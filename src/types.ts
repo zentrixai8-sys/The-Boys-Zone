@@ -20,6 +20,7 @@ export interface Product {
   discount_price: number;
   stock: number;
   image_url: string;
+  images?: string[];
   created_at: string;
 }
 

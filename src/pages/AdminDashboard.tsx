@@ -69,7 +69,16 @@ export const AdminDashboard = () => {
         path: filePath
       });
 
-      setEditingProduct(prev => ({ ...prev, image_url: publicUrl }));
+      setEditingProduct(prev => {
+        if (!prev) return null;
+        const currentImages = prev.images || [];
+        // If it's the first image, also set it as image_url
+        const updates: any = { images: [...currentImages, publicUrl] };
+        if (!prev.image_url) {
+          updates.image_url = publicUrl;
+        }
+        return { ...prev, ...updates };
+      });
       toast.success('Image uploaded successfully!');
     } catch (error) {
       console.error('Upload error:', error);
@@ -77,6 +86,19 @@ export const AdminDashboard = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const removeImage = (index: number) => {
+    setEditingProduct(prev => {
+      if (!prev || !prev.images) return prev;
+      const newImages = prev.images.filter((_, i) => i !== index);
+      const updates: any = { images: newImages };
+      // If we removed the main image_url, pick the next one or clear it
+      if (prev.image_url === prev.images[index]) {
+        updates.image_url = newImages[0] || '';
+      }
+      return { ...prev, ...updates };
+    });
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
@@ -381,42 +403,40 @@ export const AdminDashboard = () => {
                     />
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-black/40">Product Image</label>
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 bg-black/5 rounded-2xl overflow-hidden flex items-center justify-center border border-black/5">
-                        {uploading ? (
-                          <Loader2 className="w-6 h-6 animate-spin text-black/20" />
-                        ) : editingProduct?.image_url ? (
-                          <img src={editingProduct.image_url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <ImageIcon className="w-6 h-6 text-black/20" />
-                        )}
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <button 
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={uploading}
-                          className="w-full py-3 bg-black/5 hover:bg-black/10 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          <Upload className="w-4 h-4" /> {editingProduct?.image_url ? 'Change Photo' : 'Upload Photo'}
-                        </button>
-                        <input 
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleFileChange}
-                          className="hidden"
-                          accept="image/*"
-                        />
-                        <input 
-                          type="url" 
-                          placeholder="Or paste image URL..."
-                          value={editingProduct?.image_url}
-                          onChange={(e) => setEditingProduct({ ...editingProduct, image_url: e.target.value })}
-                          className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-[10px] focus:ring-2 focus:ring-black"
-                        />
-                      </div>
+                    <label className="text-xs font-bold uppercase tracking-widest text-black/40">Product Images</label>
+                    <div className="grid grid-cols-4 gap-4">
+                      {editingProduct?.images?.map((img, idx) => (
+                        <div key={idx} className="relative aspect-square bg-black/5 rounded-2xl overflow-hidden border border-black/5 group">
+                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          <button 
+                            type="button"
+                            onClick={() => removeImage(idx)}
+                            className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          {editingProduct.image_url === img && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] font-bold uppercase py-1 text-center">Main</div>
+                          )}
+                        </div>
+                      ))}
+                      <button 
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="aspect-square bg-black/5 hover:bg-black/10 rounded-2xl border-2 border-dashed border-black/10 flex flex-col items-center justify-center gap-2 transition-all disabled:opacity-50"
+                      >
+                        {uploading ? <Loader2 className="w-5 h-5 animate-spin text-black/20" /> : <Plus className="w-5 h-5 text-black/20" />}
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Add</span>
+                      </button>
                     </div>
+                    <input 
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      className="hidden"
+                      accept="image/*"
+                    />
                   </div>
                   <div className="space-y-2 col-span-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-black/40">Description</label>
