@@ -4,7 +4,7 @@ import { Product, Order, Category } from '../types';
 import { formatPrice } from '../lib/utils';
 import { 
   Plus, Search, Edit2, Trash2, Package, ShoppingCart, 
-  Users, TrendingUp, Loader2, X, Image as ImageIcon, Upload 
+  Users, TrendingUp, Loader2, X, Image as ImageIcon, Upload, Minus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
@@ -45,6 +45,11 @@ export const AdminDashboard = () => {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (editingProduct?.images && editingProduct.images.length >= 4) {
+      toast.error('Maximum 4 images allowed per product');
+      return;
+    }
 
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
@@ -125,13 +130,15 @@ export const AdminDashboard = () => {
     }
   };
 
-  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+
+
+  const quickUpdateStock = async (productId: string, newStock: number) => {
     try {
-      await api.request('updateOrderStatus', { order_id: orderId, order_status: status });
-      toast.success('Order status updated');
-      fetchData();
+      await api.request('updateProduct', { product_id: productId, stock: newStock });
+      toast.success('Stock updated');
+      setProducts(prev => prev.map(p => p.product_id === productId ? { ...p, stock: newStock } : p));
     } catch (error) {
-      toast.error('Failed to update status');
+      toast.error('Failed to update stock');
     }
   };
 
@@ -141,6 +148,16 @@ export const AdminDashboard = () => {
     { label: 'Active Products', value: products.length, icon: Package, color: 'text-orange-600' },
     { label: 'Total Customers', value: '1,284', icon: Users, color: 'text-blue-600' }
   ];
+
+  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      await api.request('updateOrderStatus', { order_id: orderId, order_status: status });
+      toast.success('Order status updated');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -189,21 +206,17 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 mb-8 border-b border-black/5">
-        <button 
-          onClick={() => setActiveTab('products')}
-          className={`px-6 py-4 text-sm font-bold uppercase tracking-widest transition-all relative ${activeTab === 'products' ? 'text-black' : 'text-black/40 hover:text-black'}`}
-        >
-          Products
-          {activeTab === 'products' && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-1 bg-black" />}
-        </button>
-        <button 
-          onClick={() => setActiveTab('orders')}
-          className={`px-6 py-4 text-sm font-bold uppercase tracking-widest transition-all relative ${activeTab === 'orders' ? 'text-black' : 'text-black/40 hover:text-black'}`}
-        >
-          Orders
-          {activeTab === 'orders' && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-1 bg-black" />}
-        </button>
+      <div className="flex gap-4 mb-8 border-b border-black/5 overflow-x-auto scrollbar-hide">
+        {['products', 'inventory', 'orders'].map((tab) => (
+          <button 
+            key={tab}
+            onClick={() => setActiveTab(tab as any)}
+            className={`px-6 py-4 text-sm font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === tab ? 'text-black' : 'text-black/40 hover:text-black'}`}
+          >
+            {tab}
+            {activeTab === tab && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-1 bg-black" />}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -225,7 +238,7 @@ export const AdminDashboard = () => {
               </thead>
               <tbody className="divide-y divide-black/5">
                 {products.map((product) => (
-                  <tr key={product.product_id} className="hover:bg-black/[0.02] transition-colors">
+                  <tr key={product.product_id} className="hover:bg-black/5 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-black/5 overflow-hidden shrink-0">
@@ -244,7 +257,7 @@ export const AdminDashboard = () => {
                       <p className="font-bold text-sm">{formatPrice(product.discount_price || product.price)}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className={`text-sm font-bold ${product.stock < 10 ? 'text-red-500' : 'text-emerald-600'}`}>{product.stock}</p>
+                      <p className={`text-sm font-bold ${product.stock <= 30 && product.stock > 0 ? 'text-orange-500' : product.stock === 0 ? 'text-red-500' : 'text-emerald-600'}`}>{product.stock}</p>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
@@ -264,6 +277,65 @@ export const AdminDashboard = () => {
                           <Trash2 className="w-4 h-4 text-red-400" />
                         </button>
                       </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : activeTab === 'inventory' ? (
+        <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden p-6 space-y-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">Inventory Management</h2>
+            <div className="relative">
+              <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-black/40" />
+              <input type="text" placeholder="Search products..." className="pl-12 pr-4 py-3 bg-black/5 rounded-2xl border-none focus:ring-2 focus:ring-black w-64 text-sm font-bold" />
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-black/5 text-xs font-bold uppercase tracking-widest text-black/40">
+                  <th className="px-6 py-4">Product</th>
+                  <th className="px-6 py-4">SKU/ID</th>
+                  <th className="px-6 py-4">Current Stock</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Quick Update</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/5">
+                {products.map((product) => (
+                  <tr key={product.product_id} className="hover:bg-black/2 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <img src={product.image_url} alt="" className="w-10 h-10 rounded-xl object-cover bg-black/5" />
+                        <span className="font-bold text-sm max-w-[200px] truncate block">{product.title}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-black/40 font-mono">{product.product_id.substring(0,8)}</td>
+                    <td className="px-6 py-4 text-sm font-bold">{product.stock}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg ${product.stock > 30 ? 'bg-emerald-50 text-emerald-600' : product.stock > 0 ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'}`}>
+                        {product.stock > 30 ? 'In Stock' : product.stock > 0 ? 'Low Stock' : 'Out of Stock'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 flex items-center gap-2">
+                      <input 
+                        type="number" 
+                        value={product.stock}
+                        onChange={(e) => {
+                          const val = Math.max(0, parseInt(e.target.value) || 0);
+                          setProducts(prev => prev.map(p => p.product_id === product.product_id ? { ...p, stock: val } : p));
+                        }}
+                        className="w-20 px-3 py-2 bg-black/5 rounded-xl border-none text-sm font-bold focus:ring-2 focus:ring-black" 
+                      />
+                      <button 
+                        onClick={() => quickUpdateStock(product.product_id, product.stock)}
+                        className="px-4 py-2 bg-black text-white rounded-xl text-xs font-bold hover:bg-black/90"
+                      >
+                        Update
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -420,15 +492,17 @@ export const AdminDashboard = () => {
                           )}
                         </div>
                       ))}
-                      <button 
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
-                        className="aspect-square bg-black/5 hover:bg-black/10 rounded-2xl border-2 border-dashed border-black/10 flex flex-col items-center justify-center gap-2 transition-all disabled:opacity-50"
-                      >
-                        {uploading ? <Loader2 className="w-5 h-5 animate-spin text-black/20" /> : <Plus className="w-5 h-5 text-black/20" />}
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Add</span>
-                      </button>
+                      {editingProduct?.images && editingProduct.images.length >= 4 ? null : (
+                        <button 
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                          className="aspect-square bg-black/5 hover:bg-black/10 rounded-2xl border-2 border-dashed border-black/10 flex flex-col items-center justify-center gap-2 transition-all disabled:opacity-50"
+                        >
+                          {uploading ? <Loader2 className="w-5 h-5 animate-spin text-black/20" /> : <Plus className="w-5 h-5 text-black/20" />}
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-black/40">Add</span>
+                        </button>
+                      )}
                     </div>
                     <input 
                       type="file"

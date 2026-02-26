@@ -95,6 +95,28 @@ export const api = {
           return true;
         }
 
+        case 'createStoreSale': {
+          // Generate a single invoice ID for all items in this sale
+          const invoiceId = `INV-${Date.now()}`;
+          const itemsData = data.items.map((item: any) => ({
+             invoice_id: invoiceId,
+             customer_name: data.customer_name,
+             customer_mobile: data.customer_mobile,
+             category: item.category,
+             product_name: item.productName,
+             quantity: item.quantity,
+             price: item.price,
+             item_total: item.price * item.quantity
+          }));
+          
+          const { error } = await supabase
+            .from('store_sales')
+            .insert(itemsData);
+            
+          if (error) throw error;
+          return true;
+        }
+
         case 'getOrders': {
           const { data: orders, error } = await supabase
             .from('orders')

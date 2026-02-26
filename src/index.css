@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -22,4 +22,32 @@
 
 ::-webkit-scrollbar-thumb {
   @apply bg-black/10 rounded-full hover:bg-black/20 transition-colors;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  .bg-white.rounded-3xl.border.p-6.flex.flex-col {
+    visibility: visible;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none;
+    box-shadow: none;
+    height: auto;
+  }
+  .bg-white.rounded-3xl.border.p-6.flex.flex-col * {
+    visibility: visible;
+  }
+  .bg-white.rounded-3xl.border.p-6.flex.flex-col input {
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+  }
 }

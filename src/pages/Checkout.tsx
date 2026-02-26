@@ -68,7 +68,7 @@ export const Checkout = () => {
 
           toast.success('Order placed successfully!');
           clearCart();
-          navigate('/profile');
+          navigate('/order-success');
         } catch (error) {
           toast.error('Failed to save order');
         }
@@ -94,68 +94,68 @@ export const Checkout = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
-      <h1 className="text-4xl font-bold tracking-tight text-black mb-10">Checkout</h1>
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 py-16">
+      <h1 className="text-4xl lg:text-5xl font-serif font-bold tracking-tight text-gray-900 mb-12 border-b border-gray-100 pb-8">Checkout</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div className="space-y-8">
-          <div className="bg-white p-8 rounded-3xl border border-black/5 shadow-sm">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5" /> Shipping Details
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+        <div className="space-y-10">
+          <div className="bg-white p-10 rounded-[32px] border border-gray-100 shadow-sm">
+            <h2 className="text-xl font-serif font-bold mb-8 flex items-center gap-3 text-gray-900">
+              <ShieldCheck className="w-5 h-5 text-gray-400" /> Shipping Details
             </h2>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-black/60">Full Name</label>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Full Name</label>
                 <input 
                   type="text" 
                   disabled 
                   value={user.name}
-                  className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl text-black/40"
+                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-[20px] text-[13px] font-medium text-gray-400 focus:outline-none"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-black/60">Shipping Address</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Shipping Address</label>
                 <textarea 
                   required
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Enter your full address with pincode"
-                  className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black min-h-[120px]"
+                  className="w-full px-5 py-4 bg-white border border-gray-200 rounded-[24px] text-[13px] font-medium focus:outline-none focus:border-gray-900 focus:ring-0 min-h-[140px] placeholder:text-gray-400"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-3xl border border-black/5 shadow-sm">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <CreditCard className="w-5 h-5" /> Payment Method
+          <div className="bg-white p-10 rounded-[32px] border border-gray-100 shadow-sm">
+            <h2 className="text-xl font-serif font-bold mb-8 flex items-center gap-3 text-gray-900">
+              <CreditCard className="w-5 h-5 text-gray-400" /> Payment Method
             </h2>
-            <div className="p-4 border-2 border-black rounded-2xl bg-black/5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-6 bg-black rounded flex items-center justify-center">
-                  <span className="text-[8px] text-white font-bold">RAZORPAY</span>
+            <div className="p-6 border border-gray-900 rounded-[24px] bg-gray-50/50 flex items-center justify-between cursor-pointer shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <span className="text-[8px] text-white font-bold tracking-widest">RAZORPAY</span>
                 </div>
-                <span className="font-bold">Razorpay Secure</span>
+                <span className="font-bold text-[13px] text-gray-900">Razorpay Secure</span>
               </div>
-              <div className="w-4 h-4 rounded-full border-4 border-black" />
+              <div className="w-5 h-5 rounded-full border-[5px] border-gray-900" />
             </div>
           </div>
         </div>
 
         <div>
-          <div className="bg-white p-8 rounded-3xl border border-black/5 shadow-sm sticky top-24">
-            <h2 className="text-xl font-bold mb-6">Order Summary</h2>
-            <div className="space-y-4 mb-8 max-h-60 overflow-y-auto pr-2">
+          <div className="bg-gray-50 p-10 rounded-[32px] border border-gray-100 sticky top-32">
+            <h2 className="text-xl font-serif font-bold mb-8 text-gray-900">Order Summary</h2>
+            <div className="space-y-5 mb-8 max-h-80 overflow-y-auto pr-4 scrollbar-hide">
               {cart.map(item => (
-                <div key={item.product_id} className="flex justify-between text-sm">
-                  <span className="text-black/60">{item.product?.title} x {item.quantity}</span>
-                  <span className="font-medium">{formatPrice((item.product?.discount_price || item.product?.price || 0) * item.quantity)}</span>
+                <div key={item.product_id} className="flex justify-between items-center pb-5 border-b border-gray-200/50 last:border-0 last:pb-0">
+                  <span className="text-gray-600 text-[13px] font-medium leading-relaxed max-w-[70%]">{item.product?.title} <span className="text-gray-400 font-bold ml-1">x {item.quantity}</span></span>
+                  <span className="font-bold text-[13px] text-gray-900">{formatPrice((item.product?.discount_price || item.product?.price || 0) * item.quantity)}</span>
                 </div>
               ))}
             </div>
             
-            <div className="space-y-4 pt-4 border-t border-black/5">
-              <div className="flex justify-between text-xl font-bold">
+            <div className="space-y-4 pt-6 border-t border-gray-200">
+              <div className="flex justify-between text-2xl font-sans font-bold text-gray-900">
                 <span>Total Amount</span>
                 <span>{formatPrice(totalPrice)}</span>
               </div>
@@ -164,10 +164,13 @@ export const Checkout = () => {
             <button 
               onClick={handlePayment}
               disabled={loading}
-              className="w-full bg-black text-white py-4 rounded-2xl font-bold hover:bg-black/90 transition-all flex items-center justify-center gap-2 mt-8 disabled:opacity-50"
+              className="w-full bg-gray-900 text-white py-5 rounded-full text-[13px] font-bold uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-3 mt-10 disabled:opacity-50 shadow-lg shadow-black/10"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : `Pay ${formatPrice(totalPrice)}`}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Pay {formatPrice(totalPrice)}</>}
             </button>
+            <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-6 flex items-center justify-center gap-2">
+              <ShieldCheck className="w-3 h-3" /> Secure Payment
+            </p>
           </div>
         </div>
       </div>

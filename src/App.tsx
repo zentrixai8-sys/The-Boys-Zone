@@ -13,6 +13,10 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Profile } from './pages/Profile';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { Billing } from './pages/Billing';
+import { About } from './pages/About';
+import { Contact } from './pages/Contact';
+import { OrderSuccess } from './pages/OrderSuccess';
 
 const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) => {
   const { user, isAdmin, loading } = useAuth();
@@ -49,6 +53,14 @@ const AppContent = () => {
           <Route path="/cart" element={<Cart />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          
+          <Route path="/order-success" element={
+            <ProtectedRoute>
+              <OrderSuccess />
+            </ProtectedRoute>
+          } />
           
           <Route path="/checkout" element={
             <ProtectedRoute>
@@ -65,6 +77,12 @@ const AppContent = () => {
           <Route path="/admin" element={
             <ProtectedRoute adminOnly>
               <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/billing" element={
+            <ProtectedRoute adminOnly>
+              <Billing />
             </ProtectedRoute>
           } />
         </Routes>
@@ -102,7 +120,8 @@ const AppContent = () => {
             <div>
               <h3 className="text-sm font-bold uppercase tracking-widest mb-6">Support</h3>
               <ul className="space-y-4 text-white/40 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
+                <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
+                <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
                 <li><a href="#" className="hover:text-white transition-colors">Shipping Policy</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Returns & Exchanges</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">FAQs</a></li>
@@ -111,6 +130,7 @@ const AppContent = () => {
           </div>
           <div className="border-t border-white/10 mt-20 pt-10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/20 uppercase tracking-widest font-bold">
             <p>© 2026 BOY'S ZONE. ALL RIGHTS RESERVED.</p>
+            <p>Powered By <a href="https://zentrix-dv.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-white hover:text-indigo-400 transition-colors">Zentrix</a></p>
             <div className="flex gap-8">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
