@@ -18,6 +18,7 @@ export const Checkout = () => {
   const { cart, totalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
   const navigate = useNavigate();
 
   const loadRazorpay = () => {
@@ -37,6 +38,28 @@ export const Checkout = () => {
     }
 
     setLoading(true);
+
+    if (paymentMethod === 'cod') {
+      try {
+        await api.request('createOrder', {
+          user_id: user?.id,
+          products: JSON.stringify(cart),
+          total_amount: totalPrice,
+          payment_id: 'COD_' + Date.now(),
+          payment_status: 'Pending (COD)',
+          address: address
+        });
+        toast.success('Order placed successfully via Cash on Delivery!');
+        clearCart();
+        navigate('/order-success');
+      } catch (error) {
+        toast.error('Failed to save order');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     const res = await loadRazorpay();
 
     if (!res) {
@@ -130,14 +153,37 @@ export const Checkout = () => {
             <h2 className="text-xl font-serif font-bold mb-8 flex items-center gap-3 text-gray-900">
               <CreditCard className="w-5 h-5 text-gray-400" /> Payment Method
             </h2>
-            <div className="p-6 border border-gray-900 rounded-[24px] bg-gray-50/50 flex items-center justify-between cursor-pointer shadow-sm hover:shadow-md transition-all">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
-                  <span className="text-[8px] text-white font-bold tracking-widest">RAZORPAY</span>
+            <div className="space-y-4">
+              <div 
+                onClick={() => setPaymentMethod('online')}
+                className={`p-6 border rounded-[24px] flex items-center justify-between cursor-pointer shadow-sm hover:shadow-md transition-all ${paymentMethod === 'online' ? 'border-gray-900 bg-gray-50/50' : 'border-gray-200 bg-white'}`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold tracking-widest">RAZORPAY</span>
+                  </div>
+                  <span className="font-bold text-[13px] text-gray-900">Razorpay Secure</span>
                 </div>
-                <span className="font-bold text-[13px] text-gray-900">Razorpay Secure</span>
+                <div className={`w-5 h-5 rounded-full border-[5px] ${paymentMethod === 'online' ? 'border-gray-900' : 'border-gray-300'}`} />
               </div>
-              <div className="w-5 h-5 rounded-full border-[5px] border-gray-900" />
+
+              {totalPrice < 400 && (
+                <div 
+                  onClick={() => setPaymentMethod('cod')}
+                  className={`p-6 border rounded-[24px] flex items-center justify-between cursor-pointer shadow-sm hover:shadow-md transition-all ${paymentMethod === 'cod' ? 'border-gray-900 bg-gray-50/50' : 'border-gray-200 bg-white'}`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-8 bg-green-100 rounded-lg flex items-center justify-center border border-green-200">
+                      <span className="text-[10px] text-green-700 font-bold tracking-widest">COD</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-[13px] text-gray-900 block">Cash on Delivery</span>
+                      <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider block mt-1">Available for orders under ₹400</span>
+                    </div>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-[5px] ${paymentMethod === 'cod' ? 'border-gray-900' : 'border-gray-300'}`} />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -164,9 +210,9 @@ export const Checkout = () => {
             <button 
               onClick={handlePayment}
               disabled={loading}
-              className="w-full bg-gray-900 text-white py-5 rounded-full text-[13px] font-bold uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-3 mt-10 disabled:opacity-50 shadow-lg shadow-black/10"
+              className={`w-full text-white py-5 rounded-full text-[13px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-3 mt-10 disabled:opacity-50 shadow-lg shadow-black/10 ${paymentMethod === 'cod' ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-900 hover:bg-black'}`}
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Pay {formatPrice(totalPrice)}</>}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{paymentMethod === 'cod' ? 'Place Order (COD)' : `Pay ${formatPrice(totalPrice)}`}</>}
             </button>
             <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-6 flex items-center justify-center gap-2">
               <ShieldCheck className="w-3 h-3" /> Secure Payment

@@ -244,12 +244,21 @@ export const ProductDetail = () => {
             </div>
           </div>
 
-          <div className="mb-10">
+          <div className="mb-10 flex gap-4">
             <button 
               onClick={() => addToCart(product, quantity)}
-              className="w-full bg-indigo-600 text-white py-4 rounded-xl text-base font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-sm shadow-indigo-600/20"
+              className="flex-1 border-2 border-indigo-600 text-indigo-600 bg-white py-4 rounded-xl text-[15px] font-bold hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
             >
               <ShoppingBag className="w-5 h-5" /> Add to Cart
+            </button>
+            <button 
+              onClick={() => {
+                addToCart(product, quantity);
+                navigate('/checkout');
+              }}
+              className="flex-1 bg-indigo-600 text-white py-4 rounded-xl text-[15px] font-bold hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-600/20"
+            >
+              Buy Now
             </button>
           </div>
 
