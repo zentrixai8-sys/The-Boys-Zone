@@ -17,11 +17,74 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-black/10 rounded-full hover:bg-black/20 transition-colors;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 9999px;
+  transition: background-color 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+@layer utilities {
+  .shadow-3d-soft {
+    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.1),
+                0 10px 30px -15px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8),
+                inset 1px 0 0 rgba(255, 255, 255, 0.3);
+  }
+
+  .shadow-3d-strong {
+    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.4),
+                0 20px 40px -20px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                inset 1px 0 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .shadow-3d-pop {
+    box-shadow: 8px 8px 0px 0px rgba(0,0,0,1);
+  }
+
+  .text-3d {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2),
+                 4px 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .bg-glass-3d {
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 30px 60px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+
+  .float-3d {
+    transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) scale3d(1, 1, 1);
+    transform-style: preserve-3d;
+  }
+
+  .image-3d {
+    box-shadow: 
+      -10px 10px 20px rgba(0,0,0,0.1),
+      -20px 20px 40px rgba(0,0,0,0.1),
+      inset 2px 2px 0px rgba(255,255,255,0.5);
+    transform: perspective(1000px) rotateY(-8deg) rotateX(6deg) scale3d(1, 1, 1);
+    transform-style: preserve-3d;
+    transition: all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .image-3d:hover {
+    transform: perspective(1000px) rotateY(0deg) rotateX(0deg) scale3d(1.05, 1.05, 1.05);
+    box-shadow: 
+      -5px 5px 10px rgba(0,0,0,0.2),
+      -10px 10px 20px rgba(0,0,0,0.1),
+      inset 2px 2px 0px rgba(255,255,255,0.5);
+    z-index: 10;
+  }
 }
 
 @media print {

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { supabase } from './lib/supabase';
+import toast, { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { Navbar } from './components/Navbar';
@@ -34,7 +35,29 @@ const ProtectedRoute = ({ children, adminOnly = false }: { children: React.React
 };
 
 const AppContent = () => {
-  const { loading } = useAuth();
+  const { isAdmin, loading } = useAuth();
+
+  useEffect(() => {
+    if (isAdmin) {
+      const channel = supabase
+        .channel('admin-order-notifications')
+        .on(
+          'postgres_changes', 
+          { event: 'INSERT', schema: 'public', table: 'orders' }, 
+          (payload) => {
+            toast.success(`New order received! Order ID: #${payload.new.order_id}`, {
+              duration: 8000,
+              icon: '🛍️',
+            });
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [isAdmin]);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -92,7 +115,14 @@ const AppContent = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="col-span-1 md:col-span-2">
-              <h2 className="text-3xl font-black tracking-tighter mb-6">BOY'S ZONE</h2>
+              <div className="flex items-center gap-4 mb-6">
+                <img 
+                  src="https://i.ibb.co/Pvj8V4T7/Whats-App-Image-2026-02-26-at-2-40-25-PM.jpg" 
+                  alt="The Boys Zone Logo" 
+                  className="h-16 w-auto object-contain rounded-xl shadow-md"
+                />
+                <h2 className="text-3xl font-black tracking-tighter">THE BOYS ZONE</h2>
+              </div>
               <p className="text-white/40 max-w-sm mb-8">
                 Your choice here. Premium menswear located in Suhela, in front of Bharat Petroleum.
               </p>
@@ -144,11 +174,14 @@ const AppContent = () => {
   );
 };
 
+import { ScrollToTop } from './components/ScrollToTop';
+
 export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
         <Router>
+          <ScrollToTop />
           <AppContent />
         </Router>
       </CartProvider>

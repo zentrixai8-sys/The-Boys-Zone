@@ -129,7 +129,7 @@ export const ProductDetail = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-16 lg:gap-24">
         {/* Image Gallery / Carousel */}
         <div className="space-y-6">
-          <div className="relative aspect-[4/5] bg-gray-50 rounded-[32px] overflow-hidden group">
+          <div className="relative aspect-[4/5] bg-gray-50 rounded-[32px] overflow-hidden group image-3d border-4 border-white">
             <AnimatePresence mode="wait">
               <motion.img 
                 key={currentImageIndex}

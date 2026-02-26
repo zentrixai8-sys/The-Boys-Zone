@@ -16,7 +16,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       viewport={{ once: true }}
       className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden"
     >
-      <Link to={`/product/${product.product_id}`} className="block relative aspect-4/5 overflow-hidden bg-gray-50 w-full">
+      <Link to={`/product/${product.product_id}`} className="block relative aspect-4/5 overflow-hidden bg-gray-50 w-full image-3d border-[2px] border-white rounded-t-2xl">
         {product.discount_price && product.discount_price < product.price && (
           <div className="absolute top-3 left-3 z-10 bg-red-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">
             -{Math.round(((product.price - product.discount_price) / product.price) * 100)}%

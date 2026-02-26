@@ -110,11 +110,17 @@ export const AdminDashboard = () => {
     e.preventDefault();
     const action = editingProduct?.product_id ? 'updateProduct' : 'addProduct';
     try {
-      await api.request(action, editingProduct);
+      const payload = { ...editingProduct };
+      if (action === 'addProduct') {
+         // Delete empty product_id so Supabase generates a valid UUID
+         delete payload.product_id;
+      }
+      await api.request(action, payload);
       toast.success(`Product ${editingProduct?.product_id ? 'updated' : 'added'} successfully`);
       setIsModalOpen(false);
       fetchData();
     } catch (error) {
+      console.error('Save Product Error:', error);
       toast.error('Failed to save product');
     }
   };

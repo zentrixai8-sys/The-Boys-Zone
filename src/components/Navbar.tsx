@@ -25,19 +25,24 @@ export const Navbar = () => {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Shop', path: '/products' },
-    { name: 'About', path: '/#about' }, // Assuming these link to sections or pages
-    { name: 'Contact', path: '/#contact' },
+    { name: 'About', path: '/about' },
+    { name: 'Contact', path: '/contact' },
   ];
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-black/5 transition-all duration-300">
+    <nav className="sticky top-0 z-[100] bg-white border-b border-black/5 transition-all duration-300">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex justify-between items-center h-20">
           
           {/* Logo (Left) */}
-          <Link to="/" className="flex-shrink-0 flex items-center gap-2">
-            <span className="text-2xl font-serif font-black tracking-tight text-gray-900 uppercase">
-              Boys Zone
+          <Link to="/" className="flex-shrink-0 flex items-center gap-3">
+            <img 
+              src="https://i.ibb.co/Pvj8V4T7/Whats-App-Image-2026-02-26-at-2-40-25-PM.jpg" 
+              alt="The Boys Zone Logo" 
+              className="h-12 w-auto object-contain rounded-lg shadow-sm"
+            />
+            <span className="text-xl font-serif font-black tracking-tight text-gray-900 uppercase">
+              The Boys Zone
             </span>
           </Link>
 
@@ -74,19 +79,29 @@ export const Navbar = () => {
             
             {user ? (
               <div className="relative group">
-                <button className="text-gray-600 hover:text-gray-900 transition-colors flex items-center">
-                  <User className="w-5 h-5 stroke-[1.5]" />
+                <button className="flex items-center gap-2 hover:bg-gray-50 pr-4 pl-1.5 py-1.5 rounded-full border border-transparent hover:border-gray-200 transition-all">
+                  <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100/50">
+                    <span className="text-sm font-bold text-indigo-700">
+                      {user.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="text-[13px] font-bold text-gray-700 max-w-[100px] truncate">
+                    {user.name}
+                  </span>
                 </button>
-                <div className="absolute right-0 top-full pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <div className="bg-white border border-gray-100 shadow-xl rounded-xl w-48 py-2 flex flex-col">
-                     <div className="px-4 py-3 border-b border-gray-50">
-                        <p className="text-xs text-gray-500 font-medium">Signed in as</p>
-                        <p className="text-sm font-bold text-gray-900 truncate">{user.name}</p>
+                <div className="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="bg-white border border-gray-100 shadow-xl rounded-2xl w-56 py-2 flex flex-col overflow-hidden">
+                     <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50">
+                        <p className="text-[11px] uppercase tracking-wider text-gray-400 font-bold mb-1">Signed in as</p>
+                        <p className="text-[14px] font-bold text-gray-900 truncate">{user.name}</p>
+                        <p className="text-[12px] text-gray-500 truncate mt-0.5">{user.email}</p>
                      </div>
-                     <Link to="/profile" className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">My Profile</Link>
+                     <Link to="/profile" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors flex items-center gap-3">
+                       <User className="w-4 h-4" /> My Profile
+                     </Link>
                      <button 
                         onClick={() => { logout(); navigate('/'); }}
-                        className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left transition-colors flex items-center gap-2"
+                        className="px-5 py-3 text-[13px] font-semibold text-red-600 hover:bg-red-50 text-left transition-colors flex items-center gap-3"
                      >
                         <LogOut className="w-4 h-4" /> Sign out
                      </button>
