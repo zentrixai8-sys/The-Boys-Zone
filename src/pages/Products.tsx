@@ -37,8 +37,8 @@ export const Products = () => {
 
   const filteredProducts = products.filter(product => {
     const matchesCategory = currentCategory === 'All' || product.category === currentCategory;
-    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          product.brand.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.brand.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -55,8 +55,8 @@ export const Products = () => {
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search items..."
               value={searchQuery}
               onChange={(e) => {
@@ -68,7 +68,7 @@ export const Products = () => {
               className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[13px] font-medium focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-colors placeholder:text-gray-400 shadow-sm"
             />
           </div>
-          <button 
+          <button
             onClick={() => setIsFilterOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors shadow-sm text-sm font-medium"
           >
@@ -77,14 +77,14 @@ export const Products = () => {
         </div>
       </div>
 
-      <div className="flex gap-16">
+      <div className="flex flex-col md:flex-row gap-8 md:gap-16">
         {/* Desktop Sidebar */}
         <aside className="hidden md:block w-48 shrink-0 space-y-8">
           <div className="sticky top-28 space-y-8">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest text-gray-900 mb-4">Categories</h3>
               <div className="space-y-1.5 flex flex-col">
-                <button 
+                <button
                   onClick={() => {
                     const newParams = new URLSearchParams(searchParams);
                     newParams.delete('category');
@@ -95,7 +95,7 @@ export const Products = () => {
                   All
                 </button>
                 {categories.map(cat => (
-                  <button 
+                  <button
                     key={cat.category_id}
                     onClick={() => {
                       const newParams = new URLSearchParams(searchParams);
@@ -131,7 +131,7 @@ export const Products = () => {
               ))}
             </div>
           ) : filteredProducts.length > 0 ? (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
@@ -144,7 +144,7 @@ export const Products = () => {
           ) : (
             <div className="text-center py-32">
               <p className="text-gray-400 text-lg font-serif">No creations found matching your criteria.</p>
-              <button 
+              <button
                 onClick={() => setSearchParams({})}
                 className="mt-6 text-[13px] font-bold uppercase tracking-widest text-gray-900 border-b border-gray-900 pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors"
               >
@@ -159,14 +159,14 @@ export const Products = () => {
       <AnimatePresence>
         {isFilterOpen && (
           <>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsFilterOpen(false)}
               className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -183,7 +183,7 @@ export const Products = () => {
                 <div>
                   <h3 className="text-sm font-bold uppercase tracking-widest text-black/40 mb-4">Categories</h3>
                   <div className="space-y-2">
-                    <button 
+                    <button
                       onClick={() => {
                         setSearchParams({});
                         setIsFilterOpen(false);
@@ -193,7 +193,7 @@ export const Products = () => {
                       All Products
                     </button>
                     {categories.map(cat => (
-                      <button 
+                      <button
                         key={cat.category_id}
                         onClick={() => {
                           setSearchParams({ category: cat.category_name });

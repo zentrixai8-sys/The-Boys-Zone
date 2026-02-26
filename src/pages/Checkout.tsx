@@ -122,23 +122,23 @@ export const Checkout = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
         <div className="space-y-10">
-          <div className="bg-white p-10 rounded-[32px] border border-gray-100 shadow-sm">
+          <div className="bg-white p-6 md:p-10 rounded-[32px] border border-gray-100 shadow-sm">
             <h2 className="text-xl font-serif font-bold mb-8 flex items-center gap-3 text-gray-900">
               <ShieldCheck className="w-5 h-5 text-gray-400" /> Shipping Details
             </h2>
             <div className="space-y-6">
               <div className="space-y-3">
                 <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Full Name</label>
-                <input 
-                  type="text" 
-                  disabled 
+                <input
+                  type="text"
+                  disabled
                   value={user.name}
                   className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-[20px] text-[13px] font-medium text-gray-400 focus:outline-none"
                 />
               </div>
               <div className="space-y-3">
                 <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Shipping Address</label>
-                <textarea 
+                <textarea
                   required
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
@@ -149,12 +149,12 @@ export const Checkout = () => {
             </div>
           </div>
 
-          <div className="bg-white p-10 rounded-[32px] border border-gray-100 shadow-sm">
+          <div className="bg-white p-6 md:p-10 rounded-[32px] border border-gray-100 shadow-sm">
             <h2 className="text-xl font-serif font-bold mb-8 flex items-center gap-3 text-gray-900">
               <CreditCard className="w-5 h-5 text-gray-400" /> Payment Method
             </h2>
             <div className="space-y-4">
-              <div 
+              <div
                 onClick={() => setPaymentMethod('online')}
                 className={`p-6 border rounded-[24px] flex items-center justify-between cursor-pointer shadow-sm hover:shadow-md transition-all ${paymentMethod === 'online' ? 'border-gray-900 bg-gray-50/50' : 'border-gray-200 bg-white'}`}
               >
@@ -168,7 +168,7 @@ export const Checkout = () => {
               </div>
 
               {totalPrice < 400 && (
-                <div 
+                <div
                   onClick={() => setPaymentMethod('cod')}
                   className={`p-6 border rounded-[24px] flex items-center justify-between cursor-pointer shadow-sm hover:shadow-md transition-all ${paymentMethod === 'cod' ? 'border-gray-900 bg-gray-50/50' : 'border-gray-200 bg-white'}`}
                 >
@@ -189,7 +189,7 @@ export const Checkout = () => {
         </div>
 
         <div>
-          <div className="bg-gray-50 p-10 rounded-[32px] border border-gray-100 sticky top-32">
+          <div className="bg-gray-50 p-6 md:p-10 rounded-[32px] border border-gray-100 sticky top-32">
             <h2 className="text-xl font-serif font-bold mb-8 text-gray-900">Order Summary</h2>
             <div className="space-y-5 mb-8 max-h-80 overflow-y-auto pr-4 scrollbar-hide">
               {cart.map(item => (
@@ -199,7 +199,7 @@ export const Checkout = () => {
                 </div>
               ))}
             </div>
-            
+
             <div className="space-y-4 pt-6 border-t border-gray-200">
               <div className="flex justify-between text-2xl font-sans font-bold text-gray-900">
                 <span>Total Amount</span>
@@ -207,7 +207,7 @@ export const Checkout = () => {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={handlePayment}
               disabled={loading}
               className={`w-full text-white py-5 rounded-full text-[13px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-3 mt-10 disabled:opacity-50 shadow-lg shadow-black/10 ${paymentMethod === 'cod' ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-900 hover:bg-black'}`}

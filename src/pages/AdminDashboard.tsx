@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../services/api';
 import { Product, Order, Category } from '../types';
 import { formatPrice } from '../lib/utils';
-import { 
-  Plus, Search, Edit2, Trash2, Package, ShoppingCart, 
+import {
+  Plus, Search, Edit2, Trash2, Package, ShoppingCart,
   Users, TrendingUp, Loader2, X, Image as ImageIcon, Upload, Minus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -112,8 +112,8 @@ export const AdminDashboard = () => {
     try {
       const payload = { ...editingProduct };
       if (action === 'addProduct') {
-         // Delete empty product_id so Supabase generates a valid UUID
-         delete payload.product_id;
+        // Delete empty product_id so Supabase generates a valid UUID
+        delete payload.product_id;
       }
       await api.request(action, payload);
       toast.success(`Product ${editingProduct?.product_id ? 'updated' : 'added'} successfully`);
@@ -173,7 +173,7 @@ export const AdminDashboard = () => {
           <p className="text-black/40">Manage your store inventory and orders</p>
         </div>
         <div className="flex gap-4">
-          <button 
+          <button
             onClick={() => {
               setEditingProduct({
                 title: '',
@@ -214,7 +214,7 @@ export const AdminDashboard = () => {
       {/* Tabs */}
       <div className="flex gap-4 mb-8 border-b border-black/5 overflow-x-auto scrollbar-hide">
         {['products', 'inventory', 'orders'].map((tab) => (
-          <button 
+          <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
             className={`px-6 py-4 text-sm font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === tab ? 'text-black' : 'text-black/40 hover:text-black'}`}
@@ -230,9 +230,9 @@ export const AdminDashboard = () => {
           <Loader2 className="w-10 h-10 animate-spin text-black/20" />
         </div>
       ) : activeTab === 'products' ? (
-        <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+        <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden w-full">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
                 <tr className="bg-black/5 text-xs font-bold uppercase tracking-widest text-black/40">
                   <th className="px-6 py-4">Product</th>
@@ -267,7 +267,7 @@ export const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => {
                             setEditingProduct(product);
                             setIsModalOpen(true);
@@ -276,7 +276,7 @@ export const AdminDashboard = () => {
                         >
                           <Edit2 className="w-4 h-4 text-black/40" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeleteProduct(product.product_id)}
                           className="p-2 hover:bg-red-50 rounded-xl transition-colors"
                         >
@@ -299,8 +299,8 @@ export const AdminDashboard = () => {
               <input type="text" placeholder="Search products..." className="pl-12 pr-4 py-3 bg-black/5 rounded-2xl border-none focus:ring-2 focus:ring-black w-64 text-sm font-bold" />
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-black/5 text-xs font-bold uppercase tracking-widest text-black/40">
                   <th className="px-6 py-4">Product</th>
@@ -319,7 +319,7 @@ export const AdminDashboard = () => {
                         <span className="font-bold text-sm max-w-[200px] truncate block">{product.title}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-xs text-black/40 font-mono">{product.product_id.substring(0,8)}</td>
+                    <td className="px-6 py-4 text-xs text-black/40 font-mono">{product.product_id.substring(0, 8)}</td>
                     <td className="px-6 py-4 text-sm font-bold">{product.stock}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg ${product.stock > 30 ? 'bg-emerald-50 text-emerald-600' : product.stock > 0 ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'}`}>
@@ -327,16 +327,16 @@ export const AdminDashboard = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 flex items-center gap-2">
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         value={product.stock}
                         onChange={(e) => {
                           const val = Math.max(0, parseInt(e.target.value) || 0);
                           setProducts(prev => prev.map(p => p.product_id === product.product_id ? { ...p, stock: val } : p));
                         }}
-                        className="w-20 px-3 py-2 bg-black/5 rounded-xl border-none text-sm font-bold focus:ring-2 focus:ring-black" 
+                        className="w-20 px-3 py-2 bg-black/5 rounded-xl border-none text-sm font-bold focus:ring-2 focus:ring-black"
                       />
-                      <button 
+                      <button
                         onClick={() => quickUpdateStock(product.product_id, product.stock)}
                         className="px-4 py-2 bg-black text-white rounded-xl text-xs font-bold hover:bg-black/90"
                       >
@@ -362,7 +362,7 @@ export const AdminDashboard = () => {
                   <p className="font-bold">#{order.order_id}</p>
                 </div>
               </div>
-              
+
               <div className="flex-1 min-w-[200px]">
                 <p className="text-xs font-bold text-black/40 uppercase tracking-widest mb-1">Customer</p>
                 <p className="text-sm font-medium">User ID: {order.user_id}</p>
@@ -376,7 +376,7 @@ export const AdminDashboard = () => {
 
               <div>
                 <p className="text-xs font-bold text-black/40 uppercase tracking-widest mb-2">Status</p>
-                <select 
+                <select
                   value={order.order_status}
                   onChange={(e) => handleUpdateOrderStatus(order.order_id, e.target.value)}
                   className="bg-black/5 border-none rounded-xl text-xs font-bold uppercase tracking-widest px-4 py-2 focus:ring-2 focus:ring-black"
@@ -397,14 +397,14 @@ export const AdminDashboard = () => {
       <AnimatePresence>
         {isModalOpen && (
           <>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
               className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -421,8 +421,8 @@ export const AdminDashboard = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2 col-span-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-black/40">Product Title</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       required
                       value={editingProduct?.title}
                       onChange={(e) => setEditingProduct({ ...editingProduct, title: e.target.value })}
@@ -431,7 +431,7 @@ export const AdminDashboard = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-black/40">Category</label>
-                    <select 
+                    <select
                       value={editingProduct?.category}
                       onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
                       className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black"
@@ -443,8 +443,8 @@ export const AdminDashboard = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-black/40">Brand</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       required
                       value={editingProduct?.brand}
                       onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })}
@@ -453,8 +453,8 @@ export const AdminDashboard = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-black/40">Price (₹)</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       required
                       value={editingProduct?.price}
                       onChange={(e) => setEditingProduct({ ...editingProduct, price: Number(e.target.value) })}
@@ -463,8 +463,8 @@ export const AdminDashboard = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-black/40">Discount Price (₹)</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       value={editingProduct?.discount_price}
                       onChange={(e) => setEditingProduct({ ...editingProduct, discount_price: Number(e.target.value) })}
                       className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black"
@@ -472,8 +472,8 @@ export const AdminDashboard = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-black/40">Stock</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       required
                       value={editingProduct?.stock}
                       onChange={(e) => setEditingProduct({ ...editingProduct, stock: Number(e.target.value) })}
@@ -486,7 +486,7 @@ export const AdminDashboard = () => {
                       {editingProduct?.images?.map((img, idx) => (
                         <div key={idx} className="relative aspect-square bg-black/5 rounded-2xl overflow-hidden border border-black/5 group">
                           <img src={img} alt="" className="w-full h-full object-cover" />
-                          <button 
+                          <button
                             type="button"
                             onClick={() => removeImage(idx)}
                             className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
@@ -499,7 +499,7 @@ export const AdminDashboard = () => {
                         </div>
                       ))}
                       {editingProduct?.images && editingProduct.images.length >= 4 ? null : (
-                        <button 
+                        <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
                           disabled={uploading}
@@ -510,7 +510,7 @@ export const AdminDashboard = () => {
                         </button>
                       )}
                     </div>
-                    <input 
+                    <input
                       type="file"
                       ref={fileInputRef}
                       onChange={handleFileChange}
@@ -520,7 +520,7 @@ export const AdminDashboard = () => {
                   </div>
                   <div className="space-y-2 col-span-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-black/40">Description</label>
-                    <textarea 
+                    <textarea
                       value={editingProduct?.description}
                       onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
                       className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black min-h-[100px]"
@@ -528,8 +528,8 @@ export const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={uploading}
                   className="w-full bg-black text-white py-4 rounded-2xl font-bold hover:bg-black/90 transition-all disabled:opacity-50"
                 >

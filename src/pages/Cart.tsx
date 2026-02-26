@@ -31,37 +31,37 @@ export const Cart = () => {
         <div className="lg:col-span-2 space-y-4">
           <AnimatePresence mode="popLayout">
             {cart.map((item) => (
-              <motion.div 
+              <motion.div
                 key={item.product_id}
                 layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -100 }}
-                className="flex gap-6 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm items-center"
+                className="flex flex-col sm:flex-row gap-6 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm sm:items-center"
               >
-                <div className="w-24 aspect-[4/5] bg-gray-50 rounded-xl overflow-hidden shrink-0">
-                  <img 
-                    src={item.product?.image_url || 'https://picsum.photos/300/400'} 
+                <div className="w-full sm:w-24 aspect-square sm:aspect-[4/5] bg-gray-50 rounded-xl overflow-hidden shrink-0">
+                  <img
+                    src={item.product?.image_url || 'https://picsum.photos/300/400'}
                     alt={item.product?.title}
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
                 </div>
-                
+
                 <div className="flex-1 flex justify-between items-center h-full">
                   <div className="flex flex-col gap-1 items-start justify-center">
                     <h3 className="text-sm font-bold text-gray-900 leading-snug">{item.product?.title}</h3>
                     <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-widest">SIZE: {item.product?.size || 'M'}</p>
-                    
+
                     <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 rounded-xl px-2 py-1.5 w-fit mt-3">
-                      <button 
+                      <button
                         onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
                         className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="text-[13px] font-bold w-4 text-center text-gray-900">{item.quantity}</span>
-                      <button 
+                      <button
                         onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
                         className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
                       >
@@ -74,7 +74,7 @@ export const Cart = () => {
                     <p className="font-sans font-bold text-lg text-gray-900 mt-1">
                       {formatPrice((item.product?.discount_price || item.product?.price || 0) * item.quantity)}
                     </p>
-                    <button 
+                    <button
                       onClick={() => removeFromCart(item.product_id)}
                       className="text-[10px] font-bold text-red-500 hover:text-red-700 transition-colors uppercase tracking-widest flex items-center gap-1.5 mb-1"
                     >
@@ -90,7 +90,7 @@ export const Cart = () => {
         <div className="lg:col-span-1">
           <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm sticky top-32 mb-6">
             <h2 className="text-lg font-bold mb-6 text-gray-900">Order Summary</h2>
-            
+
             <div className="space-y-4 mb-6">
               <div className="flex justify-between text-sm text-gray-500 font-medium">
                 <span>Subtotal</span>
@@ -107,8 +107,8 @@ export const Cart = () => {
               </div>
             </div>
 
-            <Link 
-              to="/checkout" 
+            <Link
+              to="/checkout"
               className="w-full bg-indigo-600 text-white py-4 rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-sm shadow-indigo-600/20"
             >
               Go to Checkout
