@@ -6,8 +6,11 @@ import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { cart } = useCart();
   const { user, loginTime, logout, isAdmin } = useAuth();
-  const { totalItems } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,11 +28,14 @@ export const Navbar = () => {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Shop', path: '/products' },
-    { name: 'About', path: '/about' },
-    { name: 'Contact', path: '/contact' },
   ];
 
-  if (user) {
+  if (!isAdmin) {
+    navLinks.push({ name: 'About', path: '/about' });
+    navLinks.push({ name: 'Contact', path: '/contact' });
+  }
+
+  if (user && !isAdmin) {
     navLinks.push({ name: 'My Orders', path: '/profile' });
   }
 
@@ -63,22 +69,66 @@ export const Navbar = () => {
               </Link>
             ))}
             {isAdmin && (
-              <>
-                <Link to="/billing" className="text-[13px] font-semibold tracking-wide text-gray-600 hover:text-gray-900 transition-colors">
-                  Billing
-                </Link>
-                <Link to="/admin" className="text-[13px] font-semibold tracking-wide text-gray-600 hover:text-gray-900 transition-colors">
+              <div className="relative group">
+                <button className="flex items-center gap-1.5 text-[13px] font-semibold tracking-wide text-gray-600 hover:text-gray-900 transition-colors">
                   Admin
-                </Link>
-              </>
+                  <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-6 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="bg-white border border-gray-100 shadow-xl rounded-2xl w-48 py-2 flex flex-col overflow-hidden relative">
+                    {/* Add a little invisible bridge to prevent hover loss */}
+                    <div className="absolute -top-6 left-0 right-0 h-6 bg-transparent" />
+                    
+                    <Link to="/admin" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                      Dashboard
+                    </Link>
+                    <Link to="/billing" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                      Billing
+                    </Link>
+                    <Link to="/admin/orders" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                      Orders
+                    </Link>
+                    <Link to="/admin/products" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                      Products
+                    </Link>
+                    <Link to="/admin/today-report" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                      Today Report
+                    </Link>
+                    <Link to="/admin/inventory" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                      Inventory
+                    </Link>
+                    <Link to="/admin/setting" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                      Setting
+                    </Link>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
           {/* Icons (Right) */}
           <div className="flex items-center justify-end gap-2 sm:gap-6 flex-shrink-0">
-            <button className="text-gray-600 hover:text-gray-900 transition-colors hidden sm:block">
-              <Search className="w-5 h-5 stroke-[1.5]" />
-            </button>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (searchQuery.trim()) {
+                  navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+                }
+              }}
+              className="relative hidden lg:block w-64 mr-2"
+            >
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-50 text-[13px] font-medium text-gray-900 rounded-full pl-10 pr-4 py-2 border border-black/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black/10 transition-all placeholder:text-gray-400"
+              />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            </form>
+
 
             {user ? (
               <div className="relative group">
@@ -123,9 +173,11 @@ export const Navbar = () => {
                         </div>
                       </div>
                     </div>
-                    <Link to="/profile" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors flex items-center gap-3">
-                      <User className="w-4 h-4" /> My Profile
-                    </Link>
+                    {!isAdmin && (
+                      <Link to="/profile" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors flex items-center gap-3">
+                        <User className="w-4 h-4" /> My Profile
+                      </Link>
+                    )}
                     <button
                       onClick={() => { logout(); navigate('/'); }}
                       className="px-5 py-3 text-[13px] font-semibold text-red-600 hover:bg-red-50 text-left transition-colors flex items-center gap-3"
@@ -143,9 +195,9 @@ export const Navbar = () => {
 
             <Link to="/cart" className="text-gray-600 hover:text-gray-900 transition-colors relative">
               <ShoppingBag className="w-5 h-5 stroke-[1.5]" />
-              {totalItems > 0 && (
+              {cart.totalItems > 0 && (
                 <span className="absolute -top-1 -right-1.5 bg-gray-900 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
-                  {totalItems}
+                  {cart.totalItems}
                 </span>
               )}
             </Link>
@@ -180,6 +232,25 @@ export const Navbar = () => {
             className="md:hidden bg-white border-b border-gray-100 overflow-hidden"
           >
             <div className="px-6 py-8 flex flex-col gap-6">
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (searchQuery.trim()) {
+                    navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+                    setIsMenuOpen(false);
+                  }
+                }}
+                className="relative"
+              >
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-gray-50 text-sm rounded-xl pl-10 pr-4 py-3 focus:outline-none border border-black/5"
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              </form>
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
@@ -190,10 +261,16 @@ export const Navbar = () => {
                 </Link>
               ))}
               {isAdmin && (
-                <>
-                  <Link to="/billing" className="text-lg font-serif font-medium text-gray-900">Billing</Link>
-                  <Link to="/admin" className="text-lg font-serif font-medium text-gray-900">Admin Panel</Link>
-                </>
+                <div className="flex flex-col gap-4">
+                  <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Admin Menu</div>
+                  <Link to="/admin" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Dashboard</Link>
+                  <Link to="/billing" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Billing</Link>
+                  <Link to="/admin/orders" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Orders</Link>
+                  <Link to="/admin/products" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Products</Link>
+                  <Link to="/admin/today-report" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Today Report</Link>
+                  <Link to="/admin/inventory" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Inventory</Link>
+                  <Link to="/admin/setting" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Setting</Link>
+                </div>
               )}
               <hr className="border-gray-100" />
               {!user ? (

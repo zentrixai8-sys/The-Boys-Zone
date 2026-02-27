@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Printer, Search, Loader2, Save } from 'lucide-react';
-import { formatPrice } from '../lib/utils';
+import { formatPrice, formatDate } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { api } from '../services/api';
 
@@ -23,6 +23,7 @@ export const Billing = () => {
   
   const [items, setItems] = useState<BillItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [todayLogs, setTodayLogs] = useState<{ id: string, customer: string, mobile: string, time: string, total: number, itemsCount: number }[]>([]);
 
   const handleAddItem = () => {
     if (!category || !productName || !price || !quantity) {
@@ -67,7 +68,26 @@ export const Billing = () => {
         items: items
       });
       
+      const newLog = {
+        id: Date.now().toString(),
+        customer: customerName || 'Walk-in',
+        mobile: mobile || 'N/A',
+        time: new Date().toLocaleTimeString(),
+        total: total,
+        itemsCount: items.length
+      };
+      setTodayLogs(prev => [newLog, ...prev]);
+
       toast.success('Sale logged successfully');
+      
+      setItems([]);
+      setCustomerName('');
+      setMobile('');
+      setCategory('');
+      setProductName('');
+      setPrice('');
+      setQuantity('1');
+
       setIsProcessing(false);
     } catch (error) {
       console.error(error);
@@ -129,7 +149,7 @@ export const Billing = () => {
           <div className="text-right">
             <h2 className="text-2xl font-black uppercase tracking-widest text-black/20 mb-4">INVOICE</h2>
             <div className="space-y-1 text-sm font-bold">
-              <div className="flex justify-end gap-4"><span className="text-black/40">Date:</span><span>{new Date().toLocaleDateString()}</span></div>
+              <div className="flex justify-end gap-4"><span className="text-black/40">Date:</span><span>{formatDate(new Date())}</span></div>
               <div className="flex justify-end gap-4"><span className="text-black/40">Time:</span><span>{new Date().toLocaleTimeString()}</span></div>
             </div>
           </div>
@@ -355,6 +375,40 @@ export const Billing = () => {
             
           </div>
         </div>
+      </div>
+
+      {/* Today's Log Section */}
+      <div className="mt-12 bg-white p-6 rounded-3xl border border-black/5 shadow-sm print:hidden">
+        <h2 className="text-xl font-bold mb-6">Today's Bills Log</h2>
+        {todayLogs.length === 0 ? (
+          <div className="text-center py-8 text-black/40 font-bold">No bills generated today yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b-2 border-black/10 text-xs font-bold uppercase tracking-widest text-black/40">
+                  <th className="py-4 px-4">Time</th>
+                  <th className="py-4 px-4">Customer</th>
+                  <th className="py-4 px-4 text-center">Items</th>
+                  <th className="py-4 px-4 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/5">
+                {todayLogs.map(log => (
+                  <tr key={log.id} className="hover:bg-black/5 transition-colors">
+                    <td className="py-4 px-4 font-bold text-sm tracking-widest">{log.time}</td>
+                    <td className="py-4 px-4">
+                      <div className="font-bold">{log.customer}</div>
+                      {log.mobile !== 'N/A' && <div className="text-xs text-black/60 font-medium">{log.mobile}</div>}
+                    </td>
+                    <td className="py-4 px-4 text-center font-bold bg-black/5 rounded-xl">{log.itemsCount}</td>
+                    <td className="py-4 px-4 text-right font-black text-emerald-600">{formatPrice(log.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -13,25 +13,31 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loginTime, setLoginTime] = useState<number | null>(null);
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    const savedLoginTime = localStorage.getItem('loginTime');
-    if (savedUser && savedUser !== 'undefined') {
-      try {
-        setUser(JSON.parse(savedUser));
-        if (savedLoginTime) {
-          setLoginTime(parseInt(savedLoginTime, 10));
-        }
-      } catch (e) {
-        console.error('Failed to parse user from localStorage', e);
-        localStorage.removeItem('user');
-        localStorage.removeItem('loginTime');
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser && savedUser !== 'undefined') {
+        return JSON.parse(savedUser);
       }
+    } catch (e) {
+      console.error('Failed to parse user from localStorage', e);
+      localStorage.removeItem('user');
+      localStorage.removeItem('loginTime');
     }
-  }, []);
+    return null;
+  });
+
+  const [loginTime, setLoginTime] = useState<number | null>(() => {
+    try {
+      const savedLoginTime = localStorage.getItem('loginTime');
+      if (savedLoginTime) {
+        return parseInt(savedLoginTime, 10);
+      }
+    } catch (e) {
+      console.error('Failed to parse loginTime from localStorage', e);
+    }
+    return null;
+  });
 
   const login = (userData: User) => {
     const time = Date.now();

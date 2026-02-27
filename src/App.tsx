@@ -14,6 +14,11 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Profile } from './pages/Profile';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminProducts } from './pages/AdminProducts';
+import { AdminInventory } from './pages/AdminInventory';
+import { AdminOrders } from './pages/AdminOrders';
+import { TodayReport } from './pages/TodayReport';
+import { Setting } from './pages/Setting';
 import { Billing } from './pages/Billing';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
@@ -100,6 +105,31 @@ const AppContent = () => {
           <Route path="/admin" element={
             <ProtectedRoute adminOnly>
               <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/products" element={
+            <ProtectedRoute adminOnly>
+              <AdminProducts />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/inventory" element={
+            <ProtectedRoute adminOnly>
+              <AdminInventory />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/orders" element={
+            <ProtectedRoute adminOnly>
+              <AdminOrders />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/today-report" element={
+            <ProtectedRoute adminOnly>
+              <TodayReport />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/setting" element={
+            <ProtectedRoute adminOnly>
+              <Setting />
             </ProtectedRoute>
           } />
           

@@ -120,7 +120,7 @@ export const api = {
         case 'getOrders': {
           const { data: orders, error } = await supabase
             .from('orders')
-            .select('*')
+            .select('*, profiles(name, phone)')
             .order('date', { ascending: false });
           if (error) throw error;
           return orders;
@@ -179,6 +179,14 @@ export const api = {
             .insert([data]);
           if (error) throw error;
           return true;
+        }
+
+        case 'getUsers': {
+          const { data: users, error } = await supabase
+            .from('profiles')
+            .select('*');
+          if (error) throw error;
+          return users;
         }
 
         default:

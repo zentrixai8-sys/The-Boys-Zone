@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Order } from '../types';
-import { formatPrice } from '../lib/utils';
+import { formatPrice, formatDate } from '../lib/utils';
 import { Package, Clock, MapPin, ChevronRight, User as UserIcon, Phone, Mail, Camera, Save, Loader2, Upload } from 'lucide-react';
 import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
@@ -240,7 +240,7 @@ export const Profile = () => {
                     <div className="flex flex-wrap items-center gap-4 sm:gap-8 bg-white md:bg-transparent p-4 md:p-0 rounded-2xl md:rounded-none w-full md:w-auto mt-2 md:mt-0">
                       <div>
                         <p className="text-xs font-bold text-black/40 uppercase tracking-widest">Date</p>
-                        <p className="font-medium text-sm">{new Date(order.date).toLocaleDateString()}</p>
+                        <p className="font-medium text-sm">{formatDate(order.date)}</p>
                       </div>
                       <div>
                         <p className="text-xs font-bold text-black/40 uppercase tracking-widest">Total</p>

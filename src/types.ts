@@ -47,6 +47,11 @@ export interface Order {
   order_status: string;
   address: string;
   date: string;
+  created_at?: string;
+  profiles?: {
+    name: string;
+    phone: string;
+  };
 }
 
 export interface Review {

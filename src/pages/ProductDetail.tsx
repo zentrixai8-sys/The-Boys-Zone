@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { formatPrice } from '../lib/utils';
+import { formatPrice, formatDate } from '../lib/utils';
 import { 
   ShoppingBag, Star, Truck, ShieldCheck, RefreshCcw, 
   ChevronRight, Minus, Plus, MessageSquare, Send, 
@@ -365,7 +365,7 @@ export const ProductDetail = () => {
                         </div>
                         <div>
                           <p className="font-bold text-[15px] text-gray-900">{review.profiles?.name || 'Anonymous'}</p>
-                          <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">{new Date(review.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                          <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">{formatDate(review.date)}</p>
                         </div>
                       </div>
                       <div className="flex gap-1">
