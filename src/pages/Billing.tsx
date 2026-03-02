@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Printer, Search, Loader2, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Trash2, Printer, Search, Loader2, Save, User as UserIcon, Phone, MapPin, ChevronDown, UserPlus } from 'lucide-react';
 import { formatPrice, formatDate } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { api } from '../services/api';
@@ -15,6 +15,12 @@ interface BillItem {
 export const Billing = () => {
   const [customerName, setCustomerName] = useState('');
   const [mobile, setMobile] = useState('');
+  const [address, setAddress] = useState('');
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+  const [customers, setCustomers] = useState<{id: string, name: string, mobile: string, address: string}[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
   
   const [category, setCategory] = useState('');
   const [productName, setProductName] = useState('');
@@ -24,6 +30,50 @@ export const Billing = () => {
   const [items, setItems] = useState<BillItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [todayLogs, setTodayLogs] = useState<{ id: string, customer: string, mobile: string, time: string, total: number, itemsCount: number }[]>([]);
+
+  useEffect(() => {
+    const loadCustomers = async () => {
+      try {
+        const data = await api.request('getCustomers');
+        setCustomers(data || []);
+      } catch (err) {
+        console.error('Failed to load customers:', err);
+      }
+    };
+    loadCustomers();
+  }, []);
+
+  const handleDropdownSelect = (id: string) => {
+    setSelectedCustomerId(id);
+    setIsDropdownOpen(false);
+    
+    if (id === 'walk-in') {
+      setCustomerName('');
+      setMobile('');
+      setAddress('');
+      setIsCreatingCustomer(false);
+      setCustomerSearchQuery('Walk-in Customer');
+    } else if (id === 'create-new') {
+      setCustomerName(customerSearchQuery);
+      setMobile('');
+      setAddress('');
+      setIsCreatingCustomer(true);
+    } else {
+      const customer = customers.find(c => c.id === id);
+      if (customer) {
+        setCustomerName(customer.name);
+        setMobile(customer.mobile);
+        setAddress(customer.address || '');
+        setIsCreatingCustomer(false);
+        setCustomerSearchQuery(customer.name);
+      }
+    }
+  };
+
+  const filteredCustomers = customers.filter(c => 
+    c.name.toLowerCase().includes(customerSearchQuery.toLowerCase()) || 
+    c.mobile.includes(customerSearchQuery)
+  );
 
   const handleAddItem = () => {
     if (!category || !productName || !price || !quantity) {
@@ -61,6 +111,25 @@ export const Billing = () => {
     
     setIsProcessing(true);
     try {
+      if (isCreatingCustomer) {
+        if (!customerName || !mobile || !address) {
+          toast.error('Please fill all customer details (Name, Mobile, Address) to create a new customer');
+          setIsProcessing(false);
+          return;
+        }
+        
+        // Create customer in DB
+        const newCustomer = await api.request('createCustomer', {
+           name: customerName,
+           mobile,
+           address
+        });
+        
+        setCustomers(prev => [...prev, newCustomer]);
+        setSelectedCustomerId(newCustomer.id);
+        setIsCreatingCustomer(false);
+      }
+
       // Save sale to database (API handles expanding into multiple rows)
       await api.request('createStoreSale', {
         customer_name: customerName || 'Walk-in',
@@ -83,6 +152,9 @@ export const Billing = () => {
       setItems([]);
       setCustomerName('');
       setMobile('');
+      setAddress('');
+      setSelectedCustomerId('');
+      setIsCreatingCustomer(false);
       setCategory('');
       setProductName('');
       setPrice('');
@@ -109,6 +181,9 @@ export const Billing = () => {
       setItems([]);
       setCustomerName('');
       setMobile('');
+      setAddress('');
+      setSelectedCustomerId('');
+      setIsCreatingCustomer(false);
       setCategory('');
       setProductName('');
       setPrice('');
@@ -160,6 +235,7 @@ export const Billing = () => {
           <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-2">Billed To:</p>
           <div className="font-bold text-lg">{customerName || 'Walk-in Customer'}</div>
           {mobile && <div className="text-sm font-bold text-black/60 mt-1">Ph: {mobile}</div>}
+          {address && <div className="text-sm font-bold text-black/60 mt-1">{address}</div>}
         </div>
 
         {/* Items Table */}
@@ -225,29 +301,132 @@ export const Billing = () => {
         <div className="lg:col-span-1 space-y-6 print:hidden">
           
           {/* Customer Details */}
-          <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-4">
-            <h2 className="text-lg font-bold">Customer Details</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-black/40 mb-2 block">Customer Name</label>
-                <input 
-                  type="text" 
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="e.g. Rahul Kumar" 
-                  className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black font-medium"
-                />
+          <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-6">
+            <div className="flex items-center gap-4 border-b border-black/5 pb-6">
+              <div className="p-3 bg-blue-50 text-blue-500 rounded-2xl">
+                 <UserIcon className="w-6 h-6" />
               </div>
               <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-black/40 mb-2 block">Mobile Number</label>
-                <input 
-                  type="tel" 
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                  placeholder="e.g. 9876543210" 
-                  className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black font-medium"
-                />
+                <h2 className="text-lg font-black text-slate-800 tracking-tight">Client Details</h2>
+                <p className="text-sm font-bold text-blue-500">Customer Information</p>
               </div>
+            </div>
+
+            <div className="space-y-6 pt-2">
+              <div className="relative z-50">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">Client Name *</label>
+                
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search Client..."
+                    value={customerSearchQuery}
+                    onChange={(e) => {
+                      setCustomerSearchQuery(e.target.value);
+                      setIsDropdownOpen(true);
+                      setSelectedCustomerId('');
+                      if (!e.target.value) {
+                        setCustomerName('');
+                        setMobile('');
+                        setAddress('');
+                      }
+                    }}
+                    onFocus={() => setIsDropdownOpen(true)}
+                    className="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium text-sm transition-all"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Dropdown Menu */}
+                {isDropdownOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsDropdownOpen(false)}
+                    />
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-black/10 z-50 overflow-hidden flex flex-col max-h-[300px] py-2">
+                      {customerSearchQuery.trim() === '' && (
+                        <div className="px-2 pb-2 mb-2 border-b border-black/5">
+                          <button
+                            type="button"
+                            onClick={() => handleDropdownSelect('walk-in')}
+                            className="w-full text-left px-3 py-3 text-sm rounded-xl hover:bg-slate-50 font-bold transition-colors text-slate-700"
+                          >
+                            Walk-in Customer
+                          </button>
+                        </div>
+                      )}
+                      
+                      {filteredCustomers.length > 0 ? (
+                        <div className="overflow-y-auto px-2">
+                          <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Saved Customers</div>
+                          {filteredCustomers.map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => handleDropdownSelect(c.id)}
+                              className="w-full text-left px-3 py-3 text-sm rounded-xl hover:bg-slate-50 transition-colors flex justify-between items-center"
+                            >
+                              <span className="font-bold text-slate-800 truncate pr-2">{c.name}</span>
+                              <span className="text-slate-400 text-xs shrink-0">{c.mobile}</span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="px-4 py-8 text-center bg-white">
+                          <p className="text-sm font-medium text-slate-400 mb-4">No existing match.</p>
+                          <button
+                            type="button"
+                            onClick={() => handleDropdownSelect('create-new')}
+                            className="bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-600 transition-colors flex items-center justify-center gap-2 mx-auto shadow-sm shadow-indigo-200"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                            Add New Client: "{customerSearchQuery}"
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">Contact Number</label>
+                  <div className="relative">
+                    <input 
+                      type="tel" 
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value)}
+                      placeholder="e.g. 9876543210" 
+                      readOnly={selectedCustomerId !== 'walk-in' && selectedCustomerId !== 'create-new' && selectedCustomerId !== ''}
+                      className={`w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium text-sm transition-all ${selectedCustomerId !== 'walk-in' && selectedCustomerId !== 'create-new' && selectedCustomerId !== '' ? 'opacity-70 bg-slate-50' : ''}`}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block">Address</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input 
+                      type="text" 
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="City/Area" 
+                      readOnly={selectedCustomerId !== 'walk-in' && selectedCustomerId !== 'create-new' && selectedCustomerId !== ''}
+                      className={`w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium text-sm transition-all ${selectedCustomerId !== 'walk-in' && selectedCustomerId !== 'create-new' && selectedCustomerId !== '' ? 'opacity-70 bg-slate-50' : ''}`}
+                    />
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 

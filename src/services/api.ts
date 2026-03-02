@@ -142,6 +142,28 @@ export const api = {
             .update(updateData)
             .eq('id', id);
           if (error) throw error;
+          
+          // Sync with customers table
+          if (updateData.name || updateData.phone || updateData.address) {
+            const customerData: any = {};
+            if (updateData.name) customerData.name = updateData.name;
+            if (updateData.phone) customerData.mobile = updateData.phone;
+            if (updateData.address !== undefined) customerData.address = updateData.address;
+            customerData.user_id = id;
+
+            const { data: existingCustomer } = await supabase
+              .from('customers')
+              .select('id')
+              .eq('user_id', id)
+              .maybeSingle();
+
+            if (existingCustomer) {
+              await supabase.from('customers').update(customerData).eq('id', existingCustomer.id);
+            } else {
+              await supabase.from('customers').insert([customerData]);
+            }
+          }
+          
           return true;
         }
 
@@ -187,6 +209,29 @@ export const api = {
             .select('*');
           if (error) throw error;
           return users;
+        }
+
+        case 'getCustomers': {
+          const { data: customers, error } = await supabase
+            .from('customers')
+            .select('*')
+            .order('name', { ascending: true });
+          if (error) throw error;
+          return customers;
+        }
+
+        case 'createCustomer': {
+          const { data: newCustomer, error } = await supabase
+            .from('customers')
+            .insert([{
+              name: data.name,
+              mobile: data.mobile,
+              address: data.address
+            }])
+            .select()
+            .single();
+          if (error) throw error;
+          return newCustomer;
         }
 
         default:

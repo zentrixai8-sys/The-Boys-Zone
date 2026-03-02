@@ -18,6 +18,7 @@ export const Profile = () => {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
+    address: user?.address || '',
     avatar_url: user?.avatar_url || ''
   });
 
@@ -142,6 +143,12 @@ export const Profile = () => {
                     <Phone className="w-4 h-4 text-black/20" />
                     <span className="text-black/60">{user.phone}</span>
                   </div>
+                  {user.address && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <MapPin className="w-4 h-4 text-black/20" />
+                      <span className="text-black/60">{user.address}</span>
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => setEditMode(true)}
@@ -167,6 +174,15 @@ export const Profile = () => {
                     type="text"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">Address (Optional)</label>
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
                   />
                 </div>
