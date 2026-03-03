@@ -23,6 +23,7 @@ import { Billing } from './pages/Billing';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { OrderSuccess } from './pages/OrderSuccess';
+import { AdminMaster } from './pages/AdminMaster';
 
 const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) => {
   const { user, isAdmin, loading } = useAuth();
@@ -130,6 +131,11 @@ const AppContent = () => {
           <Route path="/admin/setting" element={
             <ProtectedRoute adminOnly>
               <Setting />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/master" element={
+            <ProtectedRoute adminOnly>
+              <AdminMaster />
             </ProtectedRoute>
           } />
           

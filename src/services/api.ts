@@ -21,6 +21,49 @@ export const api = {
           return categories;
         }
 
+        case 'addCategory': {
+          const { error } = await supabase
+            .from('categories')
+            .insert([data]);
+          if (error) throw error;
+          return true;
+        }
+
+        case 'deleteCategory': {
+          const { error } = await supabase
+            .from('categories')
+            .delete()
+            .eq('category_id', data.category_id);
+          if (error) throw error;
+          return true;
+        }
+
+        case 'getOffers': {
+          const { data: offers, error } = await supabase
+            .from('offers')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          return offers;
+        }
+
+        case 'addOffer': {
+          const { error } = await supabase
+            .from('offers')
+            .insert([data]);
+          if (error) throw error;
+          return true;
+        }
+
+        case 'deleteOffer': {
+          const { error } = await supabase
+            .from('offers')
+            .delete()
+            .eq('id', data.id);
+          if (error) throw error;
+          return true;
+        }
+
         case 'login': {
           // Note: In a real app, you'd use supabase.auth.signInWithPassword
           // For this migration, we'll check the 'profiles' table to match existing logic
@@ -106,7 +149,8 @@ export const api = {
              product_name: item.productName,
              quantity: item.quantity,
              price: item.price,
-             item_total: item.price * item.quantity
+             item_total: item.price * item.quantity,
+             pdf_url: data.pdf_url || null
           }));
           
           const { error } = await supabase
@@ -201,6 +245,20 @@ export const api = {
             .insert([data]);
           if (error) throw error;
           return true;
+        }
+
+        case 'createCustomer': {
+          const { data: newCustomer, error } = await supabase
+            .from('customers')
+            .insert([{
+              name: data.name,
+              mobile: data.mobile,
+              address: data.address
+            }])
+            .select()
+            .single();
+          if (error) throw error;
+          return newCustomer;
         }
 
         case 'getUsers': {

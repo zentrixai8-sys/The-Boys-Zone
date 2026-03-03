@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingBag, User, LogOut, Menu, X, Search } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Menu, X, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -99,6 +99,9 @@ export const Navbar = () => {
                     <Link to="/admin/inventory" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
                       Inventory
                     </Link>
+                    <Link to="/admin/master" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                      Master DB
+                    </Link>
                     <Link to="/admin/setting" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
                       Setting
                     </Link>
@@ -194,7 +197,7 @@ export const Navbar = () => {
             )}
 
             <Link to="/cart" className="text-gray-600 hover:text-gray-900 transition-colors relative">
-              <ShoppingBag className="w-5 h-5 stroke-[1.5]" />
+              <ShoppingCart className="w-5 h-5 stroke-[1.5]" />
               {cart.totalItems > 0 && (
                 <span className="absolute -top-1 -right-1.5 bg-gray-900 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
                   {cart.totalItems}
@@ -269,6 +272,7 @@ export const Navbar = () => {
                   <Link to="/admin/products" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Products</Link>
                   <Link to="/admin/today-report" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Today Report</Link>
                   <Link to="/admin/inventory" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Inventory</Link>
+                  <Link to="/admin/master" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Master DB</Link>
                   <Link to="/admin/setting" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Setting</Link>
                 </div>
               )}

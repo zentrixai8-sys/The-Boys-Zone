@@ -39,7 +39,7 @@ export const Cart = () => {
                 exit={{ opacity: 0, x: -100 }}
                 className="flex flex-col sm:flex-row gap-6 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm sm:items-center"
               >
-                <div className="w-full sm:w-24 aspect-square sm:aspect-[4/5] bg-gray-50 rounded-xl overflow-hidden shrink-0">
+                <div className="w-full sm:w-24 aspect-square sm:aspect-4/5 bg-gray-50 rounded-xl overflow-hidden shrink-0">
                   <img
                     src={item.product?.image_url || 'https://picsum.photos/300/400'}
                     alt={item.product?.title}
@@ -51,18 +51,18 @@ export const Cart = () => {
                 <div className="flex-1 flex justify-between items-center h-full">
                   <div className="flex flex-col gap-1 items-start justify-center">
                     <h3 className="text-sm font-bold text-gray-900 leading-snug">{item.product?.title}</h3>
-                    <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-widest">SIZE: {item.product?.size || 'M'}</p>
+                    <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-widest">SIZE: {item.selectedSize || item.product?.size || 'M'}</p>
 
                     <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 rounded-xl px-2 py-1.5 w-fit mt-3">
                       <button
-                        onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.product_id, item.quantity - 1, item.selectedSize)}
                         className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="text-[13px] font-bold w-4 text-center text-gray-900">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.product_id, item.quantity + 1, item.selectedSize)}
                         className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
                       >
                         <Plus className="w-3 h-3" />
@@ -75,7 +75,7 @@ export const Cart = () => {
                       {formatPrice((item.product?.discount_price || item.product?.price || 0) * item.quantity)}
                     </p>
                     <button
-                      onClick={() => removeFromCart(item.product_id)}
+                      onClick={() => removeFromCart(item.product_id, item.selectedSize)}
                       className="text-[10px] font-bold text-red-500 hover:text-red-700 transition-colors uppercase tracking-widest flex items-center gap-1.5 mb-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Remove

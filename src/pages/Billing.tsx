@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Printer, Search, Loader2, Save, User as UserIcon, Phone, MapPin, ChevronDown, UserPlus } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Plus, Trash2, Printer, Search, Loader2, Save, User as UserIcon, Phone, MapPin, ChevronDown, UserPlus, Download, X } from 'lucide-react';
 import { formatPrice, formatDate } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { api } from '../services/api';
+
+import jsPDF from 'jspdf';
 
 interface BillItem {
   id: string;
@@ -19,6 +21,7 @@ export const Billing = () => {
   const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
   const [customers, setCustomers] = useState<{id: string, name: string, mobile: string, address: string}[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
   
@@ -130,11 +133,210 @@ export const Billing = () => {
         setIsCreatingCustomer(false);
       }
 
-      // Save sale to database (API handles expanding into multiple rows)
+      // 1. Generate PDF programmatically (avoids html2canvas oklab CSS parsing errors)
+      let pdfUrl = null;
+      
+      {
+        // ── Load logo ────────────────────────────────────────────────
+        let logoDataUrl: string | null = null;
+        try {
+          const resp = await fetch('https://i.ibb.co/Pvj8V4T7/Whats-App-Image-2026-02-26-at-2-40-25-PM.jpg');
+          const blob = await resp.blob();
+          logoDataUrl = await new Promise<string>((res) => {
+            const reader = new FileReader();
+            reader.onloadend = () => res(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch (_) { /* logo optional */ }
+
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+        const W = 210;
+        const margin = 14;
+        let y = 0;
+
+        // ── Colour Palette ────────────────────────────────────────────
+        const BRAND   = [30, 80, 160]  as [number,number,number]; // medium navy blue
+        const ACCENT  = [59, 130, 246] as [number,number,number]; // blue
+        const WHITE   = [255,255,255]  as [number,number,number];
+        const GRAY    = [100,116,139]  as [number,number,number];
+        const LIGHT   = [241,245,249]  as [number,number,number];
+        const BLACK   = [15, 23, 42]   as [number,number,number];
+        const GREEN   = [5, 150, 105]  as [number,number,number];
+
+        // ── Header Band ───────────────────────────────────────────────
+        doc.setFillColor(...BRAND);
+        doc.rect(0, 0, W, 42, 'F');
+
+        // Logo
+        if (logoDataUrl) {
+          doc.addImage(logoDataUrl, 'JPEG', margin, 6, 24, 24);
+        }
+
+        // Store name
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.setTextColor(...WHITE);
+        doc.text("BOY'S ZONE", margin + (logoDataUrl ? 28 : 0), 18);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(180, 200, 240);
+        doc.text('Near Ripusudan Petrol Pump Suhela, Baloda Bazar CG', margin + (logoDataUrl ? 28 : 0), 25);
+        doc.text('Ph: +91 9617628157', margin + (logoDataUrl ? 28 : 0), 31);
+
+        // INVOICE label + date (top-right of band)
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(22);
+        doc.setTextColor(59, 130, 246);
+        doc.text('INVOICE', W - margin, 16, { align: 'right' });
+
+        const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const timeStr = new Date().toLocaleTimeString();
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(180, 200, 240);
+        doc.text(`Date: ${dateStr}`, W - margin, 25, { align: 'right' });
+        doc.text(`Time: ${timeStr}`, W - margin, 31, { align: 'right' });
+
+        y = 50;
+
+        // ── Billed To card ────────────────────────────────────────────
+        doc.setFillColor(...LIGHT);
+        doc.roundedRect(margin, y, 90, 28, 3, 3, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(...ACCENT);
+        doc.text('BILLED TO', margin + 4, y + 7);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(...BLACK);
+        doc.text(customerName || 'Walk-in Customer', margin + 4, y + 14);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...GRAY);
+        if (mobile) doc.text(`Ph: ${mobile}`, margin + 4, y + 20);
+        if (address) doc.text(address, margin + 4, y + 26);
+
+        y += 36;
+
+        // ── Items Table ───────────────────────────────────────────────
+        // Header row
+        doc.setFillColor(...BRAND);
+        doc.rect(margin, y, W - margin * 2, 9, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...WHITE);
+        const col = { item: margin + 3, cat: 80, qty: 130, unit: 155, total: W - margin - 2 };
+        doc.text('ITEM DESCRIPTION', col.item, y + 6);
+        doc.text('CATEGORY',         col.cat,  y + 6);
+        doc.text('QTY',  col.qty,  y + 6, { align: 'center' });
+        doc.text('UNIT PRICE', col.unit,  y + 6, { align: 'right' });
+        doc.text('TOTAL',      col.total, y + 6, { align: 'right' });
+        y += 10;
+
+        // Item rows
+        items.forEach((item, idx) => {
+          if (idx % 2 === 0) {
+            doc.setFillColor(...LIGHT);
+            doc.rect(margin, y - 1, W - margin * 2, 8, 'F');
+          }
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9);
+          doc.setTextColor(...BLACK);
+          doc.text(item.productName, col.item, y + 5);
+
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(...GRAY);
+          doc.text(item.category,               col.cat,  y + 5);
+          doc.text(String(item.quantity),        col.qty,  y + 5, { align: 'center' });
+          doc.text(`Rs.${item.price.toFixed(2)}`, col.unit, y + 5, { align: 'right' });
+
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(...BLACK);
+          doc.text(`Rs.${(item.price * item.quantity).toFixed(2)}`, col.total, y + 5, { align: 'right' });
+          y += 8;
+        });
+
+        y += 6;
+
+        // ── Totals ────────────────────────────────────────────────────
+        const totW = 82;
+        const totX = W - margin - totW;
+
+        // Subtotal + Tax rows
+        doc.setFillColor(...LIGHT);
+        doc.roundedRect(totX, y, totW, 18, 2, 2, 'F');
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(...GRAY);
+        doc.text('Subtotal',      totX + 4,  y + 6);
+        doc.text('Tax / GST (18%)', totX + 4, y + 13);
+        doc.setTextColor(...BLACK);
+        doc.text(`Rs.${subtotal.toFixed(2)}`, W - margin - 2, y + 6,  { align: 'right' });
+        doc.text(`Rs.${tax.toFixed(2)}`,      W - margin - 2, y + 13, { align: 'right' });
+        y += 20;
+
+        // Grand Total band
+        doc.setFillColor(...GREEN);
+        doc.roundedRect(totX, y, totW, 12, 2, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(...WHITE);
+        doc.text('TOTAL',                      totX + 4,       y + 8);
+        doc.text(`Rs.${total.toFixed(2)}`, W - margin - 2, y + 8, { align: 'right' });
+        y += 20;
+
+        // ── Footer ────────────────────────────────────────────────────
+        doc.setFillColor(...BRAND);
+        doc.rect(0, y, W, 22, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...WHITE);
+        doc.text('Thank you for shopping with us!', W / 2, y + 8, { align: 'center' });
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(180, 200, 240);
+        doc.text('No Exchange without Invoice.  |  Powered by Zentrix (zentrix-dv.vercel.app)', W / 2, y + 15, { align: 'center' });
+
+        const pdfBlob = doc.output('blob');
+
+        // 2. Create an in-memory blob URL immediately (works even if upload fails)
+        const blobUrl = window.URL.createObjectURL(pdfBlob);
+        pdfUrl = blobUrl; // use as fallback
+
+        // 3. Try uploading to Supabase Storage for persistence
+        const fileName = `invoices/INV-${Date.now()}-${Math.random().toString(36).substring(7)}.pdf`;
+        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+        try {
+          const uploadedUrl = await api.request('uploadFile', { 
+            file, 
+            bucket: 'products', 
+            path: fileName 
+          });
+          if (uploadedUrl) {
+            pdfUrl = uploadedUrl; // prefer the permanent Supabase URL
+            window.URL.revokeObjectURL(blobUrl); // free memory since we have the real URL
+          }
+          console.log("PDF uploaded:", pdfUrl);
+        } catch (uploadError) {
+          console.error("Supabase upload failed, using blob URL:", uploadError);
+          // pdfUrl stays as blobUrl – View/Download will still work this session
+        }
+      }
+
+      // Save sale to database
       await api.request('createStoreSale', {
         customer_name: customerName || 'Walk-in',
         customer_mobile: mobile || 'N/A',
-        items: items
+        items: items,
+        pdf_url: pdfUrl
       });
       
       const newLog = {
@@ -143,7 +345,8 @@ export const Billing = () => {
         mobile: mobile || 'N/A',
         time: new Date().toLocaleTimeString(),
         total: total,
-        itemsCount: items.length
+        itemsCount: items.length,
+        pdf_url: pdfUrl
       };
       setTodayLogs(prev => [newLog, ...prev]);
 
@@ -161,6 +364,7 @@ export const Billing = () => {
       setQuantity('1');
 
       setIsProcessing(false);
+      setShowInvoiceModal(false);
     } catch (error) {
       console.error(error);
       toast.error('Failed to log sale in database.');
@@ -206,95 +410,134 @@ export const Billing = () => {
             {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
             {isProcessing ? 'Saving...' : 'Save Bill'}
           </button>
-          <button onClick={handlePrint} disabled={isProcessing || items.length === 0} className="bg-black text-white px-6 py-3 rounded-2xl font-bold hover:bg-black/90 transition-all flex items-center gap-2 text-sm disabled:opacity-50">
-            <Printer className="w-5 h-5" /> Print Invoice
+          <button onClick={() => {
+            if (items.length === 0) {
+              toast.error('Please add items to bill first');
+              return;
+            }
+            setShowInvoiceModal(true);
+          }} disabled={isProcessing || items.length === 0} className="bg-black text-white px-6 py-3 rounded-2xl font-bold hover:bg-black/90 transition-all flex items-center gap-2 text-sm disabled:opacity-50">
+            <Printer className="w-5 h-5" /> Preview Invoice
           </button>
         </div>
       </div>
 
-      {/* Invoice Print Layout (Visible only on print) */}
-      <div className="hidden print:flex flex-col min-h-screen bg-white">
-        {/* Header Section */}
-        <div className="flex justify-between items-start mb-10 pb-8 border-b-2 border-black">
-          <div>
-            <h1 className="text-4xl font-black uppercase tracking-widest mb-2">Boy's Zone</h1>
-            <p className="text-sm font-bold text-black/60 max-w-[200px]">Near Ripusudan Petrol Pump Suhela, Baloda Bazar CG</p>
-            <p className="text-sm font-bold text-black/60 mt-1">Ph: +91 9617628157</p>
-          </div>
-          <div className="text-right">
-            <h2 className="text-2xl font-black uppercase tracking-widest text-black/20 mb-4">INVOICE</h2>
-            <div className="space-y-1 text-sm font-bold">
-              <div className="flex justify-end gap-4"><span className="text-black/40">Date:</span><span>{formatDate(new Date())}</span></div>
-              <div className="flex justify-end gap-4"><span className="text-black/40">Time:</span><span>{new Date().toLocaleTimeString()}</span></div>
+      {/* Invoice Print Layout (Visible inside Modal but always in DOM for PDF generation) */}
+      <div className={`fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:p-0 print:block ${showInvoiceModal ? '' : 'hidden'}`}>
+        <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col shadow-2xl print:shadow-none print:max-h-none print:w-full print:rounded-none">
+            
+            <div className="sticky top-0 bg-white border-b border-black/10 p-4 flex justify-between items-center z-10 print:hidden">
+              <h3 className="font-bold text-lg">Invoice Preview</h3>
+              <div className="flex items-center gap-2">
+                <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl text-sm font-bold hover:bg-black/80 transition-colors">
+                  <Printer className="w-4 h-4" /> Print
+                </button>
+                <button 
+                  onClick={handleSave} 
+                  disabled={isProcessing}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                >
+                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {isProcessing ? 'Generating...' : 'Save & Download PDF'}
+                </button>
+                <button onClick={() => setShowInvoiceModal(false)} className="p-2 ml-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div id="print-area" className="flex flex-col bg-white text-black p-5 w-full print:w-full print:p-0">
+              {/* ── Blue Header Band ── */}
+              <div className="rounded-xl overflow-hidden mb-5" style={{background:'linear-gradient(135deg,#1e50a0,#2563eb)'}}>
+                <div className="flex justify-between items-center px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <img src="https://i.ibb.co/Pvj8V4T7/Whats-App-Image-2026-02-26-at-2-40-25-PM.jpg"
+                      alt="logo" className="w-11 h-11 rounded-lg object-cover border-2 border-white/30"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
+                    <div>
+                      <h1 className="text-lg font-black text-white tracking-wide">BOY'S ZONE</h1>
+                      <p className="text-blue-200 text-[10px]">Near Ripusudan Petrol Pump Suhela, Baloda Bazar CG</p>
+                      <p className="text-blue-200 text-[10px]">Ph: +91 9617628157</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-blue-300 text-[9px] font-bold uppercase tracking-widest">Tax Invoice</div>
+                    <div className="text-white font-bold text-sm mt-1">{formatDate(new Date())}</div>
+                    <div className="text-blue-200 text-[10px]">{new Date().toLocaleTimeString()}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Billed To + Total Due ── */}
+              <div className="flex gap-3 mb-5">
+                <div className="flex-1 bg-slate-50 rounded-xl border border-slate-100 px-4 py-3">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-blue-500 mb-1">Billed To</p>
+                  <p className="font-black text-slate-800 text-sm">{customerName || 'Walk-in Customer'}</p>
+                  {mobile && <p className="text-xs text-slate-500 mt-0.5">📞 {mobile}</p>}
+                  {address && <p className="text-xs text-slate-500">{address}</p>}
+                </div>
+                <div className="rounded-xl px-4 py-3 flex flex-col justify-center text-center min-w-[110px]" style={{background:'#2563eb'}}>
+                  <p className="text-blue-200 text-[9px] font-bold uppercase tracking-widest">Total Due</p>
+                  <p className="text-white font-black text-xl mt-0.5">{formatPrice(total)}</p>
+                </div>
+              </div>
+
+              {/* ── Items Table ── */}
+              <table className="w-full text-left border-collapse mb-4">
+                <thead>
+                  <tr style={{background:'#1e293b'}}>
+                    <th className="py-2.5 px-3 text-white text-[10px] font-bold uppercase tracking-widest rounded-tl-lg">Item</th>
+                    <th className="py-2.5 px-3 text-white text-[10px] font-bold uppercase text-center">Qty</th>
+                    <th className="py-2.5 px-3 text-white text-[10px] font-bold uppercase text-right">Price</th>
+                    <th className="py-2.5 px-3 text-white text-[10px] font-bold uppercase text-right rounded-tr-lg">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, idx) => (
+                    <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                      <td className="py-2.5 px-3 border-b border-slate-100">
+                        <div className="font-bold text-slate-800 text-sm">{item.productName}</div>
+                        <div className="text-[10px] text-slate-400">{item.category}</div>
+                      </td>
+                      <td className="py-2.5 px-3 text-center border-b border-slate-100">
+                        <span className="bg-slate-100 text-slate-700 font-bold text-xs px-2 py-0.5 rounded">{item.quantity}</span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-slate-600 text-sm border-b border-slate-100">{formatPrice(item.price)}</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-slate-800 text-sm border-b border-slate-100">{formatPrice(item.price * item.quantity)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* ── Totals ── */}
+              <div className="flex justify-end mb-5">
+                <div className="w-60 rounded-xl overflow-hidden border border-slate-100">
+                  <div className="flex justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+                    <span className="text-xs text-slate-500">Subtotal</span>
+                    <span className="text-xs font-bold text-slate-700">{formatPrice(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+                    <span className="text-xs text-slate-500">GST / Tax (18%)</span>
+                    <span className="text-xs font-bold text-slate-700">{formatPrice(tax)}</span>
+                  </div>
+                  <div className="flex justify-between px-4 py-3" style={{background:'linear-gradient(135deg,#059669,#10b981)'}}>
+                    <span className="text-white font-black text-sm">TOTAL</span>
+                    <span className="text-white font-black text-sm">{formatPrice(total)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Footer ── */}
+              <div className="rounded-xl overflow-hidden" style={{background:'linear-gradient(135deg,#1e50a0,#2563eb)'}}>
+                <div className="px-5 py-3 text-center">
+                  <p className="text-white font-black text-xs">🙏 Thank you for shopping with us!</p>
+                  <p className="text-blue-200 text-[10px] mt-0.5">No Exchange without Invoice · Powered by <span className="text-white font-bold">Zentrix</span></p>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
-
-        {/* Billed To Section */}
-        <div className="mb-10">
-          <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-2">Billed To:</p>
-          <div className="font-bold text-lg">{customerName || 'Walk-in Customer'}</div>
-          {mobile && <div className="text-sm font-bold text-black/60 mt-1">Ph: {mobile}</div>}
-          {address && <div className="text-sm font-bold text-black/60 mt-1">{address}</div>}
-        </div>
-
-        {/* Items Table */}
-        <table className="w-full text-left border-collapse mb-10">
-          <thead>
-            <tr className="border-y-2 border-black/10 text-xs font-bold uppercase tracking-widest text-black/40">
-              <th className="py-4 px-2">Item Description</th>
-              <th className="py-4 px-2 text-center">Qty</th>
-              <th className="py-4 px-2 text-right">Unit Price</th>
-              <th className="py-4 px-2 text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-black/5">
-            {items.map(item => (
-              <tr key={item.id}>
-                <td className="py-4 px-2">
-                  <div className="font-bold">{item.productName}</div>
-                  <div className="text-xs text-black/40 mt-1">{item.category}</div>
-                </td>
-                <td className="py-4 px-2 text-center font-bold">{item.quantity}</td>
-                <td className="py-4 px-2 text-right">{formatPrice(item.price)}</td>
-                <td className="py-4 px-2 text-right font-bold">{formatPrice(item.price * item.quantity)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Totals Section */}
-        <div className="flex justify-end mb-16">
-          <div className="w-64 space-y-4">
-            <div className="flex justify-between text-sm font-bold">
-              <span className="text-black/60 uppercase tracking-widest">Subtotal</span>
-              <span>{formatPrice(subtotal)}</span>
-            </div>
-            <div className="flex justify-between text-sm font-bold">
-              <span className="text-black/60 uppercase tracking-widest">Tax / GST (18%)</span>
-              <span>{formatPrice(tax)}</span>
-            </div>
-            <div className="flex justify-between text-xl font-black pt-4 border-t-2 border-black">
-              <span>Total</span>
-              <span>{formatPrice(total)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer Section */}
-        <div className="mt-auto pt-8 border-t-2 border-black/10 text-center space-y-4">
-          <div>
-            <p className="text-sm font-black uppercase tracking-widest mb-1">Thank you for shopping with us!</p>
-            <p className="text-xs font-bold text-black/40 uppercase tracking-widest">No Exchange without Invoice.</p>
-          </div>
-          <div className="pt-4 space-y-2">
-            <p className="text-xs font-bold text-black/40 uppercase tracking-widest bg-black/5 rounded-full px-4 py-2 inline-block">System Generated Invoice</p>
-            <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest">
-              Powered By <span className="text-black">Zentrix</span> (https://zentrix-dv.vercel.app/)
-            </p>
-          </div>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Forms */}
@@ -495,12 +738,12 @@ export const Billing = () => {
 
         {/* Right Column: Bill Summary & Print View */}
         <div className="lg:col-span-2">
-          <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm h-full flex flex-col min-h-[600px]">
+          <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm flex flex-col h-fit">
             <h2 className="text-xl font-bold mb-6 print:hidden">Current Bill Items</h2>
             
-            <div className="flex-1 overflow-auto">
+            <div className="overflow-x-auto">
               {items.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-black/40 print:hidden">
+                <div className="py-12 flex flex-col items-center justify-center text-black/40 print:hidden">
                   <Search className="w-12 h-12 mb-4 opacity-20" />
                   <p className="font-bold">No items added to bill yet.</p>
                 </div>
@@ -581,7 +824,30 @@ export const Billing = () => {
                       {log.mobile !== 'N/A' && <div className="text-xs text-black/60 font-medium">{log.mobile}</div>}
                     </td>
                     <td className="py-4 px-4 text-center font-bold bg-black/5 rounded-xl">{log.itemsCount}</td>
-                    <td className="py-4 px-4 text-right font-black text-emerald-600">{formatPrice(log.total)}</td>
+                    <td className="py-4 px-4 min-w-[150px]">
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="font-black text-emerald-600 text-base">{formatPrice(log.total)}</div>
+                        {log.pdf_url && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <a
+                              href={log.pdf_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors"
+                            >
+                              <Printer className="w-3 h-3" /> View
+                            </a>
+                            <a
+                              href={log.pdf_url}
+                              download={`Invoice_${log.customer.replace(/\s+/g, '_')}_${log.id}.pdf`}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors"
+                            >
+                              <Download className="w-3 h-3" /> Download
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

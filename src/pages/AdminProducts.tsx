@@ -146,7 +146,8 @@ export const AdminProducts = () => {
                 description: '',
                 category: categories[0]?.category_name || '',
                 brand: '',
-                size: 'M',
+                size: '',
+                sizes: [],
                 color: '',
                 price: 0,
                 discount_price: 0,
@@ -321,6 +322,20 @@ export const AdminProducts = () => {
                       required
                       value={editingProduct?.brand}
                       onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })}
+                      className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-black/40">Sizes (Comma separated)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. S, M, L, XL"
+                      value={editingProduct?.sizes?.join(', ') || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const parsedSizes = val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
+                        setEditingProduct({ ...editingProduct, sizes: parsedSizes });
+                      }}
                       className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black"
                     />
                   </div>

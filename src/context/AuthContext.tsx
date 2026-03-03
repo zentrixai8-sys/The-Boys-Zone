@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
+import toast from 'react-hot-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -62,6 +63,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = user?.role === 'admin';
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout;
+    let lastActivity = Date.now();
+    const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 minutes
+
+    const checkInactivity = () => {
+      const now = Date.now();
+      if (user && (now - lastActivity >= INACTIVITY_LIMIT)) {
+        logout();
+        toast.error('Session expired due to inactivity. Please login again.', {
+          id: 'session-expired',
+          duration: 5000,
+        });
+      }
+    };
+
+    const resetTimer = () => {
+      lastActivity = Date.now();
+    };
+
+    if (user) {
+      // Check for inactivity every second
+      intervalId = setInterval(checkInactivity, 1000);
+      
+      const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+      
+      events.forEach((event) => {
+        window.addEventListener(event, resetTimer, { passive: true });
+      });
+
+      return () => {
+        clearInterval(intervalId);
+        events.forEach((event) => {
+          window.removeEventListener(event, resetTimer);
+        });
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, loginTime, login, logout, updateUser, isAdmin }}>

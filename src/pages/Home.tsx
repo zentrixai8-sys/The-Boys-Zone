@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { Product, Category } from '../types';
+import { Product, Category, Offer } from '../types';
 import { ProductCard } from '../components/ProductCard';
-import { motion, useScroll, useTransform } from 'motion/react';
-import { Play, ArrowRight, Instagram } from 'lucide-react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
+import { Play, ArrowRight, Instagram, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const fadeInUp = {
@@ -22,6 +22,7 @@ const staggerContainer = {
 export const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
 
   const { scrollY } = useScroll();
@@ -31,12 +32,14 @@ export const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [productsRes, categoriesRes] = await Promise.all([
+        const [productsRes, categoriesRes, offersData] = await Promise.all([
           api.request('getProducts', { limit: 12 }), // Fetch enough for both grids
-          api.request('getCategories')
+          api.request('getCategories'),
+          api.request('getOffers')
         ]);
         setProducts(productsRes.products || []);
         setCategories(categoriesRes.categories || []);
+        setOffers(offersData || []);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -50,10 +53,10 @@ export const Home = () => {
     <div className="bg-[#111] min-h-screen font-sans selection:bg-white selection:text-black">
 
       {/* 1. Split-Screen Light/Dark Hero */}
-      <section className="relative min-h-[100svh] w-full bg-white overflow-hidden flex flex-col md:flex-row">
+      <section className="relative min-h-svh w-full bg-white overflow-hidden flex flex-col md:flex-row">
 
         {/* Left Side: Typography & Content (White Background) */}
-        <div className="w-full md:w-1/2 flex flex-col justify-center px-6 sm:px-12 lg:px-24 py-20 md:py-0 relative z-20 min-h-[60svh] md:min-h-[100svh]">
+        <div className="w-full md:w-1/2 flex flex-col justify-center px-6 sm:px-12 lg:px-24 py-20 md:py-0 relative z-20 min-h-[60svh] md:min-h-svh">
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -97,7 +100,7 @@ export const Home = () => {
         </div>
 
         {/* Right Side: Full Height Image */}
-        <div className="w-full md:w-1/2 relative min-h-[50svh] md:min-h-[100svh] overflow-hidden bg-[#f8f8f8] flex items-center justify-center">
+        <div className="w-full md:w-1/2 relative min-h-[50svh] md:min-h-svh overflow-hidden bg-[#f8f8f8] flex items-center justify-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 50 }}
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
@@ -137,9 +140,41 @@ export const Home = () => {
           className="absolute bottom-12 left-6 md:left-12 z-20 flex flex-col items-center gap-4 text-black/30 hidden md:flex"
         >
           <span className="text-[10px] uppercase tracking-[0.4em] font-bold rotate-90 origin-left translate-y-8 absolute -left-2">Scroll</span>
-          <div className="w-px h-24 bg-gradient-to-b from-black/20 to-transparent mt-16" />
+          <div className="w-px h-24 bg-linear-to-b from-black/20 to-transparent mt-16" />
         </motion.div>
       </section>
+
+      {/* Offers Marquee Section */}
+      {offers.length > 0 && (
+        <section className="bg-rose-50 border-y border-rose-100 py-4 overflow-hidden relative z-20 flex items-center">
+          <div className="absolute left-0 top-0 bottom-0 w-16 bg-linear-to-r from-rose-50 to-transparent z-10"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-16 bg-linear-to-l from-rose-50 to-transparent z-10"></div>
+          
+          <div className="flex w-[200%] animate-marquee hover:[animation-play-state:paused] items-center">
+            {/* Double the offers array to create seamless loop */}
+            {[...offers, ...offers, ...offers].map((offer, index) => (
+              <div key={`${offer.id}-${index}`} className="shrink-0 w-[300px] md:w-[450px] mx-4 relative group rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer bg-white">
+                <div className="aspect-[21/9] w-full relative">
+                  <img src={offer.image_url} alt={offer.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+                  
+                  <div className="absolute bottom-0 left-0 p-4 w-full text-white">
+                    <h5 className="font-bold text-sm md:text-base leading-tight drop-shadow-md">{offer.title}</h5>
+                    {offer.description && <p className="text-xs text-white/80 line-clamp-1 mt-0.5">{offer.description}</p>}
+                  </div>
+                </div>
+                {offer.link && (
+                  <Link to={offer.link} className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
+                    <span className="bg-white text-black text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full flex items-center gap-2">
+                       Explore <ExternalLink className="w-3 h-3" />
+                    </span>
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 2. Why Choose Us (Features) */}
       <section className="bg-[#111] text-white py-16 border-y border-white/10 relative z-20">

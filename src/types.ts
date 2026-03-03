@@ -16,6 +16,7 @@ export interface Product {
   category: string;
   brand: string;
   size: string;
+  sizes?: string[];
   color: string;
   price: number;
   discount_price: number;
@@ -35,6 +36,7 @@ export interface CartItem {
   cart_id?: string;
   product_id: string;
   quantity: number;
+  selectedSize?: string;
   product?: Product;
 }
 
@@ -62,4 +64,13 @@ export interface Review {
   rating: number;
   comment: string;
   date: string;
+}
+
+export interface Offer {
+  id: string;
+  title: string;
+  description?: string;
+  image_url: string;
+  link?: string;
+  created_at: string;
 }

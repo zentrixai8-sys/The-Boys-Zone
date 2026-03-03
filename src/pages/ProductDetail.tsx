@@ -26,6 +26,7 @@ export const ProductDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [selectedSize, setSelectedSize] = useState<string>('');
   const { addToCart } = useCart();
   const navigate = useNavigate();
 
@@ -37,6 +38,11 @@ export const ProductDetail = () => {
         const found = products.find((p: Product) => p.product_id === id);
         if (found) {
           setProduct(found);
+          if (found.sizes && found.sizes.length > 0) {
+            setSelectedSize(found.sizes[0]);
+          } else if (found.size) {
+            setSelectedSize(found.size);
+          }
           fetchReviews(found.product_id);
         } else {
           navigate('/products');
@@ -224,36 +230,38 @@ export const ProductDetail = () => {
             {product.description || "A premium quality item designed for ultimate comfort and street style."}
           </p>
 
-          <div className="space-y-10 mb-10">
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-900">Select Size</h3>
-                <button className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors underline underline-offset-4 decoration-indigo-600/30">Size Guide</button>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                {['S', 'M', 'L', 'XL'].map(size => (
-                  <button 
-                    key={size}
-                    onClick={() => {}}
-                    className={`w-14 h-14 rounded-xl border flex items-center justify-center text-sm font-bold transition-all ${product.size === size ? 'border-gray-900 bg-white text-gray-900 border-2' : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}
-                  >
-                    {size}
-                  </button>
-                ))}
+          {(product.sizes && product.sizes.length > 0) ? (
+            <div className="space-y-10 mb-10">
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-gray-900">Select Size</h3>
+                  <button className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors underline underline-offset-4 decoration-indigo-600/30">Size Guide</button>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {product.sizes.map(size => (
+                    <button 
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`w-14 h-14 rounded-xl border flex items-center justify-center text-sm font-bold transition-all ${selectedSize === size ? 'border-gray-900 bg-white text-gray-900 border-2' : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          ) : null}
 
           <div className="mb-10 flex gap-4">
             <button 
-              onClick={() => addToCart(product, quantity)}
+              onClick={() => addToCart({ ...product, size: selectedSize || product.size }, quantity)}
               className="flex-1 border-2 border-indigo-600 text-indigo-600 bg-white py-4 rounded-xl text-[15px] font-bold hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
             >
               <ShoppingBag className="w-5 h-5" /> Add to Cart
             </button>
             <button 
               onClick={() => {
-                addToCart(product, quantity);
+                addToCart({ ...product, size: selectedSize || product.size }, quantity);
                 navigate('/checkout');
               }}
               className="flex-1 bg-indigo-600 text-white py-4 rounded-xl text-[15px] font-bold hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-600/20"

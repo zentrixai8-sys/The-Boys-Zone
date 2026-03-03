@@ -193,8 +193,12 @@ export const Checkout = () => {
             <h2 className="text-xl font-serif font-bold mb-8 text-gray-900">Order Summary</h2>
             <div className="space-y-5 mb-8 max-h-80 overflow-y-auto pr-4 scrollbar-hide">
               {cart.map(item => (
-                <div key={item.product_id} className="flex justify-between items-center pb-5 border-b border-gray-200/50 last:border-0 last:pb-0">
-                  <span className="text-gray-600 text-[13px] font-medium leading-relaxed max-w-[70%]">{item.product?.title} <span className="text-gray-400 font-bold ml-1">x {item.quantity}</span></span>
+                <div key={`${item.product_id}-${item.selectedSize || 'default'}`} className="flex justify-between items-center pb-5 border-b border-gray-200/50 last:border-0 last:pb-0">
+                  <span className="text-gray-600 text-[13px] font-medium leading-relaxed max-w-[70%]">
+                    {item.product?.title} 
+                    {item.selectedSize || item.product?.size ? <span className="text-indigo-600 font-bold ml-1 text-[11px]">(Size: {item.selectedSize || item.product?.size})</span> : null}
+                    <span className="text-gray-400 font-bold ml-1">x {item.quantity}</span>
+                  </span>
                   <span className="font-bold text-[13px] text-gray-900">{formatPrice((item.product?.discount_price || item.product?.price || 0) * item.quantity)}</span>
                 </div>
               ))}

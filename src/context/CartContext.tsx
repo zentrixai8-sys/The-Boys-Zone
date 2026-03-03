@@ -5,8 +5,8 @@ import toast from 'react-hot-toast';
 interface CartContextType {
   cart: CartItem[];
   addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeFromCart: (productId: string, selectedSize?: string) => void;
+  updateQuantity: (productId: string, quantity: number, selectedSize?: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -34,30 +34,36 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [cart]);
 
   const addToCart = (product: Product, quantity = 1) => {
-    const existing = cart.find(item => item.product_id === product.product_id);
+    // When adding, use the size from the product structure directly 
+    // since we mutated `product.size` with `selectedSize` in ProductDetail
+    const productSize = product.size;
+
+    const existing = cart.find(item => 
+      item.product_id === product.product_id && item.selectedSize === productSize
+    );
     
     if (existing) {
       setCart(prev => prev.map(item => 
-        item.product_id === product.product_id 
+        (item.product_id === product.product_id && item.selectedSize === productSize)
           ? { ...item, quantity: item.quantity + quantity } 
           : item
       ));
       toast.success(`Updated ${product.title} quantity`);
     } else {
-      setCart(prev => [...prev, { product_id: product.product_id, quantity, product }]);
+      setCart(prev => [...prev, { product_id: product.product_id, quantity, selectedSize: productSize, product }]);
       toast.success(`Added ${product.title} to cart`);
     }
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(item => item.product_id !== productId));
+  const removeFromCart = (productId: string, selectedSize?: string) => {
+    setCart(prev => prev.filter(item => !(item.product_id === productId && item.selectedSize === selectedSize)));
     toast.error('Removed from cart');
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: string, quantity: number, selectedSize?: string) => {
     if (quantity < 1) return;
     setCart(prev => prev.map(item => 
-      item.product_id === productId ? { ...item, quantity } : item
+      (item.product_id === productId && item.selectedSize === selectedSize) ? { ...item, quantity } : item
     ));
   };
 
