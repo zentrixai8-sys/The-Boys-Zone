@@ -278,37 +278,24 @@ export const api = {
           return customers;
         }
 
-        case 'createStoreSale': {
-          // The table stores one row per item, grouped by invoice_id
-          const invoiceId = `INV-${Date.now()}`;
-          const rows = data.items.map((item: any) => ({
-            invoice_id: invoiceId,
-            customer_name: data.customer_name,
-            customer_mobile: data.customer_mobile,
-            category: item.category,
-            product_name: item.productName,
-            quantity: item.quantity,
-            price: item.price,
-            item_total: item.price * item.quantity,
-            pdf_url: data.pdf_url ?? null,
-          }));
-          const { error } = await supabase.from('store_sales').insert(rows);
-          if (error) throw error;
-          return { invoice_id: invoiceId };
-        }
-
-        case 'getTodaysSales': {
-          // Filter rows created today using created_at
-          const todayStart = new Date();
-          todayStart.setHours(0, 0, 0, 0);
+        case 'getStoreSalesRaw': {
+          // Returns individual item rows for category/chart analysis
           const { data: rows, error } = await supabase
             .from('store_sales')
             .select('*')
-            .gte('created_at', todayStart.toISOString())
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          return rows || [];
+        }
+
+        case 'getStoreSalesAll': {
+          // Fetch all store sales and group by invoice_id for dashboard stats
+          const { data: rows, error } = await supabase
+            .from('store_sales')
+            .select('*')
             .order('created_at', { ascending: false });
           if (error) throw error;
 
-          // Group by invoice_id to reconstruct per-bill summaries
           const invoiceMap = new Map<string, any>();
           for (const row of (rows || [])) {
             if (!invoiceMap.has(row.invoice_id)) {
@@ -316,10 +303,9 @@ export const api = {
                 id: row.invoice_id,
                 customer: row.customer_name || 'Walk-in',
                 mobile: row.customer_mobile || 'N/A',
-                time: new Date(row.created_at).toLocaleTimeString(),
+                created_at: row.created_at,
                 total: 0,
                 itemsCount: 0,
-                pdf_url: row.pdf_url || null,
               });
             }
             const inv = invoiceMap.get(row.invoice_id);
@@ -328,7 +314,6 @@ export const api = {
           }
           return Array.from(invoiceMap.values());
         }
-
 
         default:
           throw new Error(`Action ${action} not implemented for Supabase`);
