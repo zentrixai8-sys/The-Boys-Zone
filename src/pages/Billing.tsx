@@ -32,7 +32,7 @@ export const Billing = () => {
   
   const [items, setItems] = useState<BillItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [todayLogs, setTodayLogs] = useState<{ id: string, customer: string, mobile: string, time: string, total: number, itemsCount: number }[]>([]);
+  const [todayLogs, setTodayLogs] = useState<{ id: string, customer: string, mobile: string, time: string, total: number, itemsCount: number, pdf_url: string | null }[]>([]);
 
   useEffect(() => {
     const loadCustomers = async () => {
@@ -44,6 +44,29 @@ export const Billing = () => {
       }
     };
     loadCustomers();
+  }, []);
+
+  useEffect(() => {
+    const loadTodaysSales = async () => {
+      try {
+        const sales = await api.request('getTodaysSales');
+        if (sales && sales.length > 0) {
+          const logs = sales.map((s: any) => ({
+            id: s.id,
+            customer: s.customer_name || 'Walk-in',
+            mobile: s.customer_mobile || 'N/A',
+            time: new Date(s.created_at).toLocaleTimeString(),
+            total: s.total || 0,
+            itemsCount: Array.isArray(s.items) ? s.items.length : 0,
+            pdf_url: s.pdf_url || null,
+          }));
+          setTodayLogs(logs);
+        }
+      } catch (err) {
+        console.error('Failed to load today\'s sales:', err);
+      }
+    };
+    loadTodaysSales();
   }, []);
 
   const handleDropdownSelect = (id: string) => {
@@ -336,6 +359,7 @@ export const Billing = () => {
         customer_name: customerName || 'Walk-in',
         customer_mobile: mobile || 'N/A',
         items: items,
+        total: total,
         pdf_url: pdfUrl
       });
       

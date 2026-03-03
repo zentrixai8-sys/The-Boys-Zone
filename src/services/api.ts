@@ -278,19 +278,34 @@ export const api = {
           return customers;
         }
 
-        case 'createCustomer': {
-          const { data: newCustomer, error } = await supabase
-            .from('customers')
+        case 'createStoreSale': {
+          const { data: sale, error } = await supabase
+            .from('store_sales')
             .insert([{
-              name: data.name,
-              mobile: data.mobile,
-              address: data.address
+              customer_name: data.customer_name,
+              customer_mobile: data.customer_mobile,
+              items: data.items,
+              total: data.total,
+              pdf_url: data.pdf_url ?? null,
+              date: new Date().toISOString().split('T')[0]
             }])
             .select()
             .single();
           if (error) throw error;
-          return newCustomer;
+          return sale;
         }
+
+        case 'getTodaysSales': {
+          const today = new Date().toISOString().split('T')[0];
+          const { data: sales, error } = await supabase
+            .from('store_sales')
+            .select('*')
+            .eq('date', today)
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          return sales;
+        }
+
 
         default:
           throw new Error(`Action ${action} not implemented for Supabase`);
