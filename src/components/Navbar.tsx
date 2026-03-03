@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Menu, X, Search } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Menu, X, Search, Camera } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -135,7 +135,10 @@ export const Navbar = () => {
 
             {user ? (
               <div className="relative group">
-                <button className="flex items-center gap-2 sm:gap-3 hover:bg-gray-50 pr-2 sm:pr-4 pl-1 sm:pl-1.5 py-1 sm:py-1.5 rounded-full border border-gray-100 hover:border-gray-300 transition-all shadow-sm">
+                <button
+                  onClick={() => navigate('/profile?edit=true')}
+                  className="flex items-center gap-2 sm:gap-3 hover:bg-gray-50 pr-2 sm:pr-4 pl-1 sm:pl-1.5 py-1 sm:py-1.5 rounded-full border border-gray-100 hover:border-gray-300 transition-all shadow-sm"
+                >
                   <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100/50 overflow-hidden shrink-0">
                     {user.avatar_url ? (
                       <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
@@ -176,6 +179,9 @@ export const Navbar = () => {
                         </div>
                       </div>
                     </div>
+                    <Link to="/profile?edit=true" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors flex items-center gap-3">
+                      <Camera className="w-4 h-4" /> Edit Profile
+                    </Link>
                     {!isAdmin && (
                       <Link to="/profile" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors flex items-center gap-3">
                         <User className="w-4 h-4" /> My Profile
@@ -190,7 +196,7 @@ export const Navbar = () => {
                   </div>
                 </div>
               </div>
-            ) : (
+                        ) : (
               <Link to="/login" className="text-gray-600 hover:text-gray-900 transition-colors">
                 <User className="w-5 h-5 stroke-[1.5]" />
               </Link>
@@ -275,6 +281,15 @@ export const Navbar = () => {
                   <Link to="/admin/master" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Master DB</Link>
                   <Link to="/admin/setting" className="text-lg font-serif font-medium text-gray-900 pl-4 border-l-2 border-indigo-100">Setting</Link>
                 </div>
+              )}
+              <hr className="border-gray-100" />
+              {user && (
+                <Link
+                  to="/profile?edit=true"
+                  className="flex items-center gap-3 text-lg font-serif font-medium text-indigo-600"
+                >
+                  <Camera className="w-5 h-5" /> Edit Profile
+                </Link>
               )}
               <hr className="border-gray-100" />
               {!user ? (

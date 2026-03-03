@@ -6,9 +6,11 @@ import { formatPrice, formatDate } from '../lib/utils';
 import { Package, Clock, MapPin, ChevronRight, User as UserIcon, Phone, Mail, Camera, Save, Loader2, Upload } from 'lucide-react';
 import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
+import { useLocation } from 'react-router-dom';
 
 export const Profile = () => {
   const { user, updateUser } = useAuth();
+  const location = useLocation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -21,6 +23,16 @@ export const Profile = () => {
     address: user?.address || '',
     avatar_url: user?.avatar_url || ''
   });
+
+  // Auto-open edit mode if ?edit=true is in the URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('edit') === 'true') {
+      setEditMode(true);
+      // Scroll to top so the edit form is visible
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [location.search]);
 
   useEffect(() => {
     const fetchOrders = async () => {
