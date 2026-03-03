@@ -24,6 +24,10 @@ import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { OrderSuccess } from './pages/OrderSuccess';
 import { AdminMaster } from './pages/AdminMaster';
+import { ReturnPolicy } from './pages/ReturnPolicy';
+import { TermsAndConditions } from './pages/TermsAndConditions';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { ShippingPolicy } from './pages/ShippingPolicy';
 
 const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) => {
   const { user, isAdmin, loading } = useAuth();
@@ -144,6 +148,12 @@ const AppContent = () => {
               <Billing />
             </ProtectedRoute>
           } />
+
+          {/* Policy Pages */}
+          <Route path="/return-policy" element={<ReturnPolicy />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/shipping-policy" element={<ShippingPolicy />} />
         </Routes>
       </main>
       
@@ -188,9 +198,9 @@ const AppContent = () => {
               <ul className="space-y-4 text-white/40 text-sm">
                 <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
                 <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
-                <li><a href="#" className="hover:text-white transition-colors">Shipping Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Returns & Exchanges</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">FAQs</a></li>
+                <li><Link to="/shipping-policy" className="hover:text-white transition-colors">Shipping Policy</Link></li>
+                <li><Link to="/return-policy" className="hover:text-white transition-colors">Returns &amp; Exchanges</Link></li>
+                <li><Link to="/terms" className="hover:text-white transition-colors">Terms &amp; Conditions</Link></li>
               </ul>
             </div>
           </div>
@@ -198,8 +208,8 @@ const AppContent = () => {
             <p>© 2026 BOY'S ZONE. ALL RIGHTS RESERVED.</p>
             <p>Powered By <a href="https://zentrix-dv.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-white hover:text-indigo-400 transition-colors">Zentrix</a></p>
             <div className="flex gap-8">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             </div>
           </div>
         </div>
