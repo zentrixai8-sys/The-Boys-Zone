@@ -279,31 +279,54 @@ export const api = {
         }
 
         case 'createStoreSale': {
-          const { data: sale, error } = await supabase
-            .from('store_sales')
-            .insert([{
-              customer_name: data.customer_name,
-              customer_mobile: data.customer_mobile,
-              items: data.items,
-              total: data.total,
-              pdf_url: data.pdf_url ?? null,
-              date: new Date().toISOString().split('T')[0]
-            }])
-            .select()
-            .single();
+          // The table stores one row per item, grouped by invoice_id
+          const invoiceId = `INV-${Date.now()}`;
+          const rows = data.items.map((item: any) => ({
+            invoice_id: invoiceId,
+            customer_name: data.customer_name,
+            customer_mobile: data.customer_mobile,
+            category: item.category,
+            product_name: item.productName,
+            quantity: item.quantity,
+            price: item.price,
+            item_total: item.price * item.quantity,
+            pdf_url: data.pdf_url ?? null,
+          }));
+          const { error } = await supabase.from('store_sales').insert(rows);
           if (error) throw error;
-          return sale;
+          return { invoice_id: invoiceId };
         }
 
         case 'getTodaysSales': {
-          const today = new Date().toISOString().split('T')[0];
-          const { data: sales, error } = await supabase
+          // Filter rows created today using created_at
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const { data: rows, error } = await supabase
             .from('store_sales')
             .select('*')
-            .eq('date', today)
+            .gte('created_at', todayStart.toISOString())
             .order('created_at', { ascending: false });
           if (error) throw error;
-          return sales;
+
+          // Group by invoice_id to reconstruct per-bill summaries
+          const invoiceMap = new Map<string, any>();
+          for (const row of (rows || [])) {
+            if (!invoiceMap.has(row.invoice_id)) {
+              invoiceMap.set(row.invoice_id, {
+                id: row.invoice_id,
+                customer: row.customer_name || 'Walk-in',
+                mobile: row.customer_mobile || 'N/A',
+                time: new Date(row.created_at).toLocaleTimeString(),
+                total: 0,
+                itemsCount: 0,
+                pdf_url: row.pdf_url || null,
+              });
+            }
+            const inv = invoiceMap.get(row.invoice_id);
+            inv.total += Number(row.item_total) || 0;
+            inv.itemsCount += 1;
+          }
+          return Array.from(invoiceMap.values());
         }
 
 
