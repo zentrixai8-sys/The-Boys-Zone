@@ -103,7 +103,8 @@ export const AdminProducts = () => {
     e.preventDefault();
     const action = editingProduct?.product_id ? 'updateProduct' : 'addProduct';
     try {
-      const payload = { ...editingProduct };
+      const { sizes, ...rest } = editingProduct as any;
+      const payload = { ...rest };
       if (action === 'addProduct') {
         delete payload.product_id;
       }
