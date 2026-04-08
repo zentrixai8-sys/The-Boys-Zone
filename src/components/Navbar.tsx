@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Menu, X, Search, Camera } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Menu, X, Search, Camera, Eye, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '../services/api';
+import toast from 'react-hot-toast';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { cart } = useCart();
-  const { user, loginTime, logout, isAdmin } = useAuth();
+  const { user, loginTime, logout, isAdmin, updateUser } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isViewingDP, setIsViewingDP] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,6 +28,30 @@ export const Navbar = () => {
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // 5MB limit check
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('File size exceeds 5MB limit');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const imageUrl = await api.request('uploadFile', { file });
+      await api.request('updateProfile', { id: user.id, avatar_url: imageUrl });
+      updateUser({ avatar_url: imageUrl });
+      toast.success('Profile picture updated!');
+    } catch (err) {
+      toast.error('Failed to update photo');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const navLinks = [
@@ -40,12 +69,12 @@ export const Navbar = () => {
   }
 
   return (
-    <nav className="sticky top-0 z-[100] bg-white border-b border-black/5 transition-all duration-300">
+    <nav className="sticky top-0 z-100 bg-white border-b border-black/5 transition-all duration-300">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex justify-between items-center h-20">
 
           {/* Logo (Left) */}
-          <Link to="/" className="flex-shrink-0 flex items-center gap-3">
+          <Link to="/" className="shrink-0 flex items-center gap-3">
             <img
               src="https://i.ibb.co/Pvj8V4T7/Whats-App-Image-2026-02-26-at-2-40-25-PM.jpg"
               alt="The Boys Zone Logo"
@@ -112,7 +141,7 @@ export const Navbar = () => {
           </div>
 
           {/* Icons (Right) */}
-          <div className="flex items-center justify-end gap-2 sm:gap-6 flex-shrink-0">
+          <div className="flex items-center justify-end gap-2 sm:gap-6 shrink-0">
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
@@ -135,12 +164,11 @@ export const Navbar = () => {
 
             {user ? (
               <div className="relative group">
-                <button
-                  onClick={() => navigate('/profile?edit=true')}
-                  className="flex items-center gap-2 sm:gap-3 hover:bg-gray-50 pr-2 sm:pr-4 pl-1 sm:pl-1.5 py-1 sm:py-1.5 rounded-full border border-gray-100 hover:border-gray-300 transition-all shadow-sm"
-                >
+                <div className="flex items-center gap-2 sm:gap-3 hover:bg-gray-50 pr-2 sm:pr-4 pl-1 sm:pl-1.5 py-1 sm:py-1.5 rounded-full border border-gray-100 hover:border-gray-300 transition-all shadow-sm cursor-pointer">
                   <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100/50 overflow-hidden shrink-0">
-                    {user.avatar_url ? (
+                    {isUploading ? (
+                      <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+                    ) : user.avatar_url ? (
                       <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-sm font-bold text-indigo-700">
@@ -153,12 +181,12 @@ export const Navbar = () => {
                       {user.name.toUpperCase()}
                     </span>
                     {loginTime && (
-                      <span className="text-[10px] font-semibold text-emerald-600 tracking-wide uppercase">
+                      <span className="text-[10px] font-semibold text-emerald-600 tracking-widest uppercase">
                         Logged in • {new Date(loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
                   </div>
-                </button>
+                </div>
                 <div className="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <div className="bg-white border border-gray-100 shadow-xl rounded-2xl w-60 py-2 flex flex-col overflow-hidden">
                     <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50 flex flex-col gap-3">
@@ -173,14 +201,33 @@ export const Navbar = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[11px] uppercase tracking-wider text-gray-400 font-bold mb-0.5">Signed in as</p>
+                          <p className="text-[11px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">Signed in as</p>
                           <p className="text-[15px] font-bold text-gray-900 truncate">{user.name}</p>
                           <p className="text-[12px] text-gray-500 truncate">{user.email}</p>
                         </div>
                       </div>
                     </div>
+                    <button 
+                      onClick={() => setIsViewingDP(true)}
+                      className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors flex items-center gap-3 w-full"
+                    >
+                      <Eye className="w-4 h-4" /> View Profile Photo
+                    </button>
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors flex items-center gap-3 w-full border-b border-gray-50"
+                    >
+                      <Camera className="w-4 h-4" /> Change Profile Pic
+                    </button>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleImageUpload} 
+                      className="hidden" 
+                      accept="image/*" 
+                    />
                     <Link to="/profile?edit=true" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors flex items-center gap-3">
-                      <Camera className="w-4 h-4" /> Edit Profile
+                      <User className="w-4 h-4" /> Account Settings
                     </Link>
                     {!isAdmin && (
                       <Link to="/profile" className="px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors flex items-center gap-3">
@@ -196,7 +243,7 @@ export const Navbar = () => {
                   </div>
                 </div>
               </div>
-                        ) : (
+            ) : (
               <Link to="/login" className="text-gray-600 hover:text-gray-900 transition-colors">
                 <User className="w-5 h-5 stroke-[1.5]" />
               </Link>
@@ -300,6 +347,42 @@ export const Navbar = () => {
                 </button>
               )}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Image Viewer Modal */}
+      <AnimatePresence>
+        {isViewingDP && user?.avatar_url && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl"
+            onClick={() => setIsViewingDP(false)}
+          >
+            <button 
+              className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors"
+              onClick={() => setIsViewingDP(false)}
+            >
+              <X className="w-8 h-8" />
+            </button>
+            
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative max-w-lg w-full aspect-square rounded-3xl overflow-hidden border-4 border-white/10 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img 
+                src={user.avatar_url} 
+                alt={user.name} 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 p-6 pt-12">
+                 <p className="text-xl font-bold text-white">{user.name}</p>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

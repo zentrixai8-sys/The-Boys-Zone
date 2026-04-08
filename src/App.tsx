@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import toast, { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -28,6 +28,7 @@ import { ReturnPolicy } from './pages/ReturnPolicy';
 import { TermsAndConditions } from './pages/TermsAndConditions';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { ShippingPolicy } from './pages/ShippingPolicy';
+import { AdminSidebar } from './components/AdminSidebar';
 
 const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) => {
   const { user, isAdmin, loading } = useAuth();
@@ -46,6 +47,9 @@ const ProtectedRoute = ({ children, adminOnly = false }: { children: React.React
 
 const AppContent = () => {
   const { isAdmin, loading } = useAuth();
+  const location = useLocation();
+
+  const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/billing');
 
   useEffect(() => {
     if (isAdmin) {
@@ -77,8 +81,9 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-white text-black font-sans selection:bg-black selection:text-white">
-      <Navbar />
-      <main>
+      {!isAdminPath && <Navbar />}
+      {isAdminPath && <AdminSidebar />}
+      <main className={isAdminPath ? 'md:pl-[260px] transition-all duration-300' : ''}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
@@ -155,65 +160,64 @@ const AppContent = () => {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/shipping-policy" element={<ShippingPolicy />} />
         </Routes>
+        <footer className="bg-black text-white py-20 mt-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+              <div className="col-span-1 md:col-span-2">
+                <div className="flex items-center gap-4 mb-6">
+                  <img 
+                    src="https://i.ibb.co/Pvj8V4T7/Whats-App-Image-2026-02-26-at-2-40-25-PM.jpg" 
+                    alt="The Boys Zone Logo" 
+                    className="h-16 w-auto object-contain rounded-xl shadow-md"
+                  />
+                  <h2 className="text-3xl font-black tracking-tighter">THE BOYS ZONE</h2>
+                </div>
+                <p className="text-white/40 max-w-sm mb-8">
+                  Your choice here. Premium menswear located in Suhela, in front of Bharat Petroleum.
+                </p>
+                <div className="space-y-4 text-sm text-white/60">
+                  <p className="flex items-center gap-2">
+                    <span className="font-bold text-white">Address:</span> सुहेला, Bharat Petroleum के सामने
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="font-bold text-white">Contact:</span> +91 9617628157
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="font-bold text-white">Instagram:</span> @theboyszone_suhela
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-widest mb-6">Shop</h3>
+                <ul className="space-y-4 text-white/40 text-sm">
+                  <li><Link to="/products" className="hover:text-white transition-colors">All Products</Link></li>
+                  <li><Link to="/products?category=Shirts" className="hover:text-white transition-colors">Shirts</Link></li>
+                  <li><Link to="/products?category=Pants" className="hover:text-white transition-colors">Pants</Link></li>
+                  <li><Link to="/products?category=Accessories" className="hover:text-white transition-colors">Accessories</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-widest mb-6">Support</h3>
+                <ul className="space-y-4 text-white/40 text-sm">
+                  <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
+                  <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
+                  <li><Link to="/shipping-policy" className="hover:text-white transition-colors">Shipping Policy</Link></li>
+                  <li><Link to="/return-policy" className="hover:text-white transition-colors">Returns &amp; Exchanges</Link></li>
+                  <li><Link to="/terms" className="hover:text-white transition-colors">Terms &amp; Conditions</Link></li>
+                </ul>
+              </div>
+            </div>
+            <div className="border-t border-white/10 mt-20 pt-10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/20 uppercase tracking-widest font-bold">
+              <p>© 2026 BOY'S ZONE. ALL RIGHTS RESERVED.</p>
+              <p>Powered By <a href="https://zentrix-dv.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-white hover:text-indigo-400 transition-colors">Zentrix</a></p>
+              <div className="flex gap-8">
+                <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+                <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+              </div>
+            </div>
+          </div>
+        </footer>
       </main>
-      
-      <footer className="bg-black text-white py-20 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-4 mb-6">
-                <img 
-                  src="https://i.ibb.co/Pvj8V4T7/Whats-App-Image-2026-02-26-at-2-40-25-PM.jpg" 
-                  alt="The Boys Zone Logo" 
-                  className="h-16 w-auto object-contain rounded-xl shadow-md"
-                />
-                <h2 className="text-3xl font-black tracking-tighter">THE BOYS ZONE</h2>
-              </div>
-              <p className="text-white/40 max-w-sm mb-8">
-                Your choice here. Premium menswear located in Suhela, in front of Bharat Petroleum.
-              </p>
-              <div className="space-y-4 text-sm text-white/60">
-                <p className="flex items-center gap-2">
-                  <span className="font-bold text-white">Address:</span> सुहेला, Bharat Petroleum के सामने
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="font-bold text-white">Contact:</span> +91 9617628157
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="font-bold text-white">Instagram:</span> @theboyszone_suhela
-                </p>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-widest mb-6">Shop</h3>
-              <ul className="space-y-4 text-white/40 text-sm">
-                <li><Link to="/products" className="hover:text-white transition-colors">All Products</Link></li>
-                <li><Link to="/products?category=Shirts" className="hover:text-white transition-colors">Shirts</Link></li>
-                <li><Link to="/products?category=Pants" className="hover:text-white transition-colors">Pants</Link></li>
-                <li><Link to="/products?category=Accessories" className="hover:text-white transition-colors">Accessories</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-widest mb-6">Support</h3>
-              <ul className="space-y-4 text-white/40 text-sm">
-                <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-                <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
-                <li><Link to="/shipping-policy" className="hover:text-white transition-colors">Shipping Policy</Link></li>
-                <li><Link to="/return-policy" className="hover:text-white transition-colors">Returns &amp; Exchanges</Link></li>
-                <li><Link to="/terms" className="hover:text-white transition-colors">Terms &amp; Conditions</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-white/10 mt-20 pt-10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/20 uppercase tracking-widest font-bold">
-            <p>© 2026 BOY'S ZONE. ALL RIGHTS RESERVED.</p>
-            <p>Powered By <a href="https://zentrix-dv.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-white hover:text-indigo-400 transition-colors">Zentrix</a></p>
-            <div className="flex gap-8">
-              <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
       
       <Toaster position="bottom-right" />
     </div>

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import axios from 'axios';
 
 export const api = {
   async request(action: string, data: any = {}) {
@@ -30,12 +31,26 @@ export const api = {
         }
 
         case 'deleteCategory': {
-          const { error } = await supabase
+          const { data: delCat, error: catDelErr } = await supabase
             .from('categories')
             .delete()
             .eq('category_id', data.category_id);
-          if (error) throw error;
-          return true;
+          if (catDelErr) throw catDelErr;
+          return delCat;
+        }
+
+        case 'updateCategory': {
+          const { data: updCat, error: catUpdErr } = await supabase
+            .from('categories')
+            .update({
+              category_name: data.category_name,
+              image_url: data.image_url
+            })
+            .eq('category_id', data.category_id)
+            .select()
+            .single();
+          if (catUpdErr) throw catUpdErr;
+          return updCat;
         }
 
         case 'getOffers': {
@@ -56,12 +71,28 @@ export const api = {
         }
 
         case 'deleteOffer': {
-          const { error } = await supabase
+          const { data: delOffer, error: offerDelErr } = await supabase
             .from('offers')
             .delete()
             .eq('id', data.id);
-          if (error) throw error;
-          return true;
+          if (offerDelErr) throw offerDelErr;
+          return delOffer;
+        }
+
+        case 'updateOffer': {
+          const { data: updOffer, error: offerUpdErr } = await supabase
+            .from('offers')
+            .update({
+              title: data.title,
+              description: data.description,
+              link: data.link,
+              image_url: data.image_url
+            })
+            .eq('id', data.id)
+            .select()
+            .single();
+          if (offerUpdErr) throw offerUpdErr;
+          return updOffer;
         }
 
         case 'login': {
@@ -212,21 +243,17 @@ export const api = {
         }
 
         case 'uploadFile': {
-          const { file, bucket, path } = data;
-          const { data: uploadData, error } = await supabase.storage
-            .from(bucket)
-            .upload(path, file, {
-              cacheControl: '3600',
-              upsert: true
-            });
-          
-          if (error) throw error;
-          
-          const { data: { publicUrl } } = supabase.storage
-            .from(bucket)
-            .getPublicUrl(uploadData.path);
-            
-          return publicUrl;
+          const { file } = data;
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+
+          const response = await axios.post(
+            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+            formData
+          );
+
+          return response.data.secure_url;
         }
 
         case 'getReviews': {

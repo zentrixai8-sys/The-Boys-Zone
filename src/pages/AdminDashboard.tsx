@@ -285,8 +285,8 @@ export const AdminDashboard = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-gray-50/50 min-h-screen">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-gray-500 font-medium">Advanced analytics and store performance</p>
+          <h1 className="text-4xl font-black tracking-tight text-slate-900 mb-2">Dashboard</h1>
+          <p className="text-slate-500 font-bold tracking-wide">Advanced analytics and store performance</p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -424,11 +424,11 @@ export const AdminDashboard = () => {
             >
               <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h3 className="text-xl font-bold mb-1 text-gray-900">Revenue Trend</h3>
-                  <p className="text-sm text-gray-400 font-medium">Daily revenue breakdown over time</p>
+                  <h3 className="text-xl font-black mb-1 text-slate-900">Revenue Trend</h3>
+                  <p className="text-sm text-slate-400 font-bold tracking-wide">Daily revenue breakdown over time</p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <Activity className="w-6 h-6 text-indigo-500" />
+                <div className="p-3 bg-indigo-50 rounded-2xl border border-indigo-100 shadow-sm">
+                  <Activity className="w-6 h-6 text-indigo-600" />
                 </div>
               </div>
               

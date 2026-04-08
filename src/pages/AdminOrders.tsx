@@ -42,11 +42,11 @@ export const AdminOrders = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Delivered': return 'bg-emerald-100 text-emerald-800 ring-emerald-600/20';
-      case 'Shipped': return 'bg-blue-100 text-blue-800 ring-blue-600/20';
-      case 'Processing': return 'bg-indigo-100 text-indigo-800 ring-indigo-600/20';
-      case 'Cancelled': return 'bg-red-100 text-red-800 ring-red-600/20';
-      default: return 'bg-yellow-100 text-yellow-800 ring-yellow-600/20'; // Pending
+      case 'Delivered': return 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20';
+      case 'Shipped': return 'bg-blue-500 text-white shadow-sm shadow-blue-500/20';
+      case 'Processing': return 'bg-indigo-500 text-white shadow-sm shadow-indigo-500/20';
+      case 'Cancelled': return 'bg-red-500 text-white shadow-sm shadow-red-500/20';
+      default: return 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'; // Pending
     }
   };
 
@@ -77,8 +77,8 @@ export const AdminOrders = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-black mb-2">Order Management</h1>
-          <p className="text-black/40">Track and fulfill customer orders in real-time</p>
+          <h1 className="text-4xl font-black tracking-tight text-slate-900 mb-2">Order Management</h1>
+          <p className="text-slate-500 font-bold tracking-wide">Track and fulfill customer orders in real-time</p>
         </div>
       </div>
       

@@ -3,7 +3,7 @@ import { api } from '../services/api';
 import { Product, Category, Offer } from '../types';
 import { ProductCard } from '../components/ProductCard';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
-import { Play, ArrowRight, Instagram, ExternalLink } from 'lucide-react';
+import { Play, ArrowRight, Instagram, ExternalLink, Tag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const fadeInUp = {
@@ -19,6 +19,39 @@ const staggerContainer = {
   }
 };
 
+const charVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.33, 1, 0.68, 1] }
+  }
+};
+
+const AnimatedTitle = ({ text, className }: { text: string; className?: string }) => {
+  return (
+    <motion.h1
+      className={className}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+      variants={{
+        visible: { transition: { staggerChildren: 0.05 } }
+      }}
+    >
+      {text.split("").map((char, index) => (
+        <motion.span
+          key={index}
+          variants={charVariants}
+          className="inline-block"
+        >
+          {char === " " ? "\u00A0" : char}
+        </motion.span>
+      ))}
+    </motion.h1>
+  );
+};
+
 export const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -31,26 +64,53 @@ export const Home = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const [productsRes, categoriesRes, offersData] = await Promise.all([
-          api.request('getProducts', { limit: 12 }), // Fetch enough for both grids
-          api.request('getCategories'),
-          api.request('getOffers')
-        ]);
-        setProducts(productsRes.products || []);
-        setCategories(categoriesRes.categories || []);
-        setOffers(offersData || []);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
+      setLoading(true);
+      
+      // Fetching each independently so one failure doesn't block others
+      const fetchProducts = async () => {
+        try {
+          const res = await api.request('getProducts', { limit: 12 });
+          setProducts(res.products || []);
+        } catch (e) {
+          console.error('Products fetch failed:', e);
+        }
+      };
+
+      const fetchCategories = async () => {
+        try {
+          const res = await api.request('getCategories');
+          setCategories(res.categories || []);
+        } catch (e) {
+          console.error('Categories fetch failed:', e);
+        }
+      };
+
+      const fetchOffers = async () => {
+        try {
+          const res = await api.request('getOffers');
+          setOffers(res || []);
+        } catch (e) {
+          console.warn('Offers table might not exist yet:', e);
+          setOffers([]);
+        }
+      };
+
+      await Promise.allSettled([fetchProducts(), fetchCategories(), fetchOffers()]);
+      setLoading(false);
     };
     fetchData();
   }, []);
 
+  const { scrollYProgress } = useScroll();
+  const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1]);
+
   return (
     <div className="bg-[#111] min-h-screen font-sans selection:bg-white selection:text-black">
+      {/* Scroll Progress Bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-1 bg-black z-50 origin-left"
+        style={{ scaleX }}
+      />
 
       {/* 1. Split-Screen Light/Dark Hero */}
       <section className="relative min-h-svh w-full bg-white overflow-hidden flex flex-col md:flex-row">
@@ -64,15 +124,27 @@ export const Home = () => {
             transition={{ duration: 1.2, ease: "easeOut" }}
           >
             <h4 className="text-black/50 tracking-[0.4em] uppercase text-xs font-bold mb-8 flex items-center gap-4">
-              <span className="w-8 h-px bg-black/20" />
+              <motion.span 
+                initial={{ width: 0 }}
+                whileInView={{ width: 32 }}
+                transition={{ duration: 1, delay: 0.5 }}
+                className="h-px bg-black/20" 
+              />
               Welcome To
             </h4>
 
-            <h1 className="text-[5rem] sm:text-[6.5rem] lg:text-[8rem] xl:text-[9.5rem] leading-[0.85] tracking-tighter text-black mb-8 font-serif font-black uppercase text-3d">
-              The <br />
-              <span className="italic tracking-normal ml-0 md:ml-8 text-black">Boys</span><br />
-              <span className="ml-0 md:ml-24">Zone.</span>
-            </h1>
+            <AnimatedTitle 
+              text="THE" 
+              className="text-[5rem] sm:text-[6.5rem] lg:text-[8rem] xl:text-[9.5rem] leading-[0.85] tracking-tighter text-black font-serif font-black uppercase text-3d" 
+            />
+            <AnimatedTitle 
+              text="BOYS" 
+              className="text-[5rem] sm:text-[6.5rem] lg:text-[8rem] xl:text-[9.5rem] leading-[0.85] tracking-tighter text-black font-serif font-black uppercase italic ml-0 md:ml-8 text-3d" 
+            />
+            <AnimatedTitle 
+              text="ZONE." 
+              className="text-[5rem] sm:text-[6.5rem] lg:text-[8rem] xl:text-[9.5rem] leading-[0.85] tracking-tighter text-black font-serif font-black uppercase ml-0 md:ml-24 text-3d" 
+            />
           </motion.div>
 
           <motion.p
@@ -92,9 +164,19 @@ export const Home = () => {
             transition={{ duration: 1, delay: 0.6, ease: "easeOut" }}
             className="flex flex-col sm:flex-row items-start sm:items-center gap-6"
           >
-            <Link to="/products" className="group bg-black text-white px-10 py-5 rounded-full text-sm font-black tracking-widest uppercase hover:bg-gray-900 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-4 shadow-3d-strong border-b-4 border-black/80">
-              Explore The Shop
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+            <Link 
+              to="/products" 
+              className="group bg-black text-white px-10 py-5 rounded-full text-sm font-black tracking-widest uppercase hover:bg-gray-900 transition-all duration-300 flex items-center gap-4 shadow-3d-strong border-b-4 border-black/80 relative overflow-hidden"
+            >
+              <motion.span
+                className="relative z-10 flex items-center gap-4"
+                whileHover={{ x: 5 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              >
+                Explore The Shop
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+              </motion.span>
+              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
             </Link>
           </motion.div>
         </div>
@@ -123,15 +205,20 @@ export const Home = () => {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 1, delay: 1 }}
-            className="absolute bottom-8 right-8 md:bottom-16 md:right-16 bg-glass-3d p-6 rounded-3xl shadow-3d-strong float-3d"
+            whileHover={{ scale: 1.05, rotate: [0, -2, 2, 0] }}
+            className="absolute bottom-8 right-8 md:bottom-16 md:right-16 bg-glass-3d p-6 rounded-3xl shadow-3d-strong float-3d cursor-default"
           >
             <div className="flex items-center gap-4 mb-2">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.8)]" />
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_15px_rgba(34,197,94,1)]" />
               <span className="text-black text-xs font-bold uppercase tracking-widest">In Stock Now</span>
             </div>
             <p className="text-black/80 text-sm font-medium">Summer Edition '26</p>
           </motion.div>
         </div>
+
+        {/* Floating Background Blobs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-200/20 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-rose-200/10 rounded-full blur-[120px] pointer-events-none animate-pulse delay-1000" />
 
         {/* Scroll Indicator (Dark for light bg) */}
         <motion.div
@@ -144,34 +231,82 @@ export const Home = () => {
         </motion.div>
       </section>
 
-      {/* Offers Marquee Section */}
+      {/* 2. Premium Offers Auto-Slider Section */}
       {offers.length > 0 && (
-        <section className="bg-rose-50 border-y border-rose-100 py-4 overflow-hidden relative z-20 flex items-center">
-          <div className="absolute left-0 top-0 bottom-0 w-16 bg-linear-to-r from-rose-50 to-transparent z-10"></div>
-          <div className="absolute right-0 top-0 bottom-0 w-16 bg-linear-to-l from-rose-50 to-transparent z-10"></div>
-          
-          <div className="flex w-[200%] animate-marquee hover:[animation-play-state:paused] items-center">
-            {/* Double the offers array to create seamless loop */}
-            {[...offers, ...offers, ...offers].map((offer, index) => (
-              <div key={`${offer.id}-${index}`} className="shrink-0 w-[300px] md:w-[450px] mx-4 relative group rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer bg-white">
-                <div className="aspect-[21/9] w-full relative">
-                  <img src={offer.image_url} alt={offer.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+        <section className="relative h-[250px] md:h-[320px] w-full bg-[#050505] overflow-hidden border-y border-white/5 z-20 group">
+          {/* Background Ambient Glow */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-indigo-500/10 rounded-full blur-[120px]" />
+            <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-rose-500/10 rounded-full blur-[120px]" />
+          </div>
+
+          <div className="flex h-full items-center">
+            <div 
+              className="flex gap-6 px-4 animate-marquee hover:[animation-play-state:paused] w-max"
+            >
+              {/* Creating 2 sets for perfect seamless infinite scroll with CSS animation */}
+              {[...offers, ...offers, ...offers].map((offer, index) => (
+                <div 
+                  key={`${offer.id}-${index}`}
+                  className="relative shrink-0 w-[400px] md:w-[650px] h-[200px] md:h-[260px] rounded-[24px] overflow-hidden group/card shadow-3d-strong transition-all duration-700 image-3d cursor-pointer"
+                >
+                  <img 
+                    src={offer.image_url} 
+                    alt={offer.title} 
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-105" 
+                  />
                   
-                  <div className="absolute bottom-0 left-0 p-4 w-full text-white">
-                    <h5 className="font-bold text-sm md:text-base leading-tight drop-shadow-md">{offer.title}</h5>
-                    {offer.description && <p className="text-xs text-white/80 line-clamp-1 mt-0.5">{offer.description}</p>}
+                  {/* Minimal Bottom Glass Bar */}
+                  <div className="absolute inset-x-0 bottom-0 p-6 md:p-8 bg-linear-to-t from-black/80 via-black/40 to-transparent flex items-end justify-between transition-all duration-500 group-hover/card:pb-10">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="flex-1"
+                    >
+                      <p className="text-white/80 text-[10px] md:text-sm font-black uppercase tracking-widest mb-1">
+                        {offer.title}
+                      </p>
+                      <p className="text-white/60 text-[8px] md:text-xs font-medium max-w-[200px] md:max-w-xs line-clamp-1">
+                        {offer.description || "Premium collection for the modern man."}
+                      </p>
+                    </motion.div>
+                    
+                    {offer.link && (
+                      <Link 
+                        to={offer.link}
+                        className="bg-white text-black h-10 w-10 md:h-12 md:w-12 rounded-full flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-xl shrink-0"
+                      >
+                        <ArrowRight className="w-5 h-5" />
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Top Badge */}
+                  <div className="absolute top-8 left-8 bg-white/10 backdrop-blur-md border border-white/20 px-6 py-2 rounded-full">
+                    <span className="text-white text-[10px] font-black uppercase tracking-[0.3em]">Exclusive Offer</span>
                   </div>
                 </div>
-                {offer.link && (
-                  <Link to={offer.link} className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
-                    <span className="bg-white text-black text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full flex items-center gap-2">
-                       Explore <ExternalLink className="w-3 h-3" />
-                    </span>
-                  </Link>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Fallback when no offers are available - Only for Debug/Visual confirmation */}
+      {!loading && offers.length === 0 && (
+        <section className="h-[300px] w-full bg-white flex flex-col items-center justify-center border-y border-black/5 z-20">
+          <div className="flex flex-col items-center gap-4 text-center px-4">
+            <div className="w-12 h-12 rounded-full border border-black/10 flex items-center justify-center animate-pulse">
+               <Tag className="w-5 h-5 text-black/20" />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-black uppercase tracking-widest">New Offers Coming Soon</h3>
+              <p className="text-black/40 text-xs font-bold uppercase tracking-widest mt-2">We are curating something special for you</p>
+            </div>
+            <Link to="/admin" className="mt-4 px-6 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-gray-800 transition-all">
+              Add Your First Offer
+            </Link>
           </div>
         </section>
       )}
@@ -234,6 +369,15 @@ export const Home = () => {
             viewport={{ once: true }}
             className="text-center mb-16 md:mb-24"
           >
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <span className="text-xs font-bold tracking-[0.4em] text-black/40 uppercase">Curated</span>
+              <motion.div 
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                transition={{ duration: 1.5, ease: "easeInOut" }}
+                className="w-24 h-1 bg-black origin-center" 
+              />
+            </div>
             <h2 className="text-4xl md:text-6xl font-black text-black uppercase tracking-tighter mb-4">
               Featured <span className="text-transparent border-text-dark italic pr-4">Collections</span>
             </h2>
@@ -247,7 +391,8 @@ export const Home = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="relative rounded-[32px] overflow-hidden group h-[400px] md:h-full cursor-pointer image-3d border-4 border-white"
+              whileHover={{ y: -10, rotateX: -5, rotateY: 5 }}
+              className="relative rounded-[32px] overflow-hidden group h-[400px] md:h-full cursor-pointer image-3d border-4 border-white shadow-xl perspective-1000"
             >
               <img
                 src="https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=800&auto=format&fit=crop"
@@ -270,7 +415,8 @@ export const Home = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative rounded-[32px] overflow-hidden group h-[400px] md:h-full cursor-pointer image-3d border-4 border-white"
+              whileHover={{ y: -10, rotateX: 5, rotateY: -5 }}
+              className="relative rounded-[32px] overflow-hidden group h-[400px] md:h-full cursor-pointer image-3d border-4 border-white shadow-xl perspective-1000"
             >
               <img
                 src="https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=800&auto=format&fit=crop"
@@ -293,7 +439,8 @@ export const Home = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="relative rounded-[32px] overflow-hidden group h-[400px] md:h-full cursor-pointer image-3d border-4 border-white"
+              whileHover={{ y: -10, rotateX: 5, rotateY: 5 }}
+              className="relative rounded-[32px] overflow-hidden group h-[400px] md:h-full cursor-pointer image-3d border-4 border-white shadow-xl perspective-1000"
             >
               <img
                 src="https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=800&auto=format&fit=crop"
@@ -349,12 +496,14 @@ export const Home = () => {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="min-w-[280px] sm:min-w-[320px] pb-4 flex flex-col group snap-start"
               >
-                <div className="relative aspect-[4/5] bg-gray-100 rounded-3xl overflow-hidden mb-4 image-3d border-4 border-white">
+                <div className="relative aspect-4/5 bg-gray-100 rounded-3xl mb-4 overflow-hidden group/card shadow-lg hover:shadow-2xl transition-all duration-500">
                   <Link to={`/product/${product.id}`} className="block w-full h-full">
-                    <img
+                    <motion.img
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
                       src={product.images[0] || 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&q=80'}
                       alt={product.name}
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                      className="w-full h-full object-cover object-center"
                     />
                   </Link>
                   {product.sizes && product.sizes.length > 0 && (
@@ -417,7 +566,7 @@ export const Home = () => {
                   transition={{ duration: 0.6, delay: 0.2 + (index * 0.1) }}
                   className="bg-[#f8f8f8] rounded-3xl p-4 flex gap-6 hover:shadow-3d-soft hover:-translate-y-1 hover:bg-white transition-all duration-300 border border-transparent hover:border-black/5 group cursor-pointer"
                 >
-                  <div className="w-1/3 aspect-[4/5] rounded-xl overflow-hidden bg-white image-3d border-2 border-white">
+                  <div className="w-1/3 aspect-4/5 rounded-xl overflow-hidden bg-white image-3d border-2 border-white">
                     <img
                       src={product.images[0] || 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&q=80'}
                       alt={product.name}
@@ -534,11 +683,12 @@ export const Home = () => {
           ].map((img, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              whileInView={{ opacity: 1, scale: 1, y: 0 }}
               viewport={{ once: true, margin: "50px" }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="min-w-[280px] sm:min-w-[320px] md:min-w-0 md:flex-1 aspect-square relative group snap-start cursor-pointer origin-center rounded-[32px] overflow-hidden image-3d border-4 border-white mx-2 mb-12"
+              transition={{ duration: 0.8, delay: i * 0.1 }}
+              whileHover={{ y: -15 }}
+              className="min-w-[280px] sm:min-w-[320px] md:min-w-0 md:flex-1 aspect-3/4 relative group snap-start cursor-pointer origin-center rounded-[32px] overflow-hidden image-3d border-4 border-white mx-3 mb-16 shadow-2xl transition-all duration-500"
             >
               <img src={img} alt={`Gallery ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">

@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Order } from '../types';
 import { formatPrice, formatDate } from '../lib/utils';
-import { Package, Clock, MapPin, ChevronRight, User as UserIcon, Phone, Mail, Camera, Save, Loader2, Upload } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Package, Clock, MapPin, ChevronRight, User as UserIcon, Phone, Mail, Camera, Save, Loader2, Upload, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
 
@@ -16,12 +17,23 @@ export const Profile = () => {
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    phone: user?.phone || '',
-    address: user?.address || '',
-    avatar_url: user?.avatar_url || ''
+  const [formData, setFormData] = useState(() => {
+    const addr = user?.address || '';
+    const parts = addr.split(' | ');
+    return {
+      name: user?.name || '',
+      phone: user?.phone || '',
+      address: user?.address || '',
+      avatar_url: user?.avatar_url || '',
+      // Structured address parts
+      house: parts[0] || '',
+      city: parts[1] || '',
+      dist: parts[2] || '',
+      state: parts[3] || '',
+      pincode: parts[4] || ''
+    };
   });
 
   // Auto-open edit mode if ?edit=true is in the URL
@@ -60,9 +72,9 @@ export const Profile = () => {
       return;
     }
 
-    // Validate file size (max 1MB)
-    if (file.size > 1 * 1024 * 1024) {
-      toast.error('Image size should be less than 1MB');
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
       return;
     }
 
@@ -93,11 +105,25 @@ export const Profile = () => {
     if (!user) return;
     setUpdating(true);
     try {
+      // Join the structured address fields
+      const joinedAddress = [
+        formData.house,
+        formData.city,
+        formData.dist,
+        formData.state,
+        formData.pincode
+      ].filter(Boolean).join(' | ');
+
+      const submitData = {
+        ...formData,
+        address: joinedAddress
+      };
+
       await api.request('updateProfile', {
         id: user.id,
-        ...formData
+        ...submitData
       });
-      updateUser(formData);
+      updateUser(submitData);
       setEditMode(false);
       toast.success('Profile updated successfully!');
     } catch (error) {
@@ -189,17 +215,61 @@ export const Profile = () => {
                     className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
                   />
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">Address (Optional)</label>
-                  <input
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">House No / Street</label>
+                    <input
+                      type="text"
+                      value={formData.house}
+                      onChange={(e) => setFormData({ ...formData, house: e.target.value })}
+                      className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
+                      placeholder="e.g. 123, Luxury Apartments"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">City</label>
+                      <input
+                        type="text"
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                        className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">District</label>
+                      <input
+                        type="text"
+                        value={formData.dist}
+                        onChange={(e) => setFormData({ ...formData, dist: e.target.value })}
+                        className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">State</label>
+                      <input
+                        type="text"
+                        value={formData.state}
+                        onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                        className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">Pincode</label>
+                      <input
+                        type="text"
+                        value={formData.pincode}
+                        onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                        className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
+                        maxLength={6}
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">Avatar URL (Optional)</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mt-4 mb-1 block">Avatar URL (Optional)</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -246,74 +316,190 @@ export const Profile = () => {
               ))}
             </div>
           ) : orders.length > 0 ? (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {orders.map((order) => (
                 <motion.div
                   key={order.order_id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden"
+                  className={`bg-white rounded-3xl border transition-all duration-300 ${
+                    expandedOrder === order.order_id 
+                      ? 'border-indigo-500/20 shadow-xl shadow-indigo-500/5' 
+                      : 'border-black/5 shadow-sm hover:border-black/10'
+                  } overflow-hidden`}
                 >
-                  <div className="p-6 border-b border-black/5 bg-black/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-white rounded-xl">
-                        <Package className="w-5 h-5 text-black" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-black/40 uppercase tracking-widest">Order ID</p>
-                        <p className="font-bold">#{order.order_id}</p>
-                        <p className="text-[10px] font-medium text-black/40 mt-0.5">User ID: {user.id}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-4 sm:gap-8 bg-white md:bg-transparent p-4 md:p-0 rounded-2xl md:rounded-none w-full md:w-auto mt-2 md:mt-0">
-                      <div>
-                        <p className="text-xs font-bold text-black/40 uppercase tracking-widest">Date</p>
-                        <p className="font-medium text-sm">{formatDate(order.date)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-black/40 uppercase tracking-widest">Total</p>
-                        <p className="font-bold text-sm">{formatPrice(order.total_amount)}</p>
-                      </div>
-                      <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${order.order_status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
-                        {order.order_status}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <h4 className="text-xs font-bold text-black/40 uppercase tracking-widest mb-4">Items</h4>
-                      <div className="space-y-3">
+                  {/* Order Summary / Clickable Header */}
+                  <div 
+                    onClick={() => setExpandedOrder(expandedOrder === order.order_id ? null : order.order_id)}
+                    className="p-5 md:p-6 cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group"
+                  >
+                    <div className="flex items-center gap-5 flex-1 min-w-0">
+                      {/* Product Visual */}
+                      <div className="relative shrink-0">
+                        <div className="w-16 h-16 bg-slate-100 rounded-2xl overflow-hidden border border-black/5 shadow-sm">
+                          {(() => {
+                            try {
+                              const products = JSON.parse(order.products || '[]');
+                              return products[0]?.product?.image_url ? (
+                                <img 
+                                  src={products[0].product.image_url} 
+                                  alt="" 
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                />
+                              ) : <Package className="w-full h-full p-4 text-black/10" />;
+                            } catch { return <Package className="w-full h-full p-4 text-black/10" />; }
+                          })()}
+                        </div>
                         {(() => {
-                          try {
-                            const products = JSON.parse(order.products || '[]');
-                            return Array.isArray(products) ? products.map((item: any, i: number) => (
-                              <div key={i} className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-black/5 rounded-lg overflow-hidden shrink-0">
-                                  <img src={item.product?.image_url} alt="" className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium line-clamp-1">{item.product?.title}</p>
-                                  <p className="text-[10px] text-black/40">Qty: {item.quantity} • {formatPrice(item.product?.discount_price || item.product?.price)}</p>
-                                </div>
-                              </div>
-                            )) : null;
-                          } catch (e) {
-                            console.error('Failed to parse order products', e);
-                            return <p className="text-xs text-red-500">Error loading items</p>;
-                          }
+                           try {
+                             const count = JSON.parse(order.products || '[]').length;
+                             return count > 1 && (
+                               <div className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                                 +{count - 1}
+                               </div>
+                             );
+                           } catch { return null; }
                         })()}
                       </div>
-                    </div>
 
-                    <div>
-                      <h4 className="text-xs font-bold text-black/40 uppercase tracking-widest mb-4">Shipping Address</h4>
-                      <div className="flex gap-3">
-                        <MapPin className="w-4 h-4 text-black/20 shrink-0 mt-0.5" />
-                        <p className="text-sm text-black/60 leading-relaxed">{order.address}</p>
+                      {/* Summary Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-slate-800 truncate mb-1">
+                          {(() => {
+                            try {
+                              const products = JSON.parse(order.products || '[]');
+                              return products[0]?.product?.title || 'Order Summary';
+                            } catch { return 'Order Summary'; }
+                          })()}
+                        </p>
+                        <div className="flex items-center gap-3">
+                           <p className="text-lg font-black text-indigo-600">{formatPrice(order.total_amount)}</p>
+                           <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                             {order.order_status === 'Delivered' ? 'Received' : 'In Transit'}
+                           </p>
+                        </div>
                       </div>
                     </div>
+
+                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                      <div className={`px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] shadow-sm transition-all ${
+                        order.order_status === 'Delivered' 
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                          : 'bg-amber-50 text-amber-600 border border-amber-100'
+                      }`}>
+                        {order.order_status}
+                      </div>
+                      <motion.div
+                        animate={{ rotate: expandedOrder === order.order_id ? 180 : 0 }}
+                        className={`p-2 rounded-xl transition-colors ${
+                          expandedOrder === order.order_id ? 'bg-indigo-50 text-indigo-500' : 'text-slate-300'
+                        }`}
+                      >
+                        <ChevronDown className="w-5 h-5" />
+                      </motion.div>
+                    </div>
                   </div>
+
+                  {/* Expandable Details Section */}
+                  <AnimatePresence>
+                    {expandedOrder === order.order_id && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="bg-slate-50 border-t border-slate-100 overflow-hidden"
+                      >
+                        <div className="p-6 md:p-8 space-y-10">
+                          {/* Top Row: IDs & Meta */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-6 border-b border-dashed border-slate-200">
+                             <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Order ID</p>
+                                <p className="text-xs font-bold text-slate-700 font-mono">#{order.order_id.toUpperCase()}</p>
+                             </div>
+                             <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Order Date</p>
+                                <p className="text-xs font-bold text-slate-700">{formatDate(order.date)}</p>
+                             </div>
+                             <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Payment Status</p>
+                                <p className="text-xs font-bold text-emerald-600">{order.payment_status || 'Paid'}</p>
+                             </div>
+                             <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Amount</p>
+                                <p className="text-xs font-black text-indigo-600">{formatPrice(order.total_amount)}</p>
+                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                            {/* Items Section */}
+                            <div>
+                              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Items Checklist</h4>
+                              {(() => {
+                                try {
+                                  const products = JSON.parse(order.products || '[]');
+                                  return Array.isArray(products) ? products.map((item: any, i: number) => (
+                                    <Link 
+                                      key={i} 
+                                      to={`/product/${item.product?.product_id}`}
+                                      className="flex items-center gap-4 group/item hover:bg-white p-2 -m-2 rounded-2xl transition-all"
+                                    >
+                                      <div className="w-14 h-14 bg-white rounded-2xl overflow-hidden shrink-0 shadow-sm border border-black/5 group-hover/item:border-indigo-200 transition-colors">
+                                        <img src={item.product?.image_url} alt="" className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-black text-slate-800 line-clamp-1 mb-1 group-hover/item:text-indigo-600 transition-colors">{item.product?.title}</p>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[10px] font-bold text-slate-400">QTY: {item.quantity}</span>
+                                          <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                          <span className="text-[10px] font-black text-indigo-500">{formatPrice(item.product?.discount_price || item.product?.price)}</span>
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                         <p className="text-xs font-black text-slate-700">{formatPrice((item.product?.discount_price || item.product?.price || 0) * item.quantity)}</p>
+                                      </div>
+                                    </Link>
+                                  )) : null;
+                                } catch (e) {
+                                  return <p className="text-xs text-red-500">Error loading items</p>;
+                                }
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Shipping Info Section */}
+                          <div className="flex flex-col gap-8">
+                             <div>
+                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Delivery To</h4>
+                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex gap-4 transition-all hover:border-indigo-100">
+                                  <div className="p-3 bg-indigo-50 rounded-2xl h-fit">
+                                    <MapPin className="w-6 h-6 text-indigo-500" />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-black text-slate-900 mb-2 uppercase tracking-widest">Shipping Address</p>
+                                    <p className="text-sm text-slate-500 font-medium leading-relaxed italic">"{order.address}"</p>
+                                  </div>
+                                </div>
+                             </div>
+
+                             <div className="mt-auto pt-8 border-t border-dashed border-slate-200 flex flex-wrap justify-between items-center gap-4">
+                                <div>
+                                   <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1.5">Secure Transaction</p>
+                                   <p className="text-xs font-bold text-slate-500 flex items-center gap-2">
+                                      <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                                      Razorpay SSL Encrypted
+                                   </p>
+                                </div>
+                                <button className="px-8 py-3 bg-black text-white text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all shadow-xl active:scale-95">
+                                   Re-Order Package
+                                </button>
+                             </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               ))}
             </div>

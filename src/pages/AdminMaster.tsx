@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Category, Offer } from '../types';
 import toast from 'react-hot-toast';
-import { Loader2, Plus, Trash2, Image as ImageIcon, Tag, Link as LinkIcon, Edit, Upload } from 'lucide-react';
+import { Loader2, Plus, Trash2, Image as ImageIcon, Tag, Link as LinkIcon, Edit, Upload, Camera } from 'lucide-react';
 
 export const AdminMaster = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -12,13 +12,16 @@ export const AdminMaster = () => {
   // Category State
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryImage, setCategoryImage] = useState<File | null>(null);
+  const [categoryPreview, setCategoryPreview] = useState<string | null>(null);
   const [addingCategory, setAddingCategory] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   // Offer State
   const [newOfferTitle, setNewOfferTitle] = useState('');
   const [newOfferDesc, setNewOfferDesc] = useState('');
   const [newOfferLink, setNewOfferLink] = useState('');
   const [offerImage, setOfferImage] = useState<File | null>(null);
+  const [offerPreview, setOfferPreview] = useState<string | null>(null);
   const [addingOffer, setAddingOffer] = useState(false);
 
   useEffect(() => {
@@ -65,11 +68,36 @@ export const AdminMaster = () => {
       toast.success('Category added successfully');
       setNewCategoryName('');
       setCategoryImage(null);
+      setCategoryPreview(null);
       fetchData();
     } catch (error) {
       toast.error('Failed to add category');
     } finally {
       setAddingCategory(false);
+    }
+  };
+
+  const handleUpdateCategoryImage = async (categoryId: string, name: string, file: File) => {
+    try {
+      setUpdatingId(categoryId);
+      const imageUrl = await api.request('uploadFile', {
+        file,
+        bucket: 'products',
+        path: `categories/${Date.now()}_${file.name}`
+      });
+
+      await api.request('updateCategory', {
+        category_id: categoryId,
+        category_name: name,
+        image_url: imageUrl
+      });
+
+      toast.success('Category banner updated!');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update banner');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -112,11 +140,38 @@ export const AdminMaster = () => {
       setNewOfferDesc('');
       setNewOfferLink('');
       setOfferImage(null);
+      setOfferPreview(null);
       fetchData();
     } catch (error) {
       toast.error('Failed to add offer');
     } finally {
       setAddingOffer(false);
+    }
+  };
+
+  const handleUpdateOfferImage = async (offerId: string, offer: any, file: File) => {
+    try {
+      setUpdatingId(offerId);
+      const imageUrl = await api.request('uploadFile', {
+        file,
+        bucket: 'products',
+        path: `offers/${Date.now()}_${file.name}`
+      });
+
+      await api.request('updateOffer', {
+        id: offerId,
+        title: offer.title,
+        description: offer.description,
+        link: offer.link,
+        image_url: imageUrl
+      });
+
+      toast.success('Offer banner updated!');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update banner');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -160,67 +215,109 @@ export const AdminMaster = () => {
           </div>
           
           <div className="p-6">
-            <form onSubmit={handleAddCategory} className="space-y-4 mb-8 bg-gray-50 p-5 rounded-xl border border-gray-100">
-              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">Add New Category</h3>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Category Name</label>
-                <input
-                  type="text"
-                  required
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  placeholder="e.g., T-Shirts"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Category Image</label>
-                <div className="flex items-center gap-3">
-                  <label className="flex-1 flex items-center justify-center px-4 py-3 bg-white border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-colors">
-                    <span className="text-sm text-gray-500 font-medium flex items-center gap-2">
-                      <Upload className="w-4 h-4" /> {categoryImage ? categoryImage.name : 'Choose Image'}
-                    </span>
+            <form onSubmit={handleAddCategory} className="space-y-6 mb-8 bg-indigo-50/30 p-6 rounded-3xl border border-indigo-100/50">
+              <h3 className="text-xs font-black text-indigo-900 uppercase tracking-[0.2em] mb-4">Create New Category</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 ml-1">Category Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      className="w-full px-5 py-3 bg-white border border-indigo-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-gray-300"
+                      placeholder="e.g., Premium Shirts"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={addingCategory}
+                    className="w-full bg-indigo-600 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all flex justify-center items-center gap-3 disabled:opacity-50 shadow-lg shadow-indigo-600/20 active:scale-95"
+                  >
+                    {addingCategory ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-5 h-5" /> Add Category</>}
+                  </button>
+                </div>
+
+                <div className="relative group/upload">
+                  <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 ml-1">Banner Image</label>
+                  <label className={`relative flex flex-col items-center justify-center h-full min-h-[140px] bg-white border-2 border-dashed ${categoryPreview ? 'border-indigo-500 bg-indigo-50/10' : 'border-indigo-100 hover:border-indigo-400'} rounded-3xl cursor-pointer transition-all overflow-hidden group/box`}>
+                    {categoryPreview ? (
+                      <div className="absolute inset-0 w-full h-full">
+                        <img src={categoryPreview} alt="Preview" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/box:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                           <Upload className="w-8 h-8 text-white" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 p-4 text-center">
+                        <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-500 group-hover/upload:scale-110 transition-transform">
+                          <Upload className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-bold text-indigo-900/60 tracking-tight">Tap to upload banner</span>
+                      </div>
+                    )}
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setCategoryImage(e.target.files?.[0] || null)}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        if (file && file.size > 5 * 1024 * 1024) {
+                          toast.error('Image size should be less than 5MB');
+                          e.target.value = '';
+                          return;
+                        }
+                        setCategoryImage(file);
+                        if (file) setCategoryPreview(URL.createObjectURL(file));
+                      }}
                       className="hidden"
                       required
                     />
                   </label>
                 </div>
               </div>
-              <button
-                type="submit"
-                disabled={addingCategory}
-                className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
-              >
-                {addingCategory ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Add Category</>}
-              </button>
             </form>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">Existing Categories</h3>
+              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Live Collections</h3>
               {categories.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">No categories found.</p>
+                <p className="text-sm text-gray-400 text-center py-10 bg-gray-50 rounded-3xl border border-dashed border-gray-200">No categories found.</p>
               ) : (
-                <ul className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                   {categories.map(cat => (
-                    <li key={cat.category_id} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-shadow group">
+                    <div key={cat.category_id} className="group relative bg-white border border-gray-100 rounded-4xl p-3 flex items-center justify-between hover:shadow-xl hover:shadow-indigo-500/5 hover:border-indigo-100 transition-all duration-300">
                       <div className="flex items-center gap-4">
-                        <img src={cat.image_url} alt={cat.category_name} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />
-                        <span className="font-bold text-gray-800">{cat.category_name}</span>
+                        <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 group-hover:border-indigo-200 transition-colors">
+                          <img src={cat.image_url} alt={cat.category_name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                          <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer backdrop-blur-[2px] transition-opacity">
+                            {updatingId === cat.category_id ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Camera className="w-5 h-5 text-white" />}
+                            <input 
+                              type="file" 
+                              className="hidden" 
+                              accept="image/*"
+                              disabled={updatingId === cat.category_id}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleUpdateCategoryImage(cat.category_id, cat.category_name, file);
+                              }}
+                            />
+                          </label>
+                        </div>
+                        <div>
+                          <span className="font-black text-slate-800 text-sm">{cat.category_name}</span>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Quick Edit Enabled</p>
+                        </div>
                       </div>
                       <button 
                         onClick={() => handleDeleteCategory(cat.category_id)}
-                        className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 opacity-0 group-hover:opacity-100"
-                        title="Delete Category"
+                        className="text-gray-300 hover:text-rose-500 hover:bg-rose-50 transition-all p-3 rounded-2xl scale-90 hover:scale-100"
+                        title="Remove Category"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           </div>
@@ -235,95 +332,122 @@ export const AdminMaster = () => {
           </div>
           
           <div className="p-6">
-            <form onSubmit={handleAddOffer} className="space-y-4 mb-8 bg-gray-50 p-5 rounded-xl border border-gray-100">
-              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">Add New Offer Banner</h3>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Offer Title</label>
-                <input
-                  type="text"
-                  required
-                  value={newOfferTitle}
-                  onChange={(e) => setNewOfferTitle(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
-                  placeholder="e.g., Summer Sale - Flat 50% Off"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Short Description (Optional)</label>
-                <input
-                  type="text"
-                  value={newOfferDesc}
-                  onChange={(e) => setNewOfferDesc(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
-                  placeholder="e.g., Valid till this weekend only!"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Link URL (Optional)</label>
-                <input
-                  type="text"
-                  value={newOfferLink}
-                  onChange={(e) => setNewOfferLink(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
-                  placeholder="e.g., /products?category=tshirts"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Banner Image (Wide aspect ratio recommended)</label>
-                <div className="flex items-center gap-3">
-                  <label className="flex-1 flex items-center justify-center px-4 py-3 bg-white border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-rose-500 hover:bg-rose-50 transition-colors">
-                    <span className="text-sm text-gray-500 font-medium flex items-center gap-2">
-                       <Upload className="w-4 h-4" /> {offerImage ? offerImage.name : 'Choose Image'}
-                    </span>
+            <form onSubmit={handleAddOffer} className="space-y-6 mb-8 bg-rose-50/30 p-6 rounded-3xl border border-rose-100/50">
+              <h3 className="text-xs font-black text-rose-900 uppercase tracking-[0.2em] mb-4">New Promo Banner</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1.5 ml-1">Title</label>
+                    <input
+                      type="text"
+                      required
+                      value={newOfferTitle}
+                      onChange={(e) => setNewOfferTitle(e.target.value)}
+                      className="w-full px-5 py-3 bg-white border border-rose-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all"
+                      placeholder="e.g., Summer Flash Sale"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1.5 ml-1">Link (Optional)</label>
+                    <input
+                      type="text"
+                      value={newOfferLink}
+                      onChange={(e) => setNewOfferLink(e.target.value)}
+                      className="w-full px-5 py-3 bg-white border border-rose-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all"
+                      placeholder="/products?cat=shirts"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={addingOffer}
+                    className="w-full bg-rose-600 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-rose-700 transition-all flex justify-center items-center gap-3 disabled:opacity-50 shadow-lg shadow-rose-600/20 active:scale-95"
+                  >
+                    {addingOffer ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-5 h-5" /> Launch Offer</>}
+                  </button>
+                </div>
+
+                <div className="relative group/upload">
+                  <label className="block text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1.5 ml-1">Promo Banner</label>
+                  <label className={`relative flex flex-col items-center justify-center h-full min-h-[140px] bg-white border-2 border-dashed ${offerPreview ? 'border-rose-500 bg-rose-50/10' : 'border-rose-100 hover:border-rose-400'} rounded-3xl cursor-pointer transition-all overflow-hidden group/box`}>
+                    {offerPreview ? (
+                      <div className="absolute inset-0 w-full h-full">
+                        <img src={offerPreview} alt="Preview" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/box:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                           <Upload className="w-8 h-8 text-white" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 p-4 text-center">
+                        <div className="p-3 bg-rose-50 rounded-2xl text-rose-500 group-hover/upload:scale-110 transition-transform">
+                          <ImageIcon className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-bold text-rose-900/60 tracking-tight">Tap to upload promo</span>
+                      </div>
+                    )}
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setOfferImage(e.target.files?.[0] || null)}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        if (file && file.size > 5 * 1024 * 1024) {
+                          toast.error('Image size should be less than 5MB');
+                          e.target.value = '';
+                          return;
+                        }
+                        setOfferImage(file);
+                        if (file) setOfferPreview(URL.createObjectURL(file));
+                      }}
                       className="hidden"
                       required
                     />
                   </label>
                 </div>
               </div>
-              <button
-                type="submit"
-                disabled={addingOffer}
-                className="w-full bg-gray-900 text-white py-2.5 rounded-lg text-sm font-bold hover:bg-black transition-colors flex justify-center items-center gap-2 disabled:opacity-50 mt-2"
-              >
-                {addingOffer ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Upload Offer</>}
-              </button>
             </form>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">Active Offers</h3>
+              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Live Banners</h3>
               {offers.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">No active offers.</p>
+                <p className="text-sm text-gray-400 text-center py-10 bg-gray-50 rounded-3xl border border-dashed border-gray-200">No active offers.</p>
               ) : (
-                <ul className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                   {offers.map(offer => (
-                    <li key={offer.id} className="relative bg-white border border-gray-200 rounded-xl overflow-hidden group">
-                      <div className="aspect-[21/9] w-full bg-gray-100">
-                        <img src={offer.image_url} alt={offer.title} className="w-full h-full object-cover" />
+                    <div key={offer.id} className="relative bg-white border border-gray-100 rounded-[2.5rem] overflow-hidden group hover:shadow-2xl hover:border-rose-100 transition-all duration-300">
+                      <div className="aspect-21/9 w-full bg-gray-100 relative overflow-hidden">
+                        <img src={offer.image_url} alt={offer.title} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer backdrop-blur-sm transition-opacity">
+                          {updatingId === offer.id ? <Loader2 className="w-8 h-8 text-white animate-spin" /> : <Camera className="w-8 h-8 text-white" />}
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*"
+                            disabled={updatingId === offer.id}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleUpdateOfferImage(offer.id, offer, file);
+                            }}
+                          />
+                        </label>
                       </div>
-                      <div className="p-4">
-                        <h4 className="font-bold text-gray-900">{offer.title}</h4>
-                        {offer.description && <p className="text-xs text-gray-500 mt-1">{offer.description}</p>}
-                        {offer.link && (
-                          <div className="flex items-center gap-1 mt-2 text-[11px] font-bold text-rose-600">
-                            <LinkIcon className="w-3 h-3" /> {offer.link}
-                          </div>
-                        )}
+                      <div className="p-6 flex justify-between items-center">
+                        <div>
+                          <h4 className="font-black text-slate-800 text-lg uppercase tracking-tight">{offer.title}</h4>
+                          {offer.link && (
+                            <div className="flex items-center gap-2 mt-1 text-[10px] font-black text-rose-500 uppercase tracking-widest">
+                              <LinkIcon className="w-3 h-3" /> {offer.link}
+                            </div>
+                          )}
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteOffer(offer.id)}
+                          className="text-gray-300 hover:text-rose-500 hover:bg-rose-50 transition-all p-4 rounded-3xl"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => handleDeleteOffer(offer.id)}
-                        className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-gray-600 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-white shadow-sm opacity-0 group-hover:opacity-100"
-                        title="Delete Offer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           </div>
