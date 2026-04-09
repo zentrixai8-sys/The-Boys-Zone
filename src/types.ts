@@ -23,6 +23,8 @@ export interface Product {
   stock: number;
   image_url: string;
   images?: string[];
+  rating: number;
+  reviewCount: number;
   created_at: string;
 }
 

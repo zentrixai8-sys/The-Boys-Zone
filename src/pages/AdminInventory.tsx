@@ -15,8 +15,8 @@ export const AdminInventory = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const productsData = await api.request('getProducts');
-      setProducts(Array.isArray(productsData) ? productsData : []);
+      const res = await api.request('getProducts');
+      setProducts(res.products || []);
     } catch (error) {
       console.error("Failed to fetch admin data:", error);
     } finally {

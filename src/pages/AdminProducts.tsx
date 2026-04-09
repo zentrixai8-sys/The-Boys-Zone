@@ -25,11 +25,11 @@ export const AdminProducts = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [productsData, categoriesData] = await Promise.all([
+      const [productsRes, categoriesData] = await Promise.all([
         api.request('getProducts'),
         api.request('getCategories')
       ]);
-      setProducts(Array.isArray(productsData) ? productsData : []);
+      setProducts(productsRes.products || []);
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
       console.error("Failed to fetch admin data:", error);

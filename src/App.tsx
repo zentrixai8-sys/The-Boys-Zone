@@ -208,8 +208,18 @@ const AppContent = () => {
               </div>
             </div>
             <div className="border-t border-white/10 mt-20 pt-10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/20 uppercase tracking-widest font-bold">
-              <p>© 2026 BOY'S ZONE. ALL RIGHTS RESERVED.</p>
-              <p>Powered By <a href="https://zentrix-dv.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-white hover:text-indigo-400 transition-colors">Zentrix</a></p>
+              <p>© 2026 THE BOYS ZONE. ALL RIGHTS RESERVED.</p>
+              <div className="flex items-center gap-2">
+                <span className="text-white/20">Powered By</span>
+                <a 
+                  href="https://zentrixs.in" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="bg-white/5 hover:bg-white text-white hover:text-black px-4 py-1.5 rounded-full transition-all duration-500 border border-white/10 hover:shadow-glow-soft"
+                >
+                  zentrixs.in
+                </a>
+              </div>
               <div className="flex gap-8">
                 <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
                 <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>

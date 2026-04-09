@@ -33,7 +33,8 @@ export const ProductDetail = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const products = await api.request('getProducts');
+        const res = await api.request('getProducts');
+        const products = res.products || [];
         setAllProducts(products);
         const found = products.find((p: Product) => p.product_id === id);
         if (found) {
@@ -117,9 +118,8 @@ export const ProductDetail = () => {
   if (!product) return null;
 
   const images = product.images && product.images.length > 0 ? product.images : [product.image_url];
-  const averageRating = reviews.length > 0 
-    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
-    : 'New';
+  const averageRating = product.rating || 'New';
+  const totalReviewCount = product.reviewCount || 0;
 
   const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % images.length);
   const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
@@ -209,7 +209,7 @@ export const ProductDetail = () => {
                   <Star key={i} className={`w-4 h-4 ${i < Math.round(Number(averageRating)) ? 'fill-orange-400 text-orange-400' : 'text-gray-200'}`} />
                 ))}
               </div>
-              <span className="text-sm text-gray-500 font-medium">({reviews.length} Reviews)</span>
+              <span className="text-sm text-gray-500 font-medium">({totalReviewCount} Reviews)</span>
             </div>
           </div>
 
@@ -342,7 +342,7 @@ export const ProductDetail = () => {
                       <Star key={i} className={`w-4 h-4 ${i < Math.round(Number(averageRating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`} />
                     ))}
                   </div>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">{reviews.length} Verified Reviews</span>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">{totalReviewCount} Verified Reviews</span>
                 </div>
               </div>
             </div>

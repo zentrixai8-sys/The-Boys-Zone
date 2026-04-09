@@ -1,17 +1,126 @@
 import { supabase } from '../lib/supabase';
 import axios from 'axios';
 
+// Helper for social proof: Generate stable base ratings based on product id
+const getRatingBase = (productId: string) => {
+  let hash = 0;
+  for (let i = 0; i < productId.length; i++) {
+    hash = productId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const count = 200 + (Math.abs(hash) % 101); // 200-300 reviews
+  const baseAvg = 3.8 + ((Math.abs(hash * 31) % 12) / 10); // 3.8 - 5.0 base rating
+  return { count, avg: baseAvg };
+};
+
 export const api = {
   async request(action: string, data: any = {}) {
     try {
       switch (action) {
         case 'getProducts': {
-          const { data: products, error } = await supabase
+          const { data: products, error: pError } = await supabase
             .from('products')
             .select('*')
             .order('created_at', { ascending: false });
+          if (pError) throw pError;
+
+          const { data: reviews, error: rError } = await supabase
+            .from('reviews')
+            .select('product_id, rating');
+          if (rError) throw rError;
+
+          const productsWithRatings = products?.map(product => {
+            const productReviews = reviews?.filter(r => r.product_id === product.product_id) || [];
+            const realReviewCount = productReviews.length;
+            const realRatingSum = productReviews.reduce((sum, r) => sum + r.rating, 0);
+
+            // Simulation: 200-300 base reviews
+            const { count: baseCount, avg: baseAvg } = getRatingBase(product.product_id);
+            
+            const totalCount = baseCount + realReviewCount;
+            const finalAvg = ((baseAvg * baseCount) + realRatingSum) / totalCount;
+
+            return {
+              ...product,
+              rating: Number(finalAvg.toFixed(1)),
+              reviewCount: totalCount
+            };
+          });
+
+          return { products: productsWithRatings || [] };
+        }
+
+        case 'getBestSellers': {
+          const { data: orders, error } = await supabase
+            .from('orders')
+            .select('products');
           if (error) throw error;
-          return products;
+
+          const productCounts: Record<string, number> = {};
+          
+          orders?.forEach(order => {
+            try {
+              // Parse if it's a string, or use directly if Supabase already parsed it
+              const items = typeof order.products === 'string' ? JSON.parse(order.products) : order.products;
+              if (Array.isArray(items)) {
+                items.forEach((item: any) => {
+                  const id = item.product_id || item.id; // Support both naming conventions
+                  if (id) {
+                    productCounts[id] = (productCounts[id] || 0) + (item.quantity || 1);
+                  }
+                });
+              }
+            } catch (e) {
+              console.warn('Failed to parse order products', e);
+            }
+          });
+
+          const sortedProductIds = Object.entries(productCounts)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5)
+            .map(([id]) => id);
+
+          if (sortedProductIds.length === 0) {
+             // Fallback to latest products if no orders yet
+             const { data: latestProducts } = await supabase.from('products').select('*').limit(5);
+             return latestProducts || [];
+          }
+
+          const { data: bestSellerProducts, error: prodErr } = await supabase
+            .from('products')
+            .select('*')
+            .in('product_id', sortedProductIds);
+          
+          if (prodErr) throw prodErr;
+
+          const { data: reviews, error: rError } = await supabase
+            .from('reviews')
+            .select('product_id, rating')
+            .in('product_id', sortedProductIds);
+          
+          if (rError) throw rError;
+          
+          const productsWithRatings = bestSellerProducts.map(product => {
+            const productReviews = reviews?.filter(r => r.product_id === product.product_id) || [];
+            const realReviewCount = productReviews.length;
+            const realRatingSum = productReviews.reduce((sum, r) => sum + r.rating, 0);
+
+            // Simulation: 200-300 base reviews
+            const { count: baseCount, avg: baseAvg } = getRatingBase(product.product_id);
+            
+            const totalCount = baseCount + realReviewCount;
+            const finalAvg = ((baseAvg * baseCount) + realRatingSum) / totalCount;
+
+            return {
+              ...product,
+              rating: Number(finalAvg.toFixed(1)),
+              reviewCount: totalCount
+            };
+          });
+
+          // Re-sort to maintain the best-seller order
+          return productsWithRatings.sort((a, b) => 
+            sortedProductIds.indexOf(a.product_id) - sortedProductIds.indexOf(b.product_id)
+          );
         }
 
         case 'getCategories': {

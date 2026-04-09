@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Product } from '../types';
 import { formatPrice } from '../lib/utils';
 import { motion } from 'motion/react';
+import { Star } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -35,10 +36,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {product.category || 'Apparel'}
         </p>
         <Link to={`/product/${product.product_id}`}>
-          <h3 className="text-[15px] font-bold text-gray-900 mb-1 leading-snug group-hover:text-indigo-600 transition-colors line-clamp-2">
+          <h3 className="text-[15px] font-bold text-gray-900 mb-1 leading-snug group-hover:text-indigo-600 transition-colors line-clamp-2 uppercase">
             {product.title}
           </h3>
         </Link>
+        <div className="flex items-center gap-1 mb-2">
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star 
+                  key={star} 
+                  className={`w-3 h-3 ${star <= Math.round(product.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} 
+                />
+              ))}
+            </div>
+            {product.reviewCount > 0 && (
+              <span className="text-[10px] font-bold text-gray-400">({product.reviewCount})</span>
+            )}
+        </div>
         <div className="mt-auto pt-1 flex items-baseline gap-2">
            <span className="text-base font-bold text-indigo-600">
              {formatPrice(product.discount_price || product.price)}

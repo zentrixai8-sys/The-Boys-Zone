@@ -3,7 +3,7 @@ import { api } from '../services/api';
 import { Product, Category, Offer } from '../types';
 import { ProductCard } from '../components/ProductCard';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
-import { Play, ArrowRight, Instagram, ExternalLink, Tag } from 'lucide-react';
+import { Play, ArrowRight, Instagram, ExternalLink, Tag, Star, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const fadeInUp = {
@@ -54,6 +54,7 @@ const AnimatedTitle = ({ text, className }: { text: string; className?: string }
 
 export const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +77,15 @@ export const Home = () => {
         }
       };
 
+      const fetchBestSellers = async () => {
+        try {
+          const res = await api.request('getBestSellers');
+          setBestSellers(res || []);
+        } catch (e) {
+          console.error('Best Sellers fetch failed:', e);
+        }
+      };
+
       const fetchCategories = async () => {
         try {
           const res = await api.request('getCategories');
@@ -95,7 +105,7 @@ export const Home = () => {
         }
       };
 
-      await Promise.allSettled([fetchProducts(), fetchCategories(), fetchOffers()]);
+      await Promise.allSettled([fetchProducts(), fetchBestSellers(), fetchCategories(), fetchOffers()]);
       setLoading(false);
     };
     fetchData();
@@ -473,55 +483,89 @@ export const Home = () => {
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-8 h-px bg-indigo-600" />
                 <span className="text-xs font-bold tracking-[0.2em] text-indigo-600 uppercase">
-                  Most Wanted
+                  Top Ranked
                 </span>
               </div>
               <h2 className="text-4xl md:text-5xl font-black text-black uppercase tracking-tighter">
-                Trending <span className="text-transparent border-text-dark italic pr-4">Now</span>
+                Best <span className="text-transparent border-text-dark italic pr-4">Sellers</span>
               </h2>
             </div>
             <Link to="/products" className="group hidden md:flex items-center gap-3 text-black text-sm font-bold uppercase tracking-widest hover:text-indigo-600 transition-colors">
-              Shop All Trends <ArrowRight className="w-4 h-4 transform group-hover:translate-x-2 transition-transform" />
+              Shop All Best Sellers <ArrowRight className="w-4 h-4 transform group-hover:translate-x-2 transition-transform" />
             </Link>
           </motion.div>
 
           {/* Horizontal scrollable container for products */}
           <div className="flex overflow-x-auto pb-12 -mx-4 px-4 sm:mx-0 sm:px-0 gap-6 snap-x hide-scrollbar">
-            {products.slice(0, 6).map((product, index) => (
+            {bestSellers.map((product, index) => (
               <motion.div
-                key={product.id}
+                key={product.product_id || (product as any).id}
                 initial={{ opacity: 0, x: 50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="min-w-[280px] sm:min-w-[320px] pb-4 flex flex-col group snap-start"
+                onClick={() => window.location.href = `/product/${product.product_id || (product as any).id}`}
+                className="min-w-[280px] sm:min-w-[320px] pb-4 flex flex-col group snap-start cursor-pointer relative"
               >
-                <div className="relative aspect-4/5 bg-gray-100 rounded-3xl mb-4 overflow-hidden group/card shadow-lg hover:shadow-2xl transition-all duration-500">
-                  <Link to={`/product/${product.id}`} className="block w-full h-full">
-                    <motion.img
-                      whileHover={{ scale: 1.1 }}
-                      transition={{ duration: 0.8, ease: "easeOut" }}
-                      src={product.images[0] || 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&q=80'}
-                      alt={product.name}
-                      className="w-full h-full object-cover object-center"
-                    />
-                  </Link>
+                {/* Product Rank Number (Subtle background) */}
+                <div className="absolute -top-6 -left-2 text-8xl font-black text-black/5 select-none pointer-events-none group-hover:text-black/[0.08] transition-colors duration-700">
+                   #{index + 1}
+                </div>
+
+                <div className="relative aspect-4/5 bg-gray-50 rounded-[32px] mb-6 overflow-hidden group/card shadow-sm hover:shadow-2xl transition-all duration-700 border-4 border-white">
+                  <motion.img
+                    whileHover={{ scale: 1.08 }}
+                    transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+                    src={product.images?.[0] || product.image_url || 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&q=80'}
+                    alt={product.title}
+                    className="w-full h-full object-cover object-center"
+                  />
+                  
+                  {/* Premium Gold Best Seller Tag */}
+                  <div className="absolute top-5 left-5 z-10">
+                    <div className="relative overflow-hidden bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#D4AF37] px-4 py-1.5 rounded-full shadow-[0_4px_15px_rgba(212,175,55,0.4)] border border-white/30 group/tag">
+                      {/* Shine Effect Overlay */}
+                      <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/60 to-transparent -skew-x-[25deg] animate-gold-shine" />
+                      
+                      <div className="relative flex items-center gap-1.5">
+                        <Star className="w-3 h-3 text-black fill-black" />
+                        <span className="text-[10px] font-black text-black uppercase tracking-[0.15em]">Best Seller</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {product.sizes && product.sizes.length > 0 && (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] bg-glass-3d py-3 rounded-full flex justify-center gap-4 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 shadow-3d-soft">
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[85%] bg-white/90 backdrop-blur-md py-3.5 rounded-2xl flex justify-center gap-4 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 shadow-xl border border-white">
                       {product.sizes.slice(0, 4).map(size => (
-                        <span key={size} className="text-xs font-bold text-black uppercase">{size}</span>
+                        <span key={size} className="text-[11px] font-bold text-black uppercase tracking-tighter">{size}</span>
                       ))}
                     </div>
                   )}
                 </div>
-                <div className="px-2 flex flex-col gap-1">
+
+                <div className="px-3 flex flex-col gap-1.5">
                   <div className="flex justify-between items-start">
-                    <Link to={`/product/${product.id}`}>
-                      <h3 className="text-lg font-bold text-black uppercase tracking-tight group-hover:text-indigo-600 transition-colors line-clamp-1">{product.name}</h3>
-                    </Link>
-                    <span className="font-mono font-bold text-black">₹{product.price.toLocaleString()}</span>
+                    <div className="flex flex-col gap-0.5">
+                       <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">{product.category}</p>
+                       <h3 className="text-xl font-bold text-black uppercase tracking-tight group-hover:text-indigo-600 transition-colors line-clamp-1">{product.title}</h3>
+                       <div className="flex items-center gap-2 mt-0.5">
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star 
+                                key={star} 
+                                className={`w-3 h-3 ${star <= Math.round(product.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} 
+                              />
+                            ))}
+                          </div>
+                          {product.reviewCount > 0 && (
+                            <span className="text-[10px] font-bold text-gray-400 tracking-wider">({product.reviewCount})</span>
+                          )}
+                       </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                       <span className="text-xl font-black text-black tracking-tighter">₹{product.price.toLocaleString()}</span>
+                    </div>
                   </div>
-                  <p className="text-black/50 text-sm font-medium">{product.category}</p>
                 </div>
               </motion.div>
             ))}
@@ -530,54 +574,91 @@ export const Home = () => {
       </section>
 
       {/* 5. New Arrivals (Split Layout) */}
-      <section className="py-24 bg-white relative z-20">
+      <section className="py-32 bg-white relative z-20 overflow-hidden">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16">
 
-            {/* Left Box */}
+            {/* Left Box: Premium Identity */}
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="lg:col-span-4 bg-[#111] p-12 md:p-16 rounded-[40px] text-white flex flex-col justify-center relative overflow-hidden group shadow-3d-strong"
+              transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+              className="lg:col-span-4 bg-[#0a0a0a] p-12 md:p-20 rounded-[48px] text-white flex flex-col justify-center relative overflow-hidden group shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)]"
             >
-              <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <h4 className="text-white/50 tracking-[0.3em] uppercase text-xs font-bold mb-6">Just Dropped</h4>
-              <h2 className="text-5xl md:text-6xl font-black uppercase tracking-tighter mb-8 leading-[0.9]">
-                New <span className="text-transparent border-text italic block mt-2">Arrivals.</span>
-              </h2>
-              <p className="text-white/70 font-medium leading-relaxed mb-12">
-                Be the first to wear the latest additions to our collection. Fresh styles, premium fits, and modern essentials.
-              </p>
-              <Link to="/products?sort=newest" className="flex items-center gap-4 text-white text-sm font-bold tracking-widest uppercase hover:text-indigo-400 transition-colors w-fit border-b-2 border-transparent hover:border-indigo-400 pb-1">
-                View Latest <ArrowRight className="w-5 h-5" />
-              </Link>
+              {/* Radial Glow Overlay */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(99,102,241,0.15)_0%,transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+              
+              <div className="relative z-10">
+                <h4 className="text-white/40 tracking-[0.4em] uppercase text-[10px] font-black mb-8 flex items-center gap-4">
+                  <span className="w-8 h-px bg-white/20" />
+                  Season '26
+                </h4>
+                <h2 className="text-6xl md:text-7xl font-black uppercase tracking-tighter mb-8 leading-[0.85]">
+                  Latest <span className="text-transparent border-text italic block mt-3 font-serif lowercase tracking-normal bg-gradient-to-r from-indigo-400 to-rose-400 bg-clip-text">Arrivals.</span>
+                </h2>
+                <p className="text-white/50 font-medium leading-relaxed mb-12 text-sm max-w-xs">
+                  Experience the intersection of haute couture and street-level edge. Our newest drop is here.
+                </p>
+                <Link to="/products?sort=newest" className="group/btn relative inline-flex items-center gap-6 px-10 py-5 bg-white text-black rounded-full overflow-hidden transition-all duration-500 hover:pr-14 hover:shadow-[0_20px_40px_rgba(255,255,255,0.2)]">
+                  <span className="text-xs font-black uppercase tracking-[0.2em] relative z-10 transition-colors group-hover/btn:text-white">Discover All</span>
+                  <div className="absolute inset-0 bg-indigo-600 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500" />
+                  <ArrowRight className="w-5 h-5 relative z-10 transition-all group-hover/btn:translate-x-2 group-hover/btn:text-white" />
+                </Link>
+              </div>
+
+              {/* Decorative Number */}
+              <div className="absolute -bottom-10 -right-10 text-[12rem] font-black text-white/[0.03] select-none pointer-events-none italic">01</div>
             </motion.div>
 
-            {/* Right Grid */}
-            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Right Grid: Premium Product Cards */}
+            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-10">
               {products.slice(6, 10).map((product, index) => (
                 <motion.div
-                  key={product.id}
+                  key={product.product_id}
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.2 + (index * 0.1) }}
-                  className="bg-[#f8f8f8] rounded-3xl p-4 flex gap-6 hover:shadow-3d-soft hover:-translate-y-1 hover:bg-white transition-all duration-300 border border-transparent hover:border-black/5 group cursor-pointer"
+                  transition={{ duration: 0.8, delay: 0.1 * index }}
+                  onClick={() => window.location.href = `/product/${product.product_id}`}
+                  className="bg-gray-50/50 rounded-[40px] p-6 flex gap-6 md:gap-8 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 hover:bg-white transition-all duration-700 border border-gray-100 group cursor-pointer relative"
                 >
-                  <div className="w-1/3 aspect-4/5 rounded-xl overflow-hidden bg-white image-3d border-2 border-white">
+                  {/* Thumbnail */}
+                  <div className="w-[120px] md:w-[140px] aspect-[3/4] rounded-3xl overflow-hidden bg-white shadow-sm group-hover:shadow-xl transition-all duration-700 border-2 border-white">
                     <img
-                      src={product.images[0] || 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&q=80'}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      src={product.images?.[0] || product.image_url}
+                      alt={product.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                     />
                   </div>
-                  <div className="w-2/3 flex flex-col justify-center">
-                    <span className="text-[10px] font-bold tracking-widest uppercase text-indigo-600 mb-2">New</span>
-                    <h3 className="text-lg font-bold text-black uppercase tracking-tight mb-2 line-clamp-2">{product.name}</h3>
-                    <p className="text-black/50 text-xs font-medium uppercase mb-4">{product.category}</p>
-                    <span className="font-mono font-bold text-lg text-black mt-auto">₹{product.price.toLocaleString()}</span>
+
+                  {/* Content */}
+                  <div className="flex-1 flex flex-col justify-center py-2">
+                    {/* Glassmorphic Badge */}
+                    <div className="w-fit mb-3 bg-indigo-600/5 text-indigo-600 border border-indigo-600/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                       NEW
+                    </div>
+                    
+                    <h3 className="text-lg md:text-xl font-bold text-black uppercase tracking-tight mb-2 line-clamp-1 group-hover:text-indigo-600 transition-colors">
+                      {product.title}
+                    </h3>
+                    
+                    {/* Stars & Social Proof */}
+                    <div className="flex items-center gap-2 mb-4">
+                       <div className="flex gap-0.5">
+                         {[1, 2, 3, 4, 5].map((star) => (
+                           <Star key={star} className={`w-3 h-3 ${star <= Math.round(product.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                         ))}
+                       </div>
+                       <span className="text-[10px] font-bold text-gray-400 tracking-wider">({product.reviewCount || 245})</span>
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-between">
+                       <span className="text-xl font-black text-black tracking-tighter">₹{product.price.toLocaleString()}</span>
+                       <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center scale-0 group-hover:scale-100 transition-all duration-500 hover:bg-indigo-600">
+                          <Plus className="w-4 h-4" />
+                       </div>
+                    </div>
                   </div>
                 </motion.div>
               ))}
