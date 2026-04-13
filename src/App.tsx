@@ -29,6 +29,7 @@ import { TermsAndConditions } from './pages/TermsAndConditions';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { ShippingPolicy } from './pages/ShippingPolicy';
 import { AdminSidebar } from './components/AdminSidebar';
+import { CategoryBar } from './components/CategoryBar';
 
 const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) => {
   const { user, isAdmin, loading } = useAuth();
@@ -81,7 +82,12 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-white text-black font-sans selection:bg-black selection:text-white">
-      {!isAdminPath && <Navbar />}
+      {!isAdminPath && (
+        <>
+          <Navbar />
+          <CategoryBar />
+        </>
+      )}
       {isAdminPath && <AdminSidebar />}
       <main className={isAdminPath ? 'md:pl-[260px] transition-all duration-300' : ''}>
         <Routes>

@@ -75,7 +75,7 @@ export const Products = () => {
   });
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 py-16">
+    <div className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12 py-16">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-gray-100 pb-8">
         <div>
           <h1 className="text-4xl lg:text-5xl font-serif font-bold tracking-tight text-slate-900 mb-2">
@@ -236,9 +236,9 @@ export const Products = () => {
         {/* Product Grid */}
         <div className="flex-1">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {Array(8).fill(0).map((_, i) => (
-                <div key={i} className="aspect-4/5 bg-gray-50 rounded-[32px] animate-pulse" />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+              {Array(12).fill(0).map((_, i) => (
+                <div key={i} className="aspect-[4/5] bg-gray-50 rounded-xl animate-pulse" />
               ))}
             </div>
           ) : filteredProducts.length > 0 ? (
@@ -246,7 +246,7 @@ export const Products = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+              className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8"
             >
               {filteredProducts.map(product => (
                 <ProductCard key={product.product_id} product={product} />

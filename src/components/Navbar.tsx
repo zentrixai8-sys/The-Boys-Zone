@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Menu, X, Search, Camera, Eye, Loader2 } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Menu, X, Search, Camera, Eye, Loader2, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -80,10 +80,17 @@ export const Navbar = () => {
               alt="The Boys Zone Logo"
               className="h-10 sm:h-12 w-auto object-contain rounded-lg shadow-sm"
             />
-            <span className="hidden lg:block text-xl font-serif font-black tracking-tight text-gray-900 uppercase">
+            <span className="hidden lg:block text-xl font-serif font-black tracking-tight uppercase animate-premium-shine">
               The Boys Zone
             </span>
           </Link>
+
+          {/* Centered Brand Name (Mobile Only) */}
+          <div className="flex-1 md:hidden flex justify-center px-1">
+            <span className="text-[12px] font-serif font-black tracking-[0.15em] uppercase whitespace-nowrap animate-premium-shine">
+              The Boys Zone
+            </span>
+          </div>
 
           {/* Nav Links (Center) */}
           <div className="hidden md:flex flex-1 justify-center items-center gap-10">
@@ -141,7 +148,7 @@ export const Navbar = () => {
           </div>
 
           {/* Icons (Right) */}
-          <div className="flex items-center justify-end gap-2 sm:gap-6 shrink-0">
+          <div className="flex items-center justify-end gap-3.5 md:gap-6 shrink-0">
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
@@ -164,7 +171,7 @@ export const Navbar = () => {
 
             {user ? (
               <div className="relative group">
-                <div className="flex items-center gap-2 sm:gap-3 hover:bg-gray-50 pr-2 sm:pr-4 pl-1 sm:pl-1.5 py-1 sm:py-1.5 rounded-full border border-gray-100 hover:border-gray-300 transition-all shadow-sm cursor-pointer">
+                <div className="flex items-center gap-2 group-hover:bg-gray-50 md:pr-4 md:pl-1.5 py-1.5 rounded-full md:border border-gray-100 hover:border-gray-300 transition-all cursor-pointer">
                   <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100/50 overflow-hidden shrink-0">
                     {isUploading ? (
                       <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
@@ -176,7 +183,7 @@ export const Navbar = () => {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-col items-start pr-1">
+                  <div className="hidden md:flex flex-col items-start pr-1">
                     <span className="text-[14px] font-bold text-gray-800 leading-tight">
                       {user.name.toUpperCase()}
                     </span>
@@ -249,6 +256,11 @@ export const Navbar = () => {
               </Link>
             )}
 
+            <Link to="/wishlist" className="text-gray-600 hover:text-gray-900 transition-colors relative group/wishlist">
+              <Heart className="w-5 h-5 stroke-[1.5] group-hover/wishlist:fill-red-500 group-hover/wishlist:text-red-500 transition-all" />
+              <span className="absolute -top-1 -right-1 bg-red-500 w-1.5 h-1.5 rounded-full opacity-0 group-hover/wishlist:opacity-100 transition-opacity" />
+            </Link>
+
             <Link to="/cart" className="text-gray-600 hover:text-gray-900 transition-colors relative">
               <ShoppingCart className="w-5 h-5 stroke-[1.5]" />
               {cart.totalItems > 0 && (
@@ -261,21 +273,43 @@ export const Navbar = () => {
             {user && (
               <button
                 onClick={() => { logout(); navigate('/'); }}
-                className="flex items-center gap-1.5 text-gray-600 hover:text-red-600 font-semibold text-[13px] ml-1 sm:ml-2 transition-colors"
+                className="hidden lg:flex items-center gap-1.5 text-gray-600 hover:text-red-600 font-semibold text-[13px] ml-2 transition-colors"
               >
                 <LogOut className="w-4 h-4 stroke-2" />
-                <span className="hidden lg:inline">Sign Out</span>
+                <span>Sign Out</span>
               </button>
             )}
 
             <button
-              className="md:hidden text-gray-600 hover:text-gray-900 transition-colors ml-2"
+              className="md:hidden text-gray-800 hover:text-gray-900 transition-colors"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="w-6 h-6 stroke-[1.5]" /> : <Menu className="w-6 h-6 stroke-[1.5]" />}
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Search Bar - Flipkart Style */}
+      <div className="md:hidden px-4 pb-4">
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQuery.trim()) {
+              navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+            }
+          }}
+          className="relative"
+        >
+          <input
+            type="text"
+            placeholder="Search for products, brands and more"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-[#f0f2f5] text-[13px] font-medium text-gray-900 rounded-lg pl-10 pr-4 py-2.5 border-none focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-600 transition-all placeholder:text-gray-500"
+          />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        </form>
       </div>
 
       {/* Mobile Menu */}

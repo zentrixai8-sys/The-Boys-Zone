@@ -9,6 +9,15 @@ export interface User {
   created_at: string;
 }
 
+export interface ProductVariant {
+  color: string;
+  colorImage?: string;
+  sizes: {
+    size: string;
+    stock: number;
+  }[];
+}
+
 export interface Product {
   product_id: string;
   title: string;
@@ -18,6 +27,7 @@ export interface Product {
   size: string;
   sizes?: string[];
   color: string;
+  sub_category: string;
   price: number;
   discount_price: number;
   stock: number;
@@ -25,6 +35,7 @@ export interface Product {
   images?: string[];
   rating: number;
   reviewCount: number;
+  variants?: ProductVariant[];
   created_at: string;
 }
 
@@ -39,6 +50,7 @@ export interface CartItem {
   product_id: string;
   quantity: number;
   selectedSize?: string;
+  selectedColor?: string;
   product?: Product;
 }
 

@@ -5,8 +5,8 @@ import toast from 'react-hot-toast';
 interface CartContextType {
   cart: CartItem[];
   addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: string, selectedSize?: string) => void;
-  updateQuantity: (productId: string, quantity: number, selectedSize?: string) => void;
+  removeFromCart: (productId: string, selectedSize?: string, selectedColor?: string) => void;
+  updateQuantity: (productId: string, quantity: number, selectedSize?: string, selectedColor?: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -37,33 +37,50 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // When adding, use the size from the product structure directly 
     // since we mutated `product.size` with `selectedSize` in ProductDetail
     const productSize = product.size;
+    const productColor = product.color;
 
     const existing = cart.find(item => 
-      item.product_id === product.product_id && item.selectedSize === productSize
+      item.product_id === product.product_id && 
+      item.selectedSize === productSize && 
+      item.selectedColor === productColor
     );
     
     if (existing) {
       setCart(prev => prev.map(item => 
-        (item.product_id === product.product_id && item.selectedSize === productSize)
+        (item.product_id === product.product_id && 
+         item.selectedSize === productSize && 
+         item.selectedColor === productColor)
           ? { ...item, quantity: item.quantity + quantity } 
           : item
       ));
       toast.success(`Updated ${product.title} quantity`);
     } else {
-      setCart(prev => [...prev, { product_id: product.product_id, quantity, selectedSize: productSize, product }]);
+      setCart(prev => [...prev, { 
+        product_id: product.product_id, 
+        quantity, 
+        selectedSize: productSize, 
+        selectedColor: productColor,
+        product 
+      }]);
       toast.success(`Added ${product.title} to cart`);
     }
   };
 
-  const removeFromCart = (productId: string, selectedSize?: string) => {
-    setCart(prev => prev.filter(item => !(item.product_id === productId && item.selectedSize === selectedSize)));
+  const removeFromCart = (productId: string, selectedSize?: string, selectedColor?: string) => {
+    setCart(prev => prev.filter(item => 
+      !(item.product_id === productId && 
+        item.selectedSize === selectedSize && 
+        item.selectedColor === selectedColor)
+    ));
     toast.error('Removed from cart');
   };
 
-  const updateQuantity = (productId: string, quantity: number, selectedSize?: string) => {
+  const updateQuantity = (productId: string, quantity: number, selectedSize?: string, selectedColor?: string) => {
     if (quantity < 1) return;
     setCart(prev => prev.map(item => 
-      (item.product_id === productId && item.selectedSize === selectedSize) ? { ...item, quantity } : item
+      (item.product_id === productId && 
+       item.selectedSize === selectedSize && 
+       item.selectedColor === selectedColor) ? { ...item, quantity } : item
     ));
   };
 

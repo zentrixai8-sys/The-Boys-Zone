@@ -32,7 +32,7 @@ export const Cart = () => {
           <AnimatePresence mode="popLayout">
             {cart.map((item) => (
               <motion.div
-                key={item.product_id}
+                key={`${item.product_id}-${item.selectedColor}-${item.selectedSize}`}
                 layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -51,18 +51,21 @@ export const Cart = () => {
                 <div className="flex-1 flex justify-between items-center h-full">
                   <div className="flex flex-col gap-1 items-start justify-center">
                     <h3 className="text-sm font-bold text-gray-900 leading-snug">{item.product?.title}</h3>
-                    <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-widest">SIZE: {item.selectedSize || item.product?.size || 'M'}</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-widest">COLOR: {item.selectedColor || 'STANDARD'}</p>
+                      <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-widest">SIZE: {item.selectedSize || 'M'}</p>
+                    </div>
 
                     <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 rounded-xl px-2 py-1.5 w-fit mt-3">
                       <button
-                        onClick={() => updateQuantity(item.product_id, item.quantity - 1, item.selectedSize)}
+                        onClick={() => updateQuantity(item.product_id, item.quantity - 1, item.selectedSize, item.selectedColor)}
                         className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="text-[13px] font-bold w-4 text-center text-gray-900">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.product_id, item.quantity + 1, item.selectedSize)}
+                        onClick={() => updateQuantity(item.product_id, item.quantity + 1, item.selectedSize, item.selectedColor)}
                         className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
                       >
                         <Plus className="w-3 h-3" />
@@ -75,7 +78,7 @@ export const Cart = () => {
                       {formatPrice((item.product?.discount_price || item.product?.price || 0) * item.quantity)}
                     </p>
                     <button
-                      onClick={() => removeFromCart(item.product_id, item.selectedSize)}
+                      onClick={() => removeFromCart(item.product_id, item.selectedSize, item.selectedColor)}
                       className="text-[10px] font-bold text-red-500 hover:text-red-700 transition-colors uppercase tracking-widest flex items-center gap-1.5 mb-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Remove

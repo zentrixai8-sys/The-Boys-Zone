@@ -612,7 +612,7 @@ export const Home = () => {
             </motion.div>
 
             {/* Right Grid: Premium Product Cards */}
-            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-10">
+            <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-10">
               {products.slice(6, 10).map((product, index) => (
                 <motion.div
                   key={product.product_id}
