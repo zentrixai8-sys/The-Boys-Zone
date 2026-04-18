@@ -290,27 +290,29 @@ export const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Search Bar - Flipkart Style */}
-      <div className="md:hidden px-4 pb-4">
-        <form 
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (searchQuery.trim()) {
-              navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-            }
-          }}
-          className="relative"
-        >
-          <input
-            type="text"
-            placeholder="Search for products, brands and more"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#f0f2f5] text-[13px] font-medium text-gray-900 rounded-lg pl-10 pr-4 py-2.5 border-none focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-600 transition-all placeholder:text-gray-500"
-          />
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        </form>
-      </div>
+      {/* Mobile Search Bar - Flipkart Style (Hidden on Auth Pages) */}
+      {!['/login', '/register', '/forgot-password'].includes(location.pathname) && (
+        <div className="md:hidden px-4 pb-4">
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (searchQuery.trim()) {
+                navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+              }
+            }}
+            className="relative"
+          >
+            <input
+              type="text"
+              placeholder="Search for products, brands and more"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#f0f2f5] text-[13px] font-medium text-gray-900 rounded-lg pl-10 pr-4 py-2.5 border-none focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-600 transition-all placeholder:text-gray-500"
+            />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          </form>
+        </div>
+      )}
 
       {/* Mobile Menu */}
       <AnimatePresence>
@@ -322,25 +324,27 @@ export const Navbar = () => {
             className="md:hidden bg-white border-b border-gray-100 overflow-hidden"
           >
             <div className="px-6 py-8 flex flex-col gap-6">
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (searchQuery.trim()) {
-                    navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-                    setIsMenuOpen(false);
-                  }
-                }}
-                className="relative"
-              >
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-gray-50 text-sm rounded-xl pl-10 pr-4 py-3 focus:outline-none border border-black/5"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              </form>
+              {!['/login', '/register', '/forgot-password'].includes(location.pathname) && (
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (searchQuery.trim()) {
+                      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+                      setIsMenuOpen(false);
+                    }
+                  }}
+                  className="relative"
+                >
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-gray-50 text-sm rounded-xl pl-10 pr-4 py-3 focus:outline-none border border-black/5"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                </form>
+              )}
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
