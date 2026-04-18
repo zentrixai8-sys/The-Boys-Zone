@@ -205,34 +205,52 @@ export const api = {
         }
 
         case 'login': {
-          // Note: In a real app, you'd use supabase.auth.signInWithPassword
-          // For this migration, we'll check the 'profiles' table to match existing logic
-          const { data: user, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('email', data.email)
-            .eq('password', data.password)
-            .single();
+          const { data: { user }, error } = await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: data.password,
+          });
           
-          if (error || !user) throw new Error('Invalid email or password');
+          if (error) throw error;
+          if (!user) throw new Error('Login failed');
+          
           return user;
         }
 
         case 'register': {
-          const { data: newUser, error } = await supabase
-            .from('profiles')
-            .insert([{
-              name: data.name,
-              email: data.email,
-              phone: data.phone,
-              password: data.password,
-              role: 'user'
-            }])
-            .select()
-            .single();
+          // 1. Sign up user in Supabase Auth
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: data.email,
+            password: data.password,
+            options: {
+              data: {
+                name: data.name,
+                phone: data.phone,
+                role: 'user'
+              }
+            }
+          });
           
+          if (authError) throw authError;
+
+          // Supabase unique email check: If user exists but identities is empty, it means already registered
+          if (authData.user && authData.user.identities && authData.user.identities.length === 0) {
+             throw new Error('This email is already registered. Please login or reset your password.');
+          }
+          
+          return authData.user;
+        }
+
+        case 'verifyOtp': {
+          const { data: { session }, error } = await supabase.auth.verifyOtp({
+            email: data.email,
+            token: data.token,
+            type: 'signup'
+          });
+
           if (error) throw error;
-          return newUser;
+          if (!session) throw new Error('Verification failed');
+          
+          return session.user;
         }
 
         case 'addProduct': {
@@ -348,6 +366,33 @@ export const api = {
             }
           }
           
+          return true;
+        }
+
+        case 'forgotPassword': {
+          // This triggers the Reset Password email (using {{ .Token }} for OTP)
+          const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+            redirectTo: `${window.location.origin}/forgot-password?step=reset`,
+          });
+          if (error) throw error;
+          return true;
+        }
+
+        case 'verifyRecoveryOtp': {
+          const { data: { session }, error } = await supabase.auth.verifyOtp({
+            email: data.email,
+            token: data.token,
+            type: 'recovery'
+          });
+          if (error) throw error;
+          return session;
+        }
+
+        case 'resetPassword': {
+          const { error } = await supabase.auth.updateUser({
+            password: data.password
+          });
+          if (error) throw error;
           return true;
         }
 

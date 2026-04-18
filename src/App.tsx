@@ -28,6 +28,7 @@ import { ReturnPolicy } from './pages/ReturnPolicy';
 import { TermsAndConditions } from './pages/TermsAndConditions';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { ShippingPolicy } from './pages/ShippingPolicy';
+import { ForgotPassword } from './pages/ForgotPassword';
 import { AdminSidebar } from './components/AdminSidebar';
 import { CategoryBar } from './components/CategoryBar';
 
@@ -85,7 +86,7 @@ const AppContent = () => {
       {!isAdminPath && (
         <>
           <Navbar />
-          <CategoryBar />
+          {location.pathname === '/products' && <CategoryBar />}
         </>
       )}
       {isAdminPath && <AdminSidebar />}
@@ -97,6 +98,7 @@ const AppContent = () => {
           <Route path="/cart" element={<Cart />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           
