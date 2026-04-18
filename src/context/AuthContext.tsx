@@ -30,7 +30,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loginTime, setLoginTime] = useState<number | null>(user ? Date.now() : null);
   // If we have a cached user, we can set loading to false immediately to show the UI
   const [loading, setLoading] = useState(!user);
-  const isInitialLoad = useRef(true);
+
+  const updateUserState = (profile: User) => {
+    setUser(profile);
+    setLoginTime(Date.now());
+    localStorage.setItem('tbz_user_profile', JSON.stringify(profile));
+  };
 
   useEffect(() => {
     // 2. Safety Timeout: Force finish loading after 3 seconds no matter what
@@ -38,7 +43,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }, 3000);
 
-    // 3. Single Source of Truth: onAuthStateChange handles INITIAL_SESSION + Dynamic changes
     const fetchProfile = async (sessionUser: any) => {
       try {
         const { data: profile, error } = await supabase
@@ -48,6 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
 
         if (error && error.code === 'PGRST116') {
+          // Verify if we are still supposed to be logged in before creating/updating
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          if (!currentSession) return;
+
           // Profile missing, create it
           const { data: newProfile } = await supabase
             .from('profiles')
@@ -64,6 +72,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             updateUserState(newProfile);
           }
         } else if (profile) {
+          // Verify if we are still supposed to be logged in before updating state
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          if (!currentSession) return;
+          
           updateUserState(profile);
         }
       } catch (e) {
@@ -74,14 +86,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    const updateUserState = (profile: User) => {
-      setUser(profile);
-      setLoginTime(Date.now());
-      localStorage.setItem('tbz_user_profile', JSON.stringify(profile));
-    };
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        // 1. Instant Hydration from metadata (So the name appears immediately)
+        const initialUser: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata.name || 'User',
+          phone: session.user.user_metadata.phone || '',
+          role: session.user.user_metadata.role || 'user',
+          avatar_url: session.user.user_metadata.avatar_url,
+          created_at: session.user.created_at
+        };
+        
+        setUser(initialUser);
+        setLoginTime(Date.now());
+
+        // 2. Background Sync with Profile Table (Detailed data)
         await fetchProfile(session.user);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -106,17 +127,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateUserState(userData);
   };
 
-  const updateUserState = (profile: User) => {
-    setUser(profile);
-    setLoginTime(Date.now());
-    localStorage.setItem('tbz_user_profile', JSON.stringify(profile));
-  };
-
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setLoginTime(null);
-    localStorage.removeItem('tbz_user_profile');
+    try {
+      // 1. Force clear state immediately for instant UI response
+      setUser(null);
+      setLoginTime(null);
+      
+      // 2. Wipe ALL related storage keys
+      localStorage.removeItem('tbz_user_profile');
+      localStorage.removeItem('the-boys-zone-v1-auth'); // Explicitly clear the auth key
+      
+      // 3. Trigger Supabase SignOut
+      await supabase.auth.signOut();
+      
+      toast.success('Logged out successfully');
+    } catch (e) {
+      console.error('Logout error', e);
+      // Fallback: reload the page to be absolutely sure
+      window.location.href = '/';
+    }
   };
 
   const updateUser = (userData: Partial<User>) => {

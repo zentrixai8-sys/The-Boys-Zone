@@ -21,14 +21,41 @@ export const Products = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
+      // 1. Instant Hydration (Cache-First)
+      try {
+        const cached = localStorage.getItem('tbz_shop_cache');
+        if (cached) {
+          const { products: cProducts, categories: cCategories } = JSON.parse(cached);
+          if (cProducts) setProducts(cProducts);
+          if (cCategories && cCategories.length > 0) setCategories(cCategories);
+          if (cProducts || cCategories) setLoading(false);
+        }
+      } catch (e) { console.error('Cache hydration failed', e); }
+
+      // 2. Background Revalidation
       try {
         const [productsRes, categoriesData] = await Promise.all([
           api.request('getProducts'),
           api.request('getCategories')
         ]);
-        setProducts(productsRes.products || []);
-        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        
+        const freshProducts = productsRes.products || [];
+        const freshCategories = Array.isArray(categoriesData) ? categoriesData : [];
+        
+        setProducts(freshProducts);
+        
+        // Final fallback if absolutely no categories in DB or cache
+        if (freshCategories.length === 0 && categories.length === 0) {
+          const fallbacks = [
+            { category_id: '1', category_name: 'T-Shirts' },
+            { category_id: '2', category_name: 'Jeans' },
+            { category_id: '3', category_name: 'Hoodies' },
+            { category_id: '4', category_name: 'Accessories' }
+          ];
+          setCategories(fallbacks);
+        } else if (freshCategories.length > 0) {
+          setCategories(freshCategories);
+        }
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {

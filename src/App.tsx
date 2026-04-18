@@ -36,8 +36,17 @@ const ProtectedRoute = ({ children, adminOnly = false }: { children: React.React
   const { user, isAdmin, loading } = useAuth();
   
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505]">
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+        <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-b-indigo-300 rounded-full animate-spin-reverse opacity-50" />
+      </div>
+      <div className="mt-8 flex flex-col items-center">
+        <h2 className="text-white text-lg font-black tracking-[0.2em] uppercase animate-pulse">The Boys Zone</h2>
+        <div className="h-1 w-32 bg-white/5 rounded-full mt-4 overflow-hidden">
+          <div className="h-full bg-indigo-500 animate-shimmer-progress" />
+        </div>
+      </div>
     </div>
   );
   
@@ -76,8 +85,17 @@ const AppContent = () => {
   }, [isAdmin]);
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505]">
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+        <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-b-indigo-300 rounded-full animate-spin-reverse opacity-50" />
+      </div>
+      <div className="mt-8 flex flex-col items-center">
+        <h2 className="text-white text-lg font-black tracking-[0.2em] uppercase animate-pulse">The Boys Zone</h2>
+        <div className="h-1 w-32 bg-white/5 rounded-full mt-4 overflow-hidden">
+          <div className="h-full bg-indigo-500 animate-shimmer-progress" />
+        </div>
+      </div>
     </div>
   );
 

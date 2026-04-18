@@ -187,3 +187,21 @@
     background: transparent;
   }
 }
+
+@keyframes shimmer-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.animate-shimmer-progress {
+  animation: shimmer-progress 2s infinite linear;
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 1.5s infinite linear;
+}

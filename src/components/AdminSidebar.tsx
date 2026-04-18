@@ -313,7 +313,7 @@ export const AdminSidebar = () => {
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 p-8 pt-20">
-                 <p className="text-2xl font-black text-white">{user.name}</p>
+                 <p className="text-2xl font-black text-white">{user.name || 'User'}</p>
                  <p className="text-indigo-400 font-bold uppercase tracking-[0.3em] text-[10px]">Current Profile Picture</p>
               </div>
             </motion.div>

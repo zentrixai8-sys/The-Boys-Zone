@@ -115,7 +115,9 @@ export const Profile = () => {
       ].filter(Boolean).join(' | ');
 
       const submitData = {
-        ...formData,
+        name: formData.name,
+        phone: formData.phone,
+        avatar_url: formData.avatar_url,
         address: joinedAddress
       };
 

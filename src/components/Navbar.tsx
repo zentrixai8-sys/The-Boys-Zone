@@ -179,13 +179,13 @@ export const Navbar = () => {
                       <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-sm font-bold text-indigo-700">
-                        {user.name.charAt(0).toUpperCase()}
+                        {user.name?.charAt(0).toUpperCase() || 'U'}
                       </span>
                     )}
                   </div>
                   <div className="hidden md:flex flex-col items-start pr-1">
                     <span className="text-[14px] font-bold text-gray-800 leading-tight">
-                      {user.name.toUpperCase()}
+                      {(user.name || 'User').toUpperCase()}
                     </span>
                     {loginTime && (
                       <span className="text-[10px] font-semibold text-emerald-600 tracking-widest uppercase">
@@ -203,7 +203,7 @@ export const Navbar = () => {
                             <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-xl font-bold text-indigo-700">
-                              {user.name.charAt(0).toUpperCase()}
+                              {user.name?.charAt(0).toUpperCase() || 'U'}
                             </span>
                           )}
                         </div>

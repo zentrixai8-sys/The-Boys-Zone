@@ -12,6 +12,21 @@ const getRatingBase = (productId: string) => {
   return { count, avg: baseAvg };
 };
 
+// Caching Helpers
+const SHOP_CACHE_KEY = 'tbz_shop_cache';
+const getCachedData = () => {
+  try {
+    const cached = localStorage.getItem(SHOP_CACHE_KEY);
+    return cached ? JSON.parse(cached) : null;
+  } catch { return null; }
+};
+const saveToCache = (data: any) => {
+  try {
+    const current = getCachedData() || {};
+    localStorage.setItem(SHOP_CACHE_KEY, JSON.stringify({ ...current, ...data, timestamp: Date.now() }));
+  } catch (e) { console.error('Cache save failed', e); }
+};
+
 export const api = {
   async request(action: string, data: any = {}) {
     try {
@@ -24,18 +39,21 @@ export const api = {
           if (pError) throw pError;
 
           const { data: reviews, error: rError } = await supabase
-            .from('reviews')
-            .select('product_id, rating');
-          if (rError) throw rError;
+            .from('review_summaries') // Using a summary view for speed if available, fallback to reviews
+            .select('*');
+          
+          let reviewsData = reviews;
+          if (rError) {
+             const { data: rawReviews } = await supabase.from('reviews').select('product_id, rating');
+             reviewsData = rawReviews;
+          }
 
           const productsWithRatings = products?.map(product => {
-            const productReviews = reviews?.filter(r => r.product_id === product.product_id) || [];
+            const productReviews = reviewsData?.filter(r => r.product_id === product.product_id) || [];
             const realReviewCount = productReviews.length;
-            const realRatingSum = productReviews.reduce((sum, r) => sum + r.rating, 0);
+            const realRatingSum = productReviews.reduce((sum, r) => sum + (r.rating || 0), 0);
 
-            // Simulation: 200-300 base reviews
             const { count: baseCount, avg: baseAvg } = getRatingBase(product.product_id);
-            
             const totalCount = baseCount + realReviewCount;
             const finalAvg = ((baseAvg * baseCount) + realRatingSum) / totalCount;
 
@@ -46,7 +64,9 @@ export const api = {
             };
           });
 
-          return { products: productsWithRatings || [] };
+          const result = { products: productsWithRatings || [] };
+          saveToCache({ products: result.products });
+          return result;
         }
 
         case 'getBestSellers': {
@@ -128,6 +148,7 @@ export const api = {
             .from('categories')
             .select('*');
           if (error) throw error;
+          saveToCache({ categories });
           return categories;
         }
 
@@ -344,6 +365,17 @@ export const api = {
             .update(updateData)
             .eq('id', id);
           if (error) throw error;
+          
+          // Sync DP/name with auth metadata for instant UI hydration on refresh
+          if (updateData.avatar_url !== undefined || updateData.name || updateData.phone) {
+            await supabase.auth.updateUser({
+              data: {
+                name: updateData.name,
+                phone: updateData.phone,
+                avatar_url: updateData.avatar_url
+              }
+            });
+          }
           
           // Sync with customers table
           if (updateData.name || updateData.phone || updateData.address) {

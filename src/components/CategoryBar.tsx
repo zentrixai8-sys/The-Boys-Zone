@@ -63,7 +63,7 @@ export const CategoryBar = () => {
         {/* Categories Container */}
         <div 
           ref={scrollRef}
-          className="flex items-start gap-4 sm:gap-12 py-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+          className="flex items-start justify-center gap-4 sm:gap-12 py-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
         >
           {/* "All" Category */}
           <motion.div
