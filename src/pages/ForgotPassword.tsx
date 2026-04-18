@@ -90,13 +90,13 @@ export const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-[#050505] py-20 px-6">
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-slate-50 py-20 px-6">
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 scale-105"
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-10 scale-105"
         style={{ backgroundImage: 'url("/login_bg.png")' }}
       />
-      <div className="absolute inset-0 z-10 bg-gradient-to-tr from-black via-transparent to-indigo-900/20" />
-      <div className="absolute inset-0 z-10 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 z-10 bg-gradient-to-tr from-white via-white/40 to-indigo-50/50" />
+      <div className="absolute inset-0 z-10 backdrop-blur-[1px]" />
 
       <div className="relative z-20 w-full max-w-[460px] perspective-2000">
         <AnimatePresence mode="wait">
@@ -106,51 +106,48 @@ export const ForgotPassword = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="glass-premium pt-10 pb-12 px-8 rounded-[32px] relative text-center"
+              className="bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] pt-10 pb-12 px-8 rounded-[40px] relative text-center"
             >
-              <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 mx-auto border border-white/10 shadow-3d-strong">
-                <KeyRound className="w-8 h-8 text-white animate-pulse" />
+              <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-xl shadow-indigo-100 border border-white/50">
+                <KeyRound className="w-8 h-8 text-white" />
               </div>
 
-              <h1 className="text-3xl font-serif font-black text-white mb-2 tracking-tight uppercase">
+              <h1 className="text-3xl font-serif font-black text-slate-900 mb-2 tracking-tight uppercase">
                 Forgot Password
               </h1>
-              <p className="text-white/40 font-medium text-xs tracking-widest uppercase mb-8">
+              <p className="text-slate-500 font-bold text-[10px] tracking-[0.2em] uppercase mb-8 opacity-60">
                 Request a recovery code
               </p>
 
               <form onSubmit={handleSendOtp} className="space-y-6">
                 <div className="group/input relative">
-                  <div className="absolute inset-0 bg-indigo-500/10 rounded-xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
+                  <div className="absolute inset-0 bg-indigo-500/5 rounded-2xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
                   <div className="relative flex items-center">
-                    <Mail className="absolute left-4 w-5 h-5 text-white/20 group-focus-within/input:text-indigo-400 transition-colors" />
+                    <Mail className="absolute left-4 w-5 h-5 text-slate-300 group-focus-within/input:text-indigo-600 transition-colors" />
                     <input 
                       type="email" 
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all text-[14px] font-medium"
+                      className="w-full pl-12 pr-4 py-4.5 bg-gray-50/50 border border-gray-100 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600/30 focus:bg-white focus:shadow-[0_0_40px_rgba(99,102,241,0.08)] transition-all text-sm font-bold"
                       placeholder="Email Address"
                     />
                   </div>
                 </div>
 
                 <motion.button 
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.01, translateY: -2 }}
+                  whileTap={{ scale: 0.99 }}
                   type="submit" 
                   disabled={loading}
-                  className="w-full relative group/btn overflow-hidden rounded-xl py-4 flex items-center justify-center gap-3 disabled:opacity-50"
+                  className="w-full bg-slate-900 text-white py-4.5 rounded-2xl text-[13px] font-black uppercase tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3 disabled:opacity-50"
                 >
-                  <div className="absolute inset-0 bg-indigo-600 group-hover:bg-indigo-500 transition-colors" />
-                  <span className="relative z-10 text-white text-[14px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Recovery Code <ArrowRight className="w-5 h-5" /></>}
-                  </span>
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Recovery Code <ArrowRight className="w-5 h-5" /></>}
                 </motion.button>
               </form>
 
-              <div className="mt-10 pt-8 border-t border-white/5 text-center">
-                <Link to="/login" className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors">
+              <div className="mt-10 pt-8 border-t border-slate-100 text-center">
+                <Link to="/login" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-600 transition-colors">
                   ← Back to Login
                 </Link>
               </div>
@@ -161,16 +158,16 @@ export const ForgotPassword = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="glass-premium pt-8 pb-10 px-6 md:pt-10 md:pb-12 md:px-12 rounded-[32px] relative text-center"
+              className="bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] pt-8 pb-10 px-6 md:pt-10 md:pb-12 md:px-12 rounded-[40px] relative text-center"
             >
-              <div className="w-16 h-16 bg-indigo-600/10 rounded-2xl flex items-center justify-center mb-6 mx-auto border border-indigo-500/20 shadow-glow-soft">
-                <CheckCircle2 className="w-8 h-8 text-indigo-400" />
+              <div className="w-20 h-20 bg-indigo-600 rounded-full flex items-center justify-center mb-6 mx-auto shadow-xl shadow-indigo-100">
+                <CheckCircle2 className="w-10 h-10 text-white" />
               </div>
               
-              <h1 className="text-3xl font-serif font-black text-white mb-2 tracking-tight uppercase">Verify Code</h1>
-              <p className="text-white/40 font-medium text-xs mb-8">
+              <h1 className="text-3xl font-serif font-black text-slate-900 mb-2 tracking-tight uppercase">Verify Code</h1>
+              <p className="text-slate-500 font-bold text-[11px] mb-8 uppercase tracking-widest opacity-60">
                 Enter 6-digit code sent to <br/>
-                <span className="text-indigo-400 font-bold">{email}</span>
+                <span className="text-indigo-600 font-black">{email}</span>
               </p>
 
               <form onSubmit={handleVerifyOtpOnly} className="space-y-8">
@@ -184,17 +181,17 @@ export const ForgotPassword = () => {
                       value={digit}
                       onChange={(e) => handleOtpChange(index, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(index, e)}
-                      className="w-11 h-14 md:w-12 md:h-16 bg-white/[0.03] border border-white/10 rounded-xl text-center text-xl font-black text-indigo-400 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
+                      className="w-11 h-14 md:w-12 md:h-16 bg-gray-50 border border-gray-100 rounded-2xl text-center text-xl font-black text-indigo-600 focus:outline-none focus:border-indigo-600/30 focus:bg-white focus:shadow-lg transition-all"
                     />
                   ))}
                 </div>
 
                 <motion.button 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.01, translateY: -2 }}
+                  whileTap={{ scale: 0.99 }}
                   type="submit" 
                   disabled={loading}
-                  className="w-full bg-indigo-600 text-white py-4 rounded-xl text-sm font-black uppercase tracking-[0.2em] hover:bg-indigo-500 transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
+                  className="w-full bg-slate-900 text-white py-4.5 rounded-2xl text-[13px] font-black uppercase tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3 disabled:opacity-50"
                 >
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify Code'}
                 </motion.button>
@@ -202,7 +199,7 @@ export const ForgotPassword = () => {
 
               <button
                 onClick={() => setStep('email')}
-                className="mt-8 text-[10px] uppercase font-black tracking-[0.2em] text-white/20 hover:text-white transition-colors"
+                className="mt-8 text-[10px] uppercase font-black tracking-[0.2em] text-slate-400 hover:text-indigo-600 transition-colors"
               >
                 ← Change Email
               </button>
@@ -213,37 +210,37 @@ export const ForgotPassword = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="glass-premium pt-10 pb-12 px-8 rounded-[32px] relative text-center"
+              className="bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] pt-10 pb-12 px-8 rounded-[40px] relative text-center"
             >
-              <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 mx-auto border border-white/10 shadow-3d-strong">
-                <ShieldCheck className="w-8 h-8 text-indigo-400 animate-bounce" />
+              <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-xl shadow-indigo-100">
+                <ShieldCheck className="w-8 h-8 text-white" />
               </div>
 
-              <h1 className="text-3xl font-serif font-black text-white mb-2 tracking-tight uppercase">
+              <h1 className="text-3xl font-serif font-black text-slate-900 mb-2 tracking-tight uppercase">
                 New Password
               </h1>
-              <p className="text-white/40 font-medium text-xs tracking-widest uppercase mb-8">
+              <p className="text-slate-500 font-bold text-[10px] tracking-[0.2em] uppercase mb-8 opacity-60">
                 Set your new secure access code
               </p>
 
               <form onSubmit={handleUpdatePassword} className="space-y-6">
                 <div className="group/input relative">
-                  <div className="absolute inset-0 bg-indigo-500/10 rounded-xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
+                  <div className="absolute inset-0 bg-indigo-500/5 rounded-2xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
                   <div className="relative flex items-center">
-                    <Lock className="absolute left-4 w-5 h-5 text-white/20 group-focus-within/input:text-indigo-400 transition-colors" />
+                    <Lock className="absolute left-4 w-5 h-5 text-slate-300 group-focus-within/input:text-indigo-600 transition-colors" />
                     <input 
                       type={showPassword ? "text" : "password"} 
                       required
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full pl-12 pr-12 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all text-[14px] font-medium"
+                      className="w-full pl-12 pr-12 py-4.5 bg-gray-50/50 border border-gray-100 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600/30 focus:bg-white focus:shadow-[0_0_40px_rgba(99,102,241,0.08)] transition-all text-sm font-bold"
                       placeholder="Enter New Password"
                       autoFocus
                     />
                     <button 
                       type="button" 
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 text-white/20 hover:text-white transition-colors"
+                      className="absolute right-4 text-slate-300 hover:text-indigo-600 transition-all focus:outline-none"
                     >
                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -251,16 +248,13 @@ export const ForgotPassword = () => {
                 </div>
 
                 <motion.button 
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.01, translateY: -2 }}
+                  whileTap={{ scale: 0.99 }}
                   type="submit" 
                   disabled={loading}
-                  className="w-full relative group/btn overflow-hidden rounded-xl py-4 flex items-center justify-center gap-3 disabled:opacity-50"
+                  className="w-full bg-slate-900 text-white py-4.5 rounded-2xl text-[13px] font-black uppercase tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3 disabled:opacity-50"
                 >
-                  <div className="absolute inset-0 bg-indigo-600 group-hover:bg-indigo-500 transition-colors" />
-                  <span className="relative z-10 text-white text-[14px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Update Password & Login <CheckCircle2 className="w-5 h-5" /></>}
-                  </span>
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Update Password & Login <CheckCircle2 className="w-5 h-5" /></>}
                 </motion.button>
               </form>
             </motion.div>

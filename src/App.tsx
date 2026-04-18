@@ -36,15 +36,15 @@ const ProtectedRoute = ({ children, adminOnly = false }: { children: React.React
   const { user, isAdmin, loading } = useAuth();
   
   if (loading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505]">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
       <div className="relative">
-        <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-        <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-b-indigo-300 rounded-full animate-spin-reverse opacity-50" />
+        <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-b-indigo-400 rounded-full animate-spin-reverse opacity-30" />
       </div>
       <div className="mt-8 flex flex-col items-center">
-        <h2 className="text-white text-lg font-black tracking-[0.2em] uppercase animate-pulse">The Boys Zone</h2>
-        <div className="h-1 w-32 bg-white/5 rounded-full mt-4 overflow-hidden">
-          <div className="h-full bg-indigo-500 animate-shimmer-progress" />
+        <h2 className="text-slate-900 text-lg font-black tracking-[0.2em] uppercase animate-pulse">The Boys Zone</h2>
+        <div className="h-1 w-32 bg-slate-200 rounded-full mt-4 overflow-hidden">
+          <div className="h-full bg-indigo-600 animate-shimmer-progress" />
         </div>
       </div>
     </div>
@@ -85,15 +85,15 @@ const AppContent = () => {
   }, [isAdmin]);
 
   if (loading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505]">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
       <div className="relative">
-        <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-        <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-b-indigo-300 rounded-full animate-spin-reverse opacity-50" />
+        <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-b-indigo-400 rounded-full animate-spin-reverse opacity-30" />
       </div>
       <div className="mt-8 flex flex-col items-center">
-        <h2 className="text-white text-lg font-black tracking-[0.2em] uppercase animate-pulse">The Boys Zone</h2>
-        <div className="h-1 w-32 bg-white/5 rounded-full mt-4 overflow-hidden">
-          <div className="h-full bg-indigo-500 animate-shimmer-progress" />
+        <h2 className="text-slate-900 text-lg font-black tracking-[0.2em] uppercase animate-pulse">The Boys Zone</h2>
+        <div className="h-1 w-32 bg-slate-200 rounded-full mt-4 overflow-hidden">
+          <div className="h-full bg-indigo-600 animate-shimmer-progress" />
         </div>
       </div>
     </div>

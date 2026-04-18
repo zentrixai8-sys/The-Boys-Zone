@@ -93,13 +93,13 @@ export const Register = () => {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-[#050505] py-20 px-6">
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-slate-50 py-20 px-6">
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-30 scale-105"
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-10 scale-105"
         style={{ backgroundImage: 'url("/login_bg.png")' }}
       />
-      <div className="absolute inset-0 z-10 bg-gradient-to-tr from-black via-transparent to-indigo-900/20" />
-      <div className="absolute inset-0 z-10 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 z-10 bg-gradient-to-tr from-white via-white/40 to-indigo-50/50" />
+      <div className="absolute inset-0 z-10 backdrop-blur-[1px]" />
 
       <div className="relative z-20 w-full max-w-[460px] perspective-2000">
         <AnimatePresence mode="wait">
@@ -109,78 +109,78 @@ export const Register = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="glass-premium pt-6 pb-8 px-6 md:pt-8 md:pb-10 md:px-10 rounded-[32px] relative"
+              className="bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] pt-6 pb-8 px-6 md:pt-8 md:pb-10 md:px-10 rounded-[40px] relative scrollbar-hide"
             >
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-indigo-600/10 rounded-2xl flex items-center justify-center mb-4 mx-auto border border-indigo-500/20 shadow-3d-strong">
-                  <User className="w-8 h-8 text-indigo-400" />
+                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-xl shadow-indigo-100 border border-white/50">
+                  <User className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl font-serif font-black text-white mb-2 tracking-tight uppercase">Join Us</h1>
-                <p className="text-white/40 font-medium text-xs tracking-widest uppercase">Create your premium account</p>
+                <h1 className="text-3xl font-serif font-black text-slate-900 mb-2 tracking-tight uppercase">Join Us</h1>
+                <p className="text-slate-500 font-bold text-[10px] tracking-[0.2em] uppercase opacity-60">Create your premium account</p>
               </div>
 
               <form onSubmit={handleRegisterSubmit} className="space-y-4">
                 <div className="group/input relative">
-                  <div className="absolute inset-0 bg-indigo-500/10 rounded-xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
+                  <div className="absolute inset-0 bg-indigo-500/5 rounded-2xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
                   <div className="relative flex items-center">
-                    <User className="absolute left-4 w-5 h-5 text-white/20 group-focus-within/input:text-indigo-400 transition-colors" />
+                    <User className="absolute left-4 w-5 h-5 text-slate-300 group-focus-within/input:text-indigo-600 transition-colors" />
                     <input 
                       type="text" 
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] focus:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all text-sm font-medium"
+                      className="w-full pl-12 pr-4 py-4.5 bg-gray-50/50 border border-gray-100 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600/30 focus:bg-white focus:shadow-[0_0_40px_rgba(99,102,241,0.08)] transition-all text-sm font-bold"
                       placeholder="Full Name"
                     />
                   </div>
                 </div>
 
                 <div className="group/input relative">
-                  <div className="absolute inset-0 bg-indigo-500/10 rounded-xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
+                  <div className="absolute inset-0 bg-indigo-500/5 rounded-2xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
                   <div className="relative flex items-center">
-                    <Mail className="absolute left-4 w-5 h-5 text-white/20 group-focus-within/input:text-indigo-400 transition-colors" />
+                    <Mail className="absolute left-4 w-5 h-5 text-slate-300 group-focus-within/input:text-indigo-600 transition-colors" />
                     <input 
                       type="email" 
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] focus:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all text-sm font-medium"
+                      className="w-full pl-12 pr-4 py-4.5 bg-gray-50/50 border border-gray-100 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600/30 focus:bg-white focus:shadow-[0_0_40px_rgba(99,102,241,0.08)] transition-all text-sm font-bold"
                       placeholder="Email Address"
                     />
                   </div>
                 </div>
 
                 <div className="group/input relative">
-                  <div className="absolute inset-0 bg-indigo-500/10 rounded-xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
+                  <div className="absolute inset-0 bg-indigo-500/5 rounded-2xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
                   <div className="relative flex items-center">
-                    <Phone className="absolute left-4 w-5 h-5 text-white/20 group-focus-within/input:text-indigo-400 transition-colors" />
+                    <Phone className="absolute left-4 w-5 h-5 text-slate-300 group-focus-within/input:text-indigo-600 transition-colors" />
                     <input 
                       type="tel" 
                       required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] focus:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all text-sm font-medium"
+                      className="w-full pl-12 pr-4 py-4.5 bg-gray-50/50 border border-gray-100 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600/30 focus:bg-white focus:shadow-[0_0_40px_rgba(99,102,241,0.08)] transition-all text-sm font-bold"
                       placeholder="Phone Number"
                     />
                   </div>
                 </div>
 
                 <div className="group/input relative">
-                  <div className="absolute inset-0 bg-indigo-500/10 rounded-xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
+                  <div className="absolute inset-0 bg-indigo-500/5 rounded-2xl blur-xl opacity-0 group-focus-within/input:opacity-100 transition-all duration-500" />
                   <div className="relative flex items-center">
-                    <Lock className="absolute left-4 w-5 h-5 text-white/20 group-focus-within/input:text-indigo-400 transition-colors" />
+                    <Lock className="absolute left-4 w-5 h-5 text-slate-300 group-focus-within/input:text-indigo-600 transition-colors" />
                     <input 
                       type={showPassword ? "text" : "password"} 
                       required
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full pl-12 pr-12 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] focus:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all text-sm font-medium"
+                      className="w-full pl-12 pr-12 py-4.5 bg-gray-50/50 border border-gray-100 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600/30 focus:bg-white focus:shadow-[0_0_40px_rgba(99,102,241,0.08)] transition-all text-sm font-bold"
                       placeholder="Password"
                     />
                     <button 
                       type="button" 
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 text-indigo-400/60 hover:text-indigo-400 transition-all focus:outline-none"
+                      className="absolute right-4 text-slate-300 hover:text-indigo-600 transition-all focus:outline-none"
                     >
                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -188,20 +188,20 @@ export const Register = () => {
                 </div>
 
                 <motion.button 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.01, translateY: -2 }}
+                  whileTap={{ scale: 0.99 }}
                   type="submit" 
                   disabled={loading}
-                  className="w-full bg-indigo-600 text-white py-4 rounded-xl text-sm font-black uppercase tracking-[0.2em] hover:bg-indigo-500 transition-colors flex items-center justify-center gap-3 mt-4 disabled:opacity-50"
+                  className="w-full bg-slate-900 text-white py-4.5 rounded-2xl text-[13px] font-black uppercase tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3 mt-4 disabled:opacity-50"
                 >
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send OTP Code <ArrowRight className="w-5 h-5" /></>}
                 </motion.button>
               </form>
 
               <div className="mt-8 text-center">
-                <p className="text-[11px] text-white/30 font-bold uppercase tracking-[0.1em]">
+                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-[0.1em]">
                   Already have an account?{' '}
-                  <Link to="/login" className="text-indigo-400 font-black hover:text-indigo-300 transition-colors ml-1">
+                  <Link to="/login" className="text-indigo-600 font-black hover:text-indigo-800 transition-colors ml-1">
                     Sign In
                   </Link>
                 </p>
@@ -213,15 +213,15 @@ export const Register = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="glass-premium pt-8 pb-10 px-6 md:pt-10 md:pb-12 md:px-12 rounded-[32px] relative text-center"
+              className="bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] pt-8 pb-10 px-6 md:pt-10 md:pb-12 md:px-12 rounded-[40px] relative text-center"
             >
-              <div className="w-20 h-20 bg-indigo-600/10 rounded-full flex items-center justify-center mb-6 mx-auto border border-indigo-500/20 shadow-glow-soft">
-                <CheckCircle2 className="w-10 h-10 text-indigo-400" />
+              <div className="w-20 h-20 bg-indigo-600 rounded-full flex items-center justify-center mb-6 mx-auto shadow-xl shadow-indigo-100">
+                <CheckCircle2 className="w-10 h-10 text-white" />
               </div>
-              <h1 className="text-3xl font-serif font-black text-white mb-3 tracking-tight uppercase">Verify OTP</h1>
-              <p className="text-white/40 font-medium text-xs mb-8">
+              <h1 className="text-3xl font-serif font-black text-slate-900 mb-3 tracking-tight uppercase">Verify OTP</h1>
+              <p className="text-slate-500 font-bold text-[11px] mb-8 uppercase tracking-widest opacity-60">
                 Enter the 6-digit code sent to <br/>
-                <span className="text-indigo-400 font-bold">{formData.email}</span>
+                <span className="text-indigo-600 font-black">{formData.email}</span>
               </p>
 
               <form onSubmit={handleVerifyOtp}>
@@ -235,17 +235,17 @@ export const Register = () => {
                       value={digit}
                       onChange={(e) => handleOtpChange(index, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(index, e)}
-                      className="w-12 h-14 md:w-14 md:h-16 bg-white/[0.03] border border-white/10 rounded-xl text-center text-2xl font-black text-indigo-400 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
+                      className="w-12 h-14 md:w-14 md:h-16 bg-gray-50 border border-gray-100 rounded-2xl text-center text-2xl font-black text-indigo-600 focus:outline-none focus:border-indigo-600/30 focus:bg-white focus:shadow-lg transition-all"
                     />
                   ))}
                 </div>
 
                 <motion.button 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.01, translateY: -2 }}
+                  whileTap={{ scale: 0.99 }}
                   type="submit" 
                   disabled={loading}
-                  className="w-full bg-indigo-600 text-white py-4 rounded-xl text-sm font-black uppercase tracking-[0.2em] hover:bg-indigo-500 transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
+                  className="w-full bg-slate-900 text-white py-4.5 rounded-2xl text-[13px] font-black uppercase tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3 disabled:opacity-50"
                 >
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify & Complete'}
                 </motion.button>
@@ -255,7 +255,7 @@ export const Register = () => {
                 <button
                   onClick={handleResendOtp}
                   disabled={resendTimer > 0 || loading}
-                  className="text-xs font-bold uppercase tracking-widest text-white/30 hover:text-indigo-400 disabled:hover:text-white/30 transition-colors"
+                  className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-600 disabled:hover:text-slate-400 transition-colors"
                 >
                   {resendTimer > 0 ? `Resend code in ${resendTimer}s` : 'Resend code'}
                 </button>
@@ -263,7 +263,7 @@ export const Register = () => {
 
               <button
                 onClick={() => setStep('form')}
-                className="mt-6 text-[10px] uppercase font-black tracking-[0.2em] text-white/20 hover:text-white transition-colors"
+                className="mt-6 text-[10px] uppercase font-black tracking-[0.2em] text-slate-300 hover:text-slate-900 transition-colors"
               >
                 ← Back to registration
               </button>
