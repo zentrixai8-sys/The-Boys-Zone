@@ -11,7 +11,7 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -51,6 +51,29 @@ export const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // --- Hardcoded Admin Bypass ---
+    if (email.toLowerCase() === 'admin@test.com' && password === 'admin123') {
+      console.warn('⚡ Admin Bypass Activated');
+      const bypassUser = {
+        id: 'tbz-hardcoded-admin-id',
+        email: 'admin@test.com',
+        name: 'The Boys Zone Admin',
+        phone: '9617628157',
+        role: 'admin',
+        created_at: new Date().toISOString()
+      };
+      
+      // @ts-ignore
+      login(bypassUser);
+      toast.success('Admin Bypass Successful! Welcome back.');
+      navigate('/admin');
+      setLoading(false);
+      return;
+    }
+    
+    console.log('Attempting login for:', email);
+    
     try {
       const rawUser = await api.request('login', { email, password });
       const role = rawUser.user_metadata?.role || 'user';
