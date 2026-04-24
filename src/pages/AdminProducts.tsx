@@ -62,13 +62,13 @@ export const AdminProducts = () => {
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+      toast.error('Please upload an image or video file');
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size should be less than 5MB');
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('File size should be less than 20MB');
       return;
     }
 
@@ -157,8 +157,22 @@ export const AdminProducts = () => {
     const file = e.target.files?.[0];
     if (!file || activeVariantIdx === null) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+    const currentVariants = [...(editingProduct?.variants || [])];
+    const targetVariant = currentVariants[activeVariantIdx];
+    const currentImages = targetVariant.images || (targetVariant.colorImage ? [targetVariant.colorImage] : []);
+
+    if (currentImages.length >= 3) {
+      toast.error('Maximum 3 photos allowed per variant');
+      return;
+    }
+
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+      toast.error('Please upload an image or video file');
+      return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('File size should be less than 20MB');
       return;
     }
 
@@ -173,11 +187,12 @@ export const AdminProducts = () => {
         path: fileName
       });
 
-      const currentVariants = [...(editingProduct?.variants || [])];
-      currentVariants[activeVariantIdx].colorImage = publicUrl;
-      setEditingProduct({ ...editingProduct, variants: currentVariants } as any);
+      targetVariant.images = [...currentImages, publicUrl];
+      // Keep colorImage updated with the first image for backward compatibility
+      targetVariant.colorImage = targetVariant.images[0];
       
-      toast.success('Variant image uploaded!');
+      setEditingProduct({ ...editingProduct, variants: currentVariants } as any);
+      toast.success('Variant photo uploaded!');
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload variant image.');
@@ -186,6 +201,7 @@ export const AdminProducts = () => {
       setActiveVariantIdx(null);
     }
   };
+
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -564,16 +580,24 @@ export const AdminProducts = () => {
                               </div>
                             </div>
                             <div className="space-y-2 col-span-2 border-t border-black/5 pt-4">
-                              <label className="text-[10px] font-bold uppercase tracking-widest text-black/40">Variant Photo</label>
-                              <div className="flex items-center gap-4">
-                                {variant.colorImage ? (
-                                  <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-black/5 group">
-                                    <img src={variant.colorImage} alt="" className="w-full h-full object-cover" />
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-black/40">Variant Photos (Max 3)</label>
+                              <div className="flex flex-wrap gap-3">
+                                {variant.images?.map((img, imgIdx) => (
+                                  <div key={imgIdx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-black/5 group">
+                                    {img.match(/\.(mp4|webm|ogg|mov)$/i) || img.includes('video') ? (
+                                      <video src={img} className="w-full h-full object-cover" muted autoPlay loop />
+                                    ) : (
+                                      <img src={img} alt="" className="w-full h-full object-cover" />
+                                    )}
+
+
                                     <button
                                       type="button"
                                       onClick={() => {
                                         const v = [...(editingProduct?.variants || [])];
-                                        v[vIdx].colorImage = '';
+                                        const newImgs = (v[vIdx].images || []).filter((_, i) => i !== imgIdx);
+                                        v[vIdx].images = newImgs;
+                                        v[vIdx].colorImage = newImgs[0] || '';
                                         setEditingProduct({ ...editingProduct, variants: v } as any);
                                       }}
                                       className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
@@ -581,7 +605,9 @@ export const AdminProducts = () => {
                                       <Trash2 className="w-4 h-4" />
                                     </button>
                                   </div>
-                                ) : (
+                                ))}
+                                
+                                {(!variant.images || variant.images.length < 3) && (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -591,14 +617,18 @@ export const AdminProducts = () => {
                                     className="w-20 h-20 bg-white border-2 border-dashed border-black/10 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-black/5 transition-colors"
                                   >
                                     <Plus className="w-4 h-4 text-black/20" />
-                                    <span className="text-[8px] font-black uppercase text-black/40">Upload</span>
+                                    <span className="text-[8px] font-black uppercase text-black/40">Add Photo</span>
                                   </button>
                                 )}
-                                <div className="flex-1">
-                                  <p className="text-[10px] text-black/40 font-medium leading-tight">This photo will show when the customer selects this color.</p>
+                                
+                                <div className="flex-1 min-w-[120px]">
+                                  <p className="text-[9px] text-black/40 font-bold uppercase tracking-wider leading-tight">
+                                    Upload up to 3 photos for this color variant.
+                                  </p>
                                 </div>
                               </div>
                             </div>
+
                          </div>
                        </div>
                      ))}
@@ -610,7 +640,7 @@ export const AdminProducts = () => {
                   ref={variantFileInputRef}
                   onChange={handleVariantFileChange}
                   className="hidden"
-                  accept="image/*"
+                  accept="image/*,video/*"
                 />
 
                 <button

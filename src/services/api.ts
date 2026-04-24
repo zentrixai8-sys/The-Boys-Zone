@@ -329,13 +329,175 @@ export const api = {
              quantity: item.quantity,
              price: item.price,
              item_total: item.price * item.quantity,
-             pdf_url: data.pdf_url || null
+             pdf_url: data.pdf_url || null,
+             payment_method: data.payment_method || 'Cash'
           }));
           
           const { error } = await supabase
             .from('store_sales')
             .insert(itemsData);
             
+          if (error) throw error;
+          return true;
+        }
+
+        case 'getTodaysSales': {
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+
+          const { data: rows, error } = await supabase
+            .from('store_sales')
+            .select('*')
+            .gte('created_at', todayStart.toISOString())
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+
+          // Group by invoice_id
+          const invoiceMap = new Map<string, any>();
+          for (const row of (rows || [])) {
+            if (!invoiceMap.has(row.invoice_id)) {
+              invoiceMap.set(row.invoice_id, {
+                id: row.invoice_id,
+                customer: row.customer_name || 'Walk-in',
+                mobile: row.customer_mobile || 'N/A',
+                time: new Date(row.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+                total: 0,
+                itemsCount: 0,
+                pdf_url: row.pdf_url || null,
+                payment_method: row.payment_method || 'Cash',
+              });
+            }
+            const inv = invoiceMap.get(row.invoice_id);
+            inv.total += Number(row.item_total) || 0;
+            inv.itemsCount += 1;
+          }
+          return Array.from(invoiceMap.values());
+        }
+
+        case 'createPendingPayment': {
+          const { error } = await supabase
+            .from('pending_payments')
+            .insert([{
+              invoice_id: data.invoice_id,
+              customer_name: data.customer_name,
+              customer_mobile: data.customer_mobile,
+              total_amount: data.total_amount,
+              items_summary: data.items_summary,
+              status: 'pending',
+            }]);
+          if (error) throw error;
+          return true;
+        }
+
+        case 'getPendingPayments': {
+          const { data: rows, error } = await supabase
+            .from('pending_payments')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          return rows || [];
+        }
+
+        case 'markPendingPaid': {
+          const now = new Date().toISOString();
+          const fullUpdate: any = {
+            status: 'paid',
+            paid_at: now,
+            paid_method: data.paid_method || 'Cash',
+          };
+          if (data.amount_received != null) fullUpdate.amount_received = data.amount_received;
+          if (data.proof_url != null) fullUpdate.proof_url = data.proof_url;
+
+          const { error: fullErr } = await supabase
+            .from('pending_payments')
+            .update(fullUpdate)
+            .eq('id', data.id);
+
+          if (fullErr) {
+            const { error: basicErr } = await supabase
+              .from('pending_payments')
+              .update({ status: 'paid', paid_at: now, paid_method: data.paid_method || 'Cash' })
+              .eq('id', data.id);
+            if (basicErr) throw basicErr;
+          }
+
+          // Insert payment log
+          await supabase.from('payment_logs').insert([{
+            pending_payment_id: data.id,
+            customer_name: data.customer_name || null,
+            amount_paid: data.amount_received || data.total_amount,
+            payment_method: data.paid_method || 'Cash',
+            note: 'Full payment received',
+            proof_url: data.proof_url || null,
+            paid_at: now,
+          }]);
+
+          return true;
+        }
+
+        case 'recordPartialPayment': {
+          const updateData: any = { total_amount: data.remaining_amount };
+          if (data.proof_url) updateData.proof_url = data.proof_url;
+
+          const { error } = await supabase
+            .from('pending_payments')
+            .update(updateData)
+            .eq('id', data.id);
+          if (error) throw error;
+
+          // Insert payment log for partial payment
+          await supabase.from('payment_logs').insert([{
+            pending_payment_id: data.id,
+            customer_name: data.customer_name || null,
+            amount_paid: data.amount_received,
+            payment_method: data.paid_method || 'Cash',
+            note: `Partial payment. Remaining: ₹${data.remaining_amount}`,
+            proof_url: data.proof_url || null,
+            paid_at: new Date().toISOString(),
+          }]);
+
+          return true;
+        }
+
+        case 'createPaymentLog': {
+          const { error } = await supabase.from('payment_logs').insert([{
+            pending_payment_id: data.pending_payment_id,
+            customer_name: data.customer_name || null,
+            amount_paid: data.amount_paid,
+            payment_method: data.payment_method || 'Cash',
+            note: data.note || null,
+            proof_url: data.proof_url || null,
+            paid_at: new Date().toISOString(),
+          }]);
+          if (error) throw error;
+          return true;
+        }
+
+        case 'getPaymentLogs': {
+          const { data: logs, error } = await supabase
+            .from('payment_logs')
+            .select('*')
+            .eq('pending_payment_id', data.pending_payment_id)
+            .order('paid_at', { ascending: false });
+          if (error) throw error;
+          return logs || [];
+        }
+
+        case 'getAllPaymentLogs': {
+          const { data: logs, error } = await supabase
+            .from('payment_logs')
+            .select('*')
+            .order('paid_at', { ascending: false });
+          if (error) throw error;
+          return logs || [];
+        }
+
+
+        case 'deletePendingPayment': {
+          const { error } = await supabase
+            .from('pending_payments')
+            .delete()
+            .eq('id', data.id);
           if (error) throw error;
           return true;
         }
@@ -348,6 +510,7 @@ export const api = {
           if (error) throw error;
           return orders;
         }
+
 
         case 'updateOrderStatus': {
           const { error } = await supabase
@@ -435,7 +598,7 @@ export const api = {
           formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
           const response = await axios.post(
-            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/auto/upload`,
             formData
           );
 

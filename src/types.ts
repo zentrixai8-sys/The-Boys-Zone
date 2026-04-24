@@ -12,6 +12,7 @@ export interface User {
 export interface ProductVariant {
   color: string;
   colorImage?: string;
+  images?: string[];
   sizes: {
     size: string;
     stock: number;

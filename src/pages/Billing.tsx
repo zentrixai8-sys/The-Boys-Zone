@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Printer, Search, Loader2, Save, User as UserIcon, Phone, MapPin, ChevronDown, UserPlus, Download, X } from 'lucide-react';
 import { formatPrice, formatDate } from '../lib/utils';
 import toast from 'react-hot-toast';
@@ -32,7 +32,10 @@ export const Billing = () => {
   
   const [items, setItems] = useState<BillItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [todayLogs, setTodayLogs] = useState<{ id: string, customer: string, mobile: string, time: string, total: number, itemsCount: number, pdf_url: string | null }[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'UPI' | 'Mixed' | 'Pending'>('Cash');
+  const [cashPart, setCashPart] = useState('');
+  const [upiPart, setUpiPart] = useState('');
+  const [todayLogs, setTodayLogs] = useState<{ id: string, customer: string, mobile: string, time: string, total: number, itemsCount: number, pdf_url: string | null, payment_method?: string }[]>([]);
 
   useEffect(() => {
     const loadCustomers = async () => {
@@ -351,8 +354,25 @@ export const Billing = () => {
         customer_mobile: mobile || 'N/A',
         items: items,
         total: total,
-        pdf_url: pdfUrl
+        pdf_url: pdfUrl,
+        payment_method: paymentMethod,
+        cash_part: paymentMethod === 'Mixed' ? (parseFloat(cashPart) || 0) : null,
+        upi_part: paymentMethod === 'Mixed' ? (parseFloat(upiPart) || 0) : null,
       });
+
+      // If payment is Pending → also store in pending_payments table for follow-up
+      if (paymentMethod === 'Pending') {
+        const invoiceId = `INV-${Date.now()}`;
+        const itemsSummary = items.map(i => `${i.quantity}x ${i.productName}`).join(', ');
+        await api.request('createPendingPayment', {
+          invoice_id: invoiceId,
+          customer_name: customerName || 'Walk-in',
+          customer_mobile: mobile || 'N/A',
+          total_amount: total,
+          items_summary: itemsSummary,
+        });
+        toast('⏳ Pending payment recorded for follow-up!', { duration: 4000 });
+      }
       
       const newLog = {
         id: Date.now().toString(),
@@ -361,11 +381,13 @@ export const Billing = () => {
         time: new Date().toLocaleTimeString(),
         total: total,
         itemsCount: items.length,
-        pdf_url: pdfUrl
+        pdf_url: pdfUrl,
+        payment_method: paymentMethod
       };
       setTodayLogs(prev => [newLog, ...prev]);
 
       toast.success('Sale logged successfully');
+
       
       setItems([]);
       setCustomerName('');
@@ -377,6 +399,8 @@ export const Billing = () => {
       setProductName('');
       setPrice('');
       setQuantity('1');
+      setCashPart('');
+      setUpiPart('');
 
       setIsProcessing(false);
       setShowInvoiceModal(false);
@@ -407,6 +431,8 @@ export const Billing = () => {
       setProductName('');
       setPrice('');
       setQuantity('1');
+      setCashPart('');
+      setUpiPart('');
     }
   };
 
@@ -749,6 +775,89 @@ export const Billing = () => {
             </div>
           </div>
 
+          {/* Payment Method Selector */}
+          <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-4">
+            <h2 className="text-lg font-bold flex items-center gap-2">💳 Payment Method</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {(['Cash', 'UPI', 'Mixed', 'Pending'] as const).map((method) => {
+                const icons: Record<string, string> = { Cash: '💵', UPI: '📱', Mixed: '🔀', Pending: '⏳' };
+                const colors: Record<string, string> = {
+                  Cash: paymentMethod === method ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-100' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50',
+                  UPI: paymentMethod === method ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-100' : 'border-blue-200 text-blue-700 hover:bg-blue-50',
+                  Mixed: paymentMethod === method ? 'bg-violet-500 text-white border-violet-500 shadow-lg shadow-violet-100' : 'border-violet-200 text-violet-700 hover:bg-violet-50',
+                  Pending: paymentMethod === method ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-100' : 'border-amber-200 text-amber-700 hover:bg-amber-50',
+                };
+                return (
+                  <button
+                    key={method}
+                    onClick={() => setPaymentMethod(method)}
+                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl border-2 font-bold text-sm transition-all duration-200 ${colors[method]}`}
+                  >
+                    <span>{icons[method]}</span> {method}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Mixed Split Inputs — shown only when Mixed is selected */}
+            {paymentMethod === 'Mixed' && (
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-1.5 block">💵 Cash Part</label>
+                    <div className="flex items-center gap-1">
+                      <span className="text-emerald-600 font-bold text-sm">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={cashPart}
+                        onChange={(e) => setCashPart(e.target.value)}
+                        placeholder="0"
+                        className="w-full bg-transparent text-emerald-900 font-black text-lg focus:outline-none border-b-2 border-emerald-300 focus:border-emerald-500 pb-0.5"
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1.5 block">📱 UPI Part</label>
+                    <div className="flex items-center gap-1">
+                      <span className="text-blue-600 font-bold text-sm">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={upiPart}
+                        onChange={(e) => setUpiPart(e.target.value)}
+                        placeholder="0"
+                        className="w-full bg-transparent text-blue-900 font-black text-lg focus:outline-none border-b-2 border-blue-300 focus:border-blue-500 pb-0.5"
+                      />
+                    </div>
+                  </div>
+                </div>
+                {/* Balance indicator */}
+                {(() => {
+                  const c = parseFloat(cashPart) || 0;
+                  const u = parseFloat(upiPart) || 0;
+                  const balanced = Math.abs((c + u) - total) < 0.01 && total > 0;
+                  const diff = total - (c + u);
+                  return (
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold ${
+                      balanced ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                      (c + u) > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                      'bg-black/5 text-black/40'
+                    }`}>
+                      {balanced ? (
+                        <><span>✅</span> SPLIT BALANCED CORRECTLY</>
+                      ) : (c + u) > 0 ? (
+                        <><span>⚠️</span> {diff > 0 ? `₹${diff.toFixed(2)} remaining` : `₹${Math.abs(diff).toFixed(2)} over total`}</>
+                      ) : (
+                        <><span>ℹ️</span> Enter Cash + UPI amounts above</>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+
         </div>
 
         {/* Right Column: Bill Summary & Print View */}
@@ -826,6 +935,7 @@ export const Billing = () => {
                 <tr className="border-b-2 border-black/10 text-xs font-bold uppercase tracking-widest text-black/40">
                   <th className="py-4 px-4">Time</th>
                   <th className="py-4 px-4">Customer</th>
+                  <th className="py-4 px-4 text-center">Payment</th>
                   <th className="py-4 px-4 text-center">Items</th>
                   <th className="py-4 px-4 text-right">Total</th>
                 </tr>
@@ -837,6 +947,23 @@ export const Billing = () => {
                     <td className="py-4 px-4">
                       <div className="font-bold">{log.customer}</div>
                       {log.mobile !== 'N/A' && <div className="text-xs text-black/60 font-medium">{log.mobile}</div>}
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      {(() => {
+                        const m = log.payment_method || 'Cash';
+                        const badge: Record<string, string> = {
+                          Cash: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                          UPI: 'bg-blue-50 text-blue-700 border border-blue-200',
+                          Mixed: 'bg-violet-50 text-violet-700 border border-violet-200',
+                          Pending: 'bg-amber-50 text-amber-700 border border-amber-200',
+                        };
+                        const icon: Record<string, string> = { Cash: '💵', UPI: '📱', Mixed: '🔀', Pending: '⏳' };
+                        return (
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold ${badge[m] || badge['Cash']}`}>
+                            {icon[m]} {m}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-4 px-4 text-center font-bold bg-black/5 rounded-xl">{log.itemsCount}</td>
                     <td className="py-4 px-4 min-w-[150px]">

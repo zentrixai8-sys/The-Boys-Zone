@@ -20,6 +20,7 @@ import { AdminOrders } from './pages/AdminOrders';
 import { TodayReport } from './pages/TodayReport';
 import { Setting } from './pages/Setting';
 import { Billing } from './pages/Billing';
+import { PendingPayments } from './pages/PendingPayments';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { OrderSuccess } from './pages/OrderSuccess';
@@ -177,6 +178,12 @@ const AppContent = () => {
           <Route path="/billing" element={
             <ProtectedRoute adminOnly>
               <Billing />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/billing/pending-payments" element={
+            <ProtectedRoute adminOnly>
+              <PendingPayments />
             </ProtectedRoute>
           } />
 

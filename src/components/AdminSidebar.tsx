@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Receipt, ShoppingBag, Package, 
   BarChart3, Inbox, Database, Settings, X, Menu,
-  ChevronRight, LogOut, Store, Eye, Camera, Loader2
+  ChevronRight, LogOut, Store, Eye, Camera, Loader2, AlarmClock
 } from 'lucide-react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -31,6 +31,7 @@ export const AdminSidebar = () => {
   const menuItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
     { name: 'Billing', path: '/billing', icon: Receipt },
+    { name: 'Payment Follow-up', path: '/billing/pending-payments', icon: AlarmClock },
     { name: 'Orders', path: '/admin/orders', icon: ShoppingBag },
     { name: 'Products', path: '/admin/products', icon: Package },
     { name: 'Today Report', path: '/admin/today-report', icon: BarChart3 },
