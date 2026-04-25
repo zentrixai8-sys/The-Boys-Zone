@@ -1,16 +1,86 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { api } from '../services/api';
 import { Product } from '../types';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Package, AlertTriangle, CheckCircle, XCircle, RefreshCw, BarChart3, History, Plus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+
+/* ─── Stock Log Types ─────────────────────────────────────────── */
+export interface StockLog {
+  id: string;
+  productId: string;
+  productName: string;
+  addedQty: number;
+  previousStock: number;
+  newStock: number;
+  timestamp: string;
+  note?: string;
+}
+
+const STOCK_LOG_KEY = 'tbz_stock_in_logs';
+
+export const getStockLogs = (): StockLog[] => {
+  try { return JSON.parse(localStorage.getItem(STOCK_LOG_KEY) || '[]'); } catch { return []; }
+};
+
+const addStockLog = (log: Omit<StockLog, 'id'>) => {
+  const logs = getStockLogs();
+  const newLog: StockLog = { ...log, id: Date.now().toString() };
+  localStorage.setItem(STOCK_LOG_KEY, JSON.stringify([newLog, ...logs]));
+};
+
+/* ─── 3D Tilt Card ──────────────────────────────────────────── */
+const Card3D = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
+  const tiltRef = useRef<HTMLDivElement>(null);
+  const [rot, setRot] = useState({ x: 0, y: 0 });
+  const [glare, setGlare] = useState({ x: 50, y: 50 });
+  const [hovering, setHovering] = useState(false);
+  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!tiltRef.current) return;
+    const r = tiltRef.current.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    setRot({ x: ((r.height / 2 - y) / r.height) * 12, y: ((x - r.width / 2) / r.width) * 12 });
+    setGlare({ x: (x / r.width) * 100, y: (y / r.height) * 100 });
+  }, []);
+  return (
+    <div style={{ perspective: '900px' }}>
+      <motion.div ref={tiltRef} onMouseMove={onMove}
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => { setHovering(false); setRot({ x: 0, y: 0 }); }}
+        animate={{ rotateX: rot.x, rotateY: rot.y, scale: hovering ? 1.03 : 1 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+        style={{ transformStyle: 'preserve-3d', position: 'relative' }}
+        className={className}
+      >
+        {children}
+        <div className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-300"
+          style={{ opacity: hovering ? 1 : 0, background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255,255,255,0.18) 0%, transparent 65%)` }} />
+      </motion.div>
+    </div>
+  );
+};
+/* ──────────────────────────────────────────────────────────── */
 
 export const AdminInventory = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'in' | 'low' | 'out'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('All');
+  const [subCategoryFilter, setSubCategoryFilter] = useState<string>('All');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'online' | 'store'>('all');
+  const [viewMode, setViewMode] = useState<'store' | 'online'>('store');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // "Add Stock" input per product
+  const [addQtyMap, setAddQtyMap] = useState<Record<string, string>>({});
+  const [noteMap, setNoteMap] = useState<Record<string, string>>({});
+
+  // History modal
+  const [historyProduct, setHistoryProduct] = useState<{ id: string; name: string } | null>(null);
+  const [stockLogs, setStockLogs] = useState<StockLog[]>([]);
+
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -18,93 +88,465 @@ export const AdminInventory = () => {
       const res = await api.request('getProducts');
       setProducts(res.products || []);
     } catch (error) {
-      console.error("Failed to fetch admin data:", error);
+      console.error('Failed to fetch inventory:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const quickUpdateStock = async (productId: string, newStock: number) => {
+  const handleAddStock = async (product: Product) => {
+    const qty = parseInt(addQtyMap[product.product_id] || '0');
+    if (!qty || qty <= 0) { toast.error('Please enter a valid quantity to add'); return; }
+
+    const newStock = (product.stock || 0) + qty;
+    setUpdatingId(product.product_id);
     try {
-      await api.request('updateProduct', { product_id: productId, stock: newStock });
-      toast.success('Stock updated');
-      setProducts(prev => prev.map(p => p.product_id === productId ? { ...p, stock: newStock } : p));
-    } catch (error) {
+      await api.request('updateProduct', { product_id: product.product_id, stock: newStock });
+
+      // Save log to localStorage
+      addStockLog({
+        productId: product.product_id,
+        productName: product.title,
+        addedQty: qty,
+        previousStock: product.stock || 0,
+        newStock,
+        timestamp: new Date().toISOString(),
+        note: noteMap[product.product_id] || '',
+      });
+
+      setProducts(prev => prev.map(p => p.product_id === product.product_id ? { ...p, stock: newStock } : p));
+      setAddQtyMap(prev => ({ ...prev, [product.product_id]: '' }));
+      setNoteMap(prev => ({ ...prev, [product.product_id]: '' }));
+      toast.success(`✅ Stock updated: ${product.stock} → ${newStock} (+${qty})`);
+    } catch {
       toast.error('Failed to update stock');
+    } finally {
+      setUpdatingId(null);
     }
+  };
+
+  const openHistory = (product: Product) => {
+    setHistoryProduct({ id: product.product_id, name: product.title });
+    setStockLogs(getStockLogs().filter(l => l.productId === product.product_id));
+  };
+
+  const filtered = useMemo(() => {
+    return products.filter(p => {
+      const matchesSearch = p.title?.toLowerCase().includes(search.toLowerCase()) || p.category?.toLowerCase().includes(search.toLowerCase());
+      const matchesFilter = 
+        activeFilter === 'all' ? true :
+        activeFilter === 'in'  ? p.stock > 30 :
+        activeFilter === 'low' ? p.stock > 0 && p.stock <= 30 :
+        p.stock === 0;
+      const matchesCat = categoryFilter === 'All' || p.category?.toLowerCase() === categoryFilter.toLowerCase();
+      const matchesSub = subCategoryFilter === 'All' || p.sub_category?.toLowerCase() === subCategoryFilter.toLowerCase();
+      
+      // Intelligent detection: Store products have no images OR specific description
+      const isStoreOnly = (!p.image_url && (!p.variants || p.variants.length === 0 || p.variants.every(v => !v.colorImage))) || 
+                         (p.description?.includes('Showroom stock item'));
+      
+      const matchesSource = 
+        sourceFilter === 'all' ? true :
+        sourceFilter === 'online' ? !isStoreOnly :
+        isStoreOnly;
+      return matchesSearch && matchesFilter && matchesCat && matchesSub && matchesSource;
+    });
+  }, [products, search, activeFilter, categoryFilter, subCategoryFilter, viewMode, sourceFilter]);
+
+  // Derived filter options
+  const allCategories = useMemo(() => ['All', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))], [products]);
+  const allSubCategories = useMemo(() => {
+    const base = products.filter(p => categoryFilter === 'All' || p.category === categoryFilter);
+    return ['All', ...Array.from(new Set(base.map(p => p.sub_category).filter(Boolean)))];
+  }, [products, categoryFilter]);
+
+  const totalStock   = products.reduce((s, p) => s + (p.stock || 0), 0);
+  const inStock      = products.filter(p => p.stock > 30).length;
+  const lowStock     = products.filter(p => p.stock > 0 && p.stock <= 30).length;
+  const outOfStock   = products.filter(p => p.stock === 0).length;
+
+  const getStatus = (stock: number) => {
+    if (stock > 30) return { label: 'In Stock',     color: 'text-emerald-400', bg: 'bg-emerald-500/15 border-emerald-500/30', dot: 'bg-emerald-400', bar: 'bg-emerald-500' };
+    if (stock > 0)  return { label: 'Low Stock',    color: 'text-amber-400',   bg: 'bg-amber-500/15 border-amber-500/30',     dot: 'bg-amber-400',   bar: 'bg-amber-500' };
+    return             { label: 'Out of Stock', color: 'text-red-400',     bg: 'bg-red-500/15 border-red-500/30',         dot: 'bg-red-500',     bar: 'bg-red-500' };
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-10">
-        <h1 className="text-4xl font-bold tracking-tight text-black mb-2">Inventory Management</h1>
-        <p className="text-black/40">Quickly view and update your product stock levels in real time</p>
-      </div>
+
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-10">
+        <h1 className="text-4xl font-black tracking-tight text-black mb-2">Inventory Management</h1>
+        <p className="text-black/40 text-sm">Add stock (additive), view history & monitor levels in real-time</p>
+      </motion.div>
+
+      {/* Stat Cards */}
+      <motion.div
+        className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8"
+        variants={{ show: { transition: { staggerChildren: 0.1 } } }}
+        initial="hidden" animate="show"
+      >
+        {[
+          { label: 'Total Stock',  value: totalStock, icon: BarChart3,     bg: 'from-[#040d10] via-[#0a1a20] to-[#0f2430]', border: 'border-teal-900/60',   sub: 'text-teal-300',    iconC: 'text-teal-400',    ring: 'ring-teal-500/60',    filter: 'all' as const },
+          { label: 'In Stock',     value: inStock,    icon: CheckCircle,   bg: 'from-[#052e1c] to-[#0a4f2e]',               border: 'border-emerald-900/50', sub: 'text-emerald-300', iconC: 'text-emerald-400', ring: 'ring-emerald-500/60', filter: 'in'  as const },
+          { label: 'Low Stock',    value: lowStock,   icon: AlertTriangle, bg: 'from-[#3d2000] to-[#5c3000]',               border: 'border-amber-900/50',   sub: 'text-amber-300',   iconC: 'text-amber-400',   ring: 'ring-amber-500/60',   filter: 'low' as const },
+          { label: 'Out of Stock', value: outOfStock, icon: XCircle,       bg: 'from-[#2a0505] to-[#4a0a0a]',               border: 'border-red-900/50',     sub: 'text-red-300',     iconC: 'text-red-400',     ring: 'ring-red-500/60',     filter: 'out' as const },
+        ].map((card) => (
+          <motion.div key={card.label}
+            onClick={() => setActiveFilter(prev => prev === card.filter ? 'all' : card.filter)}
+            style={{ cursor: 'pointer' }}
+            variants={{
+              hidden: { opacity: 0, y: 30, scale: 0.9 },
+              show:   { opacity: 1, y: 0,  scale: 1, transition: { type: 'spring', stiffness: 220, damping: 18 } }
+            }}
+          >
+            <Card3D className={`bg-gradient-to-br ${card.bg} border ${card.border} rounded-2xl p-4 relative overflow-hidden shadow-lg transition-all duration-200 ${activeFilter === card.filter ? `ring-2 ${card.ring} shadow-2xl` : ''}`}>
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 rounded-xl bg-white/10 border border-white/10">
+                  <card.icon className={`w-4 h-4 ${card.iconC}`} />
+                </div>
+                <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${card.sub}`}>{card.label}</span>
+              </div>
+              <p className="text-2xl font-black text-white drop-shadow">{card.value}</p>
+            </Card3D>
+          </motion.div>
+        ))}
+      </motion.div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-black/20" />
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden p-6 space-y-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Inventory Levels</h2>
-            <div className="relative">
-              <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-black/40" />
-              <input type="text" placeholder="Search products..." className="pl-12 pr-4 py-3 bg-black/5 rounded-2xl border-none focus:ring-2 focus:ring-black w-64 text-sm font-bold" />
+        <motion.div
+          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden"
+        >
+          {/* Toolbar */}
+          <div className="p-6 flex flex-col gap-4 border-b border-slate-200 bg-slate-50/30">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-black">Stock Levels</h2>
+                <p className="text-[11px] text-black/40 mt-0.5">{filtered.length} products • Enter quantity to ADD (not replace)</p>
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-none">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" />
+                  <input
+                    type="text" value={search} onChange={e => setSearch(e.target.value)}
+                    placeholder="Search products..."
+                    className="pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-black w-full sm:w-60 text-sm font-bold shadow-sm"
+                  />
+                </div>
+                <button onClick={fetchData} className="p-2.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl transition-colors flex-shrink-0 shadow-sm">
+                  <RefreshCw className="w-4 h-4 text-black/60" />
+                </button>
+              </div>
+            </div>
+
+            {/* Category & Sub-category filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                  <button
+                    onClick={() => setSourceFilter('all')}
+                    className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${sourceFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
+                  >
+                    All Products
+                  </button>
+                  <button
+                    onClick={() => setSourceFilter('online')}
+                    className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${sourceFilter === 'online' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                  >
+                    Online Only
+                  </button>
+                  <button
+                    onClick={() => setSourceFilter('store')}
+                    className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${sourceFilter === 'store' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+                  >
+                    Store Only
+                  </button>
+                </div>
+
+                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-black text-slate-400 px-3 flex items-center uppercase tracking-widest">Category</span>
+                  <select 
+                    value={categoryFilter}
+                    onChange={e => { setCategoryFilter(e.target.value); setSubCategoryFilter('All'); }}
+                    className="bg-transparent text-[10px] font-black text-slate-800 outline-none pr-4 uppercase tracking-widest"
+                  >
+                    {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Sub-category</span>
+                <select
+                  value={subCategoryFilter}
+                  onChange={e => setSubCategoryFilter(e.target.value)}
+                  className="text-xs font-bold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-black/20 focus:outline-none px-3 py-2 cursor-pointer shadow-sm"
+                >
+                  {allSubCategories.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              {/* Active filter chips */}
+              <div className="flex flex-wrap gap-2">
+                {categoryFilter !== 'All' && (
+                  <button
+                    onClick={() => { setCategoryFilter('All'); setSubCategoryFilter('All'); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white text-[11px] font-black rounded-xl hover:bg-black transition-colors"
+                  >
+                    {categoryFilter} <X className="w-3 h-3" />
+                  </button>
+                )}
+                {subCategoryFilter !== 'All' && (
+                  <button
+                    onClick={() => setSubCategoryFilter('All')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-[11px] font-black rounded-xl hover:bg-indigo-700 transition-colors"
+                  >
+                    {subCategoryFilter} <X className="w-3 h-3" />
+                  </button>
+                )}
+                {(categoryFilter !== 'All' || subCategoryFilter !== 'All' || activeFilter !== 'all') && (
+                  <button
+                    onClick={() => { setCategoryFilter('All'); setSubCategoryFilter('All'); setActiveFilter('all'); setSearch(''); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-black/8 text-black/50 text-[11px] font-black rounded-xl hover:bg-black/15 transition-colors"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Table */}
           <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse min-w-[700px]">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
-                <tr className="bg-black/5 text-xs font-bold uppercase tracking-widest text-black/40">
+                <tr className="bg-slate-100 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 border-b border-slate-200">
                   <th className="px-6 py-4">Product</th>
-                  <th className="px-6 py-4">SKU/ID</th>
+                  <th className="px-6 py-4">Category</th>
                   <th className="px-6 py-4">Current Stock</th>
                   <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Quick Update</th>
+                  <th className="px-6 py-4">Add Stock (+)</th>
+                  <th className="px-6 py-4">History</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/5">
-                {products.map((product) => (
-                  <tr key={product.product_id} className="hover:bg-black/2 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <img src={product.image_url} alt="" className="w-10 h-10 rounded-xl object-cover bg-black/5" />
-                        <span className="font-bold text-sm max-w-[200px] truncate block">{product.title}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-black/40 font-mono">{product.product_id.substring(0, 8)}</td>
-                    <td className="px-6 py-4 text-sm font-bold">{product.stock}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg ${product.stock > 30 ? 'bg-emerald-50 text-emerald-600' : product.stock > 0 ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'}`}>
-                        {product.stock > 30 ? 'In Stock' : product.stock > 0 ? 'Low Stock' : 'Out of Stock'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={product.stock}
-                        onChange={(e) => {
-                          const val = Math.max(0, parseInt(e.target.value) || 0);
-                          setProducts(prev => prev.map(p => p.product_id === product.product_id ? { ...p, stock: val } : p));
-                        }}
-                        className="w-20 px-3 py-2 bg-black/5 rounded-xl border-none text-sm font-bold focus:ring-2 focus:ring-black"
-                      />
-                      <button
-                        onClick={() => quickUpdateStock(product.product_id, product.stock)}
-                        className="px-4 py-2 bg-black text-white rounded-xl text-xs font-bold hover:bg-black/90"
+              <tbody>
+                <AnimatePresence>
+                  {filtered.map((product, idx) => {
+                    const status = getStatus(product.stock);
+                    const barWidth = Math.min(100, (product.stock / 100) * 100);
+                    return (
+                      <motion.tr
+                        key={product.product_id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ delay: idx * 0.03, duration: 0.25 }}
+                        className="border-t border-slate-100 hover:bg-slate-50/50 transition-colors"
                       >
-                        Update
-                      </button>
+                        {/* Product */}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 ring-1 ring-slate-200">
+                              <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-slate-800 leading-tight max-w-[160px] truncate">{product.title}</p>
+                              <p className="text-[10px] font-mono text-slate-400 mt-0.5">#{product.product_id.substring(0, 8)}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Category */}
+                        <td className="px-6 py-4">
+                          <span className="text-[11px] font-bold bg-slate-100 px-2.5 py-1 rounded-lg text-slate-600 border border-slate-200">
+                            {product.category || '—'}
+                          </span>
+                        </td>
+
+                        {/* Current Stock with bar */}
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1.5 min-w-[80px]">
+                            <span className={`text-lg font-black ${product.stock === 0 ? 'text-red-500' : product.stock <= 30 ? 'text-amber-500' : 'text-black'}`}>
+                              {product.stock}
+                            </span>
+                            <div className="h-1.5 w-20 bg-black/8 rounded-full overflow-hidden">
+                              <motion.div
+                                className={`h-full rounded-full ${status.bar}`}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${barWidth}%` }}
+                                transition={{ duration: 0.6, delay: idx * 0.03 + 0.2 }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Status Badge */}
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg border ${status.bg} ${status.color}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${status.dot} animate-pulse`} />
+                            {status.label}
+                          </span>
+                        </td>
+
+                        {/* Add Stock (additive) */}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] text-slate-400 font-bold">{product.stock} +</span>
+                                <input
+                                  type="number" min="1"
+                                  value={addQtyMap[product.product_id] || ''}
+                                  onChange={e => setAddQtyMap(prev => ({ ...prev, [product.product_id]: e.target.value }))}
+                                  placeholder="qty"
+                                  className="w-16 px-2 py-1.5 bg-white rounded-lg border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-black/20 focus:outline-none text-center shadow-sm"
+                                />
+                                {addQtyMap[product.product_id] && parseInt(addQtyMap[product.product_id]) > 0 && (
+                                  <span className="text-[11px] text-emerald-600 font-black">
+                                    = {product.stock + (parseInt(addQtyMap[product.product_id]) || 0)}
+                                  </span>
+                                )}
+                              </div>
+                              <input
+                                type="text"
+                                value={noteMap[product.product_id] || ''}
+                                onChange={e => setNoteMap(prev => ({ ...prev, [product.product_id]: e.target.value }))}
+                                placeholder="Note (optional)"
+                                className="w-48 px-2 py-1 bg-white rounded-lg border border-slate-200 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-black/20"
+                              />
+                            </div>
+                            <button
+                              onClick={() => handleAddStock(product)}
+                              disabled={updatingId === product.product_id || !addQtyMap[product.product_id]}
+                              className="px-3 py-2 bg-slate-900 text-white rounded-xl text-[11px] font-black hover:bg-black transition-colors disabled:opacity-40 flex items-center gap-1 whitespace-nowrap"
+                            >
+                              {updatingId === product.product_id
+                                ? <Loader2 className="w-3 h-3 animate-spin" />
+                                : <Plus className="w-3 h-3" />
+                              }
+                              {updatingId === product.product_id ? 'Saving…' : 'Add'}
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* History */}
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => openHistory(product)}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[11px] font-black hover:bg-indigo-100 transition-colors border border-indigo-100"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                            History
+                          </button>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </AnimatePresence>
+
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-20 text-center">
+                      <Package className="w-10 h-10 mx-auto mb-3 text-black/15" />
+                      <p className="text-sm font-bold text-black/30">No products found</p>
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       )}
+
+      {/* Stock History Modal */}
+      <AnimatePresence>
+        {historyProduct && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+              onClick={() => setHistoryProduct(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 30 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+              className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-50 md:w-[560px] max-h-[80vh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-black/5 flex items-center justify-between bg-slate-900">
+                <div>
+                  <h2 className="text-lg font-black text-white flex items-center gap-2">
+                    <History className="w-5 h-5 text-indigo-400" />
+                    Stock In History
+                  </h2>
+                  <p className="text-[11px] text-slate-400 mt-0.5 truncate max-w-[340px]">{historyProduct.name}</p>
+                </div>
+                <button onClick={() => setHistoryProduct(null)} className="p-2 rounded-xl hover:bg-white/10 transition-colors">
+                  <X className="w-5 h-5 text-white/60" />
+                </button>
+              </div>
+
+              {/* Logs */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                {stockLogs.length === 0 ? (
+                  <div className="py-16 text-center">
+                    <History className="w-10 h-10 mx-auto mb-3 text-black/10" />
+                    <p className="text-sm font-bold text-black/30">No stock-in records yet</p>
+                    <p className="text-[11px] text-black/20 mt-1">Records will appear here once you add stock</p>
+                  </div>
+                ) : (
+                  stockLogs.map((log, i) => (
+                    <motion.div
+                      key={log.id}
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      className="flex items-start gap-4 p-4 bg-black/[0.02] rounded-2xl border border-black/5"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center flex-shrink-0">
+                        <Plus className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-black text-black">+{log.addedQty} units added</span>
+                          <span className="text-[10px] font-bold text-black/30 whitespace-nowrap">
+                            {new Date(log.timestamp).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-black/40 mt-1">
+                          Stock: <span className="font-bold text-red-400">{log.previousStock}</span>
+                          <span className="mx-1 text-black/20">→</span>
+                          <span className="font-bold text-emerald-500">{log.newStock}</span>
+                        </p>
+                        {log.note && (
+                          <p className="text-[11px] text-indigo-500 font-medium mt-1 italic">📝 {log.note}</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-black/5 flex justify-between items-center">
+                <span className="text-[11px] text-black/30">{stockLogs.length} record{stockLogs.length !== 1 ? 's' : ''}</span>
+                <button onClick={() => setHistoryProduct(null)} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-black hover:bg-black transition-colors">
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

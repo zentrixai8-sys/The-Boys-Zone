@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Printer, Search, Loader2, Save, User as UserIcon, Phone, MapPin, ChevronDown, UserPlus, Download, X } from 'lucide-react';
+import { Plus, Trash2, Printer, Search, Loader2, Save, User as UserIcon, Phone, MapPin, ChevronDown, UserPlus, Download, X, Package } from 'lucide-react';
 import { formatPrice, formatDate } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { api } from '../services/api';
 
 import jsPDF from 'jspdf';
+
+const subCategoryMap: Record<string, string[]> = {
+  'Shirt':       ['Casual', 'Formal', 'Denim', 'Checkered', 'Printed', 'Party Wear'],
+  'T-Shirt':     ['Round Neck', 'Polo', 'Oversized', 'Graphic', 'Full Sleeve'],
+  'Jeans':       ['Skinny', 'Slim', 'Straight', 'Relaxed', 'Baggy', 'Distressed'],
+  'Pant':        ['Chinos', 'Formal', 'Cargo', 'Joggers', 'Cotton Pants'],
+  'Pants':       ['Chinos', 'Formal', 'Cargo', 'Joggers', 'Cotton Pants'],
+  'Accessories': ['Belts', 'Wallets', 'Watches', 'Sunglasses', 'Perfumes', 'Caps', 'Undergarments', 'Socks', 'Bracelets', 'Key Rings'],
+  'Footwear':    ['Sneakers', 'Formal Shoes', 'Sandals', 'Loafers', 'Boots', 'Flip-Flops'],
+  'Shoes':       ['Sneakers', 'Formal Shoes', 'Sandals', 'Loafers', 'Boots', 'Flip-Flops'],
+};
 
 interface BillItem {
   id: string;
@@ -35,7 +46,11 @@ export const Billing = () => {
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'UPI' | 'Mixed' | 'Pending'>('Cash');
   const [cashPart, setCashPart] = useState('');
   const [upiPart, setUpiPart] = useState('');
+  const [salesChannel, setSalesChannel] = useState<'Store' | 'Online'>('Store');
   const [todayLogs, setTodayLogs] = useState<{ id: string, customer: string, mobile: string, time: string, total: number, itemsCount: number, pdf_url: string | null, payment_method?: string }[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [currentStock, setCurrentStock] = useState<number | null>(null);
+  const [customerDue, setCustomerDue] = useState<number>(0);
 
   useEffect(() => {
     const loadCustomers = async () => {
@@ -63,13 +78,23 @@ export const Billing = () => {
     loadTodaysSales();
   }, []);
 
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const res = await api.request('getProducts');
+        setAllProducts(res.products || []);
+      } catch (err) {
+        console.error('Failed to load products:', err);
+      }
+    };
+    loadProducts();
+  }, [items]); // Reload stock after sale/item added
+
   const handleDropdownSelect = (id: string) => {
     setSelectedCustomerId(id);
     setIsDropdownOpen(false);
     
     if (id === 'walk-in') {
-      setCustomerName('');
-      setMobile('');
       setAddress('');
       setIsCreatingCustomer(false);
       setCustomerSearchQuery('Walk-in Customer');
@@ -90,10 +115,60 @@ export const Billing = () => {
     }
   };
 
+  useEffect(() => {
+    const loadDue = async () => {
+      if (mobile && mobile.length >= 10) {
+        try {
+          const allPending = await api.request('getPendingPayments');
+          const due = (allPending || []).reduce((sum: number, p: any) => {
+            if (p.customer_mobile === mobile && p.status === 'pending') {
+              return sum + (Number(p.total_amount) || 0);
+            }
+            return sum;
+          }, 0);
+          setCustomerDue(due);
+        } catch (err) {
+          console.error('Failed to load due amount:', err);
+          setCustomerDue(0);
+        }
+      } else {
+        setCustomerDue(0);
+      }
+    };
+    loadDue();
+  }, [mobile]);
+
   const filteredCustomers = customers.filter(c => 
     c.name.toLowerCase().includes(customerSearchQuery.toLowerCase()) || 
     c.mobile.includes(customerSearchQuery)
   );
+
+  useEffect(() => {
+    if (category && productName) {
+      const match = allProducts.filter(p => 
+        p.category === category && 
+        p.sub_category === productName
+      );
+      if (match.length > 0) {
+        const totalStock = match.reduce((sum, p) => {
+          // Sum from variants and sizes
+          const productStock = (p.variants || []).reduce((vSum: number, v: any) => {
+            const sizeSum = (v.sizes || []).reduce((sSum: number, s: any) => {
+              const val = salesChannel === 'Store' ? (s.store_stock || 0) : (s.online_stock || 0);
+              return sSum + Number(val);
+            }, 0);
+            return vSum + sizeSum;
+          }, 0);
+          return sum + productStock;
+        }, 0);
+        setCurrentStock(totalStock);
+      } else {
+        setCurrentStock(0);
+      }
+    } else {
+      setCurrentStock(null);
+    }
+  }, [category, productName, allProducts, salesChannel]);
 
   const handleAddItem = () => {
     if (!category || !productName || !price || !quantity) {
@@ -104,7 +179,7 @@ export const Billing = () => {
     const newItem: BillItem = {
       id: Date.now().toString(),
       category,
-      productName,
+      productName: productName,
       price: parseFloat(price),
       quantity: parseInt(quantity)
     };
@@ -138,7 +213,29 @@ export const Billing = () => {
       toast.error('Please add items to bill first');
       return;
     }
-    
+
+    // ── Stock check: warn if any item is 0-stock in store inventory ──
+    try {
+      const prodRes = await api.request('getProducts');
+      const allProducts: any[] = prodRes.products || [];
+      const outOfStockWarnings: string[] = [];
+      items.forEach(item => {
+        const match = allProducts.find(
+          p => p.title?.toLowerCase() === item.productName?.toLowerCase() ||
+               p.title?.toLowerCase().includes(item.productName?.toLowerCase())
+        );
+        if (match && (match.stock === 0 || match.stock === null || match.stock === undefined)) {
+          outOfStockWarnings.push(item.productName);
+        }
+      });
+      if (outOfStockWarnings.length > 0) {
+        toast(
+          `⚠️ Low/Zero stock for: ${outOfStockWarnings.join(', ')}. Billing will still proceed.`,
+          { duration: 5000, icon: '⚠️', style: { background: '#7c2d12', color: '#fef3c7', fontWeight: 'bold' } }
+        );
+      }
+    } catch (_) { /* non-blocking */ }
+
     setIsProcessing(true);
     try {
       if (isCreatingCustomer) {
@@ -365,6 +462,7 @@ export const Billing = () => {
         items: items,
         total: total,
         pdf_url: pdfUrl,
+        sales_channel: salesChannel,
         payment_method: paymentMethod,
         cash_part: paymentMethod === 'Mixed' ? (parseFloat(cashPart) || 0) : null,
         upi_part: paymentMethod === 'Mixed' ? (parseFloat(upiPart) || 0) : null,
@@ -384,6 +482,23 @@ export const Billing = () => {
         toast('⏳ Pending payment recorded for follow-up!', { duration: 4000 });
       }
       
+      // ── Auto-deduct stock for each billed item ────────────────────
+      try {
+        const prodRes = await api.request('getProducts');
+        const allProducts: any[] = prodRes.products || [];
+        const deductPromises = items.map(async (item) => {
+          const match = allProducts.find(
+            p => p.title?.toLowerCase() === item.productName?.toLowerCase() ||
+                 p.title?.toLowerCase().includes(item.productName?.toLowerCase())
+          );
+          if (match) {
+            const newStock = Math.max(0, (match.stock || 0) - item.quantity);
+            await api.request('updateProduct', { product_id: match.product_id, stock: newStock });
+          }
+        });
+        await Promise.allSettled(deductPromises);
+      } catch (_) { /* stock deduction is best-effort, non-blocking */ }
+
       const newLog = {
         id: Date.now().toString(),
         customer: customerName || 'Walk-in',
@@ -609,9 +724,17 @@ export const Billing = () => {
               <div className="p-3 bg-blue-50 text-blue-500 rounded-2xl">
                  <UserIcon className="w-6 h-6" />
               </div>
-              <div>
-                <h2 className="text-lg font-black text-slate-800 tracking-tight">Client Details</h2>
-                <p className="text-sm font-bold text-blue-500">Customer Information</p>
+              <div className="flex-1 flex justify-between items-center">
+                <div>
+                  <h2 className="text-lg font-black text-slate-800 tracking-tight">Client Details</h2>
+                  <p className="text-sm font-bold text-blue-500">Customer Information</p>
+                </div>
+                {customerDue > 0 && (
+                  <div className="px-3 py-1.5 bg-red-50 border border-red-100 rounded-xl flex flex-col items-end">
+                    <span className="text-[8px] font-black text-red-400 uppercase tracking-widest">Amount Due</span>
+                    <span className="text-sm font-black text-red-600">{formatPrice(customerDue)}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -734,15 +857,31 @@ export const Billing = () => {
           </div>
 
           {/* Add Item Form */}
-          <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-4">
-            <h2 className="text-lg font-bold">Add Item</h2>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold">Add Item</h2>
+              <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                <button
+                  onClick={() => setSalesChannel('Store')}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${salesChannel === 'Store' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+                >
+                  Store
+                </button>
+                <button
+                  onClick={() => setSalesChannel('Online')}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${salesChannel === 'Online' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                >
+                  Online
+                </button>
+              </div>
+            </div>
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-bold uppercase tracking-widest text-black/40 mb-2 block">Category</label>
                 <select 
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black font-medium"
+                  onChange={(e) => { setCategory(e.target.value); setProductName(''); }}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-black font-medium transition-all"
                 >
                   <option value="">Select Category...</option>
                   <option value="Shirt">Shirt</option>
@@ -753,16 +892,41 @@ export const Billing = () => {
                   <option value="Footwear">Footwear</option>
                 </select>
               </div>
+
               <div>
                 <label className="text-xs font-bold uppercase tracking-widest text-black/40 mb-2 block">Product Name / Description</label>
-                <input 
-                  type="text" 
-                  value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                  placeholder="e.g. Blue Striped Cotton Shirt" 
-                  className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black font-medium"
-                />
+                {category && subCategoryMap[category] ? (
+                  <select 
+                    value={productName}
+                    onChange={(e) => setProductName(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-black font-medium transition-all"
+                  >
+                    <option value="">Select Product Description...</option>
+                    {subCategoryMap[category].map(sc => (
+                      <option key={sc} value={sc}>{sc}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input 
+                    type="text" 
+                    value={productName}
+                    onChange={(e) => setProductName(e.target.value)}
+                    placeholder={category ? `Enter ${category} details...` : "Select category first"}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-black font-medium transition-all"
+                  />
+                )}
               </div>
+              
+              {currentStock !== null && (
+                <div className={`p-4 rounded-2xl border flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300 ${currentStock > 10 ? (salesChannel === 'Store' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-blue-50 border-blue-200 text-blue-700') : currentStock > 0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                   <div className="flex items-center gap-2">
+                     <Package className="w-4 h-4" />
+                     <span className="text-[10px] font-black uppercase tracking-widest">{salesChannel} Stock Available</span>
+                   </div>
+                   <span className="text-lg font-black">{currentStock} Pcs</span>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold uppercase tracking-widest text-black/40 mb-2 block">Price (₹)</label>
@@ -771,7 +935,7 @@ export const Billing = () => {
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0.00" 
-                    className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black font-medium"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-black font-medium transition-all"
                   />
                 </div>
                 <div>
@@ -781,13 +945,13 @@ export const Billing = () => {
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                     min="1"
-                    className="w-full px-4 py-3 bg-black/5 border-none rounded-2xl focus:ring-2 focus:ring-black font-medium"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-black font-medium transition-all"
                   />
                 </div>
               </div>
               <button 
                 onClick={handleAddItem}
-                className="w-full bg-black/5 text-black py-4 rounded-xl font-bold flex flex-col items-center justify-center hover:bg-black/10 transition-colors mt-2"
+                className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold flex flex-col items-center justify-center hover:bg-black transition-all mt-2 shadow-lg shadow-slate-200"
               >
                 <Plus className="w-5 h-5 mb-1" /> Add to Bill
               </button>

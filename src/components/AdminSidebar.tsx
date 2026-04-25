@@ -74,94 +74,69 @@ export const AdminSidebar = () => {
   };
 
   const SidebarContent = ({ mobile = false }) => (
-    <div className={`h-full flex flex-col ${mobile ? 'bg-slate-900' : 'bg-slate-900/95 backdrop-blur-xl'} text-white border-r border-white/10 shadow-2xl transition-all duration-300`}>
+    <div className={`h-full flex flex-col ${mobile ? 'bg-[#0f1629]' : 'bg-[#0f1629]'} text-white border-r border-white/5 shadow-2xl`}>
+      
       {/* Header */}
-      <div className="p-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-            <Store className="w-6 h-6 text-white" />
-          </div>
-          {(!isCollapsed || mobile) && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex flex-col"
-            >
-              <span className="text-base font-black tracking-tighter uppercase whitespace-nowrap text-white">Admin Portal</span>
-              <span className="text-[10px] font-extrabold text-indigo-300 uppercase tracking-[0.2em]">The Boys Zone</span>
-            </motion.div>
-          )}
+      <div className="px-5 pt-5 pb-3 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0">
+          <Store className="w-5 h-5 text-white" />
         </div>
+        {(!isCollapsed || mobile) && (
+          <div className="flex flex-col">
+            <span className="text-sm font-black tracking-tight uppercase text-white">Admin Portal</span>
+            <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-[0.18em]">The Boys Zone</span>
+          </div>
+        )}
       </div>
 
-      {/* Profile Summary (Only if not collapsed) */}
-      {/* Profile Summary (Only if not collapsed) */}
+      {/* Profile Card */}
       {(!isCollapsed || mobile) && (
-        <div className="px-6 py-4 mb-4 relative">
-          <div className="bg-white/10 rounded-2xl p-4 border border-white/10 shadow-inner group/card relative">
-            <div className="flex items-center gap-3">
-              {/* DP Container */}
-              <div 
-                className="relative cursor-pointer group/avatar"
-                onClick={() => setShowProfileActions(!showProfileActions)}
-              >
-                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border-2 border-indigo-500/50 overflow-hidden shadow-lg transition-transform group-hover/avatar:scale-105 active:scale-95">
-                  {isUploading ? (
-                    <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
-                  ) : user?.avatar_url ? (
-                    <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-xs font-bold text-white">{user?.name?.charAt(0)}</span>
-                  )}
-                </div>
-                {/* Visual indicator for clickability */}
-                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-slate-900 opacity-0 group-hover/avatar:opacity-100 transition-opacity">
-                   <Camera className="w-2 h-2 text-white" />
-                </div>
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-black truncate text-white">{user?.name}</p>
-                <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest truncate">Super Admin</p>
-              </div>
+        <div className="px-4 pb-3 relative">
+          {/* File input must be outside AnimatePresence so it stays in DOM */}
+          <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
+          <div
+            className="relative cursor-pointer rounded-2xl p-3 flex items-center gap-3 bg-white/5 border border-white/8 hover:bg-white/8 transition-all group/card"
+            onClick={() => setShowProfileActions(!showProfileActions)}
+          >
+            <div className="w-8 h-8 rounded-full bg-indigo-700/60 flex items-center justify-center border border-indigo-500/40 overflow-hidden flex-shrink-0">
+              {isUploading ? (
+                <Loader2 className="w-4 h-4 text-indigo-300 animate-spin" />
+              ) : user?.avatar_url ? (
+                <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-white">{user?.name?.charAt(0)}</span>
+              )}
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold truncate text-white">{user?.name}</p>
+              <p className="text-[9px] text-indigo-400 font-semibold uppercase tracking-wider">Super Admin</p>
+            </div>
+            <Camera className="w-3.5 h-3.5 text-white/20 group-hover/card:text-indigo-400 transition-colors" />
 
             {/* Profile Actions Popover */}
             <AnimatePresence>
               {showProfileActions && (
                 <>
                   <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     className="fixed inset-0 z-10"
-                    onClick={() => setShowProfileActions(false)}
+                    onClick={(e) => { e.stopPropagation(); setShowProfileActions(false); }}
                   />
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-48 bg-slate-800 border border-white/10 rounded-2xl shadow-2xl z-20 py-2 overflow-hidden"
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    className="absolute left-0 right-0 top-full mt-2 bg-slate-800 border border-white/10 rounded-2xl shadow-2xl z-20 py-1.5 overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <button 
-                      onClick={() => { setIsViewingDP(true); setShowProfileActions(false); }}
-                      className="w-full px-4 py-2.5 text-xs font-bold flex items-center gap-3 hover:bg-white/5 text-slate-200 transition-colors"
-                    >
-                      <Eye className="w-4 h-4 text-indigo-400" /> View Photo
+                    <button onClick={() => { setIsViewingDP(true); setShowProfileActions(false); }}
+                      className="w-full px-4 py-2 text-xs font-bold flex items-center gap-3 hover:bg-white/5 text-slate-300 transition-colors">
+                      <Eye className="w-3.5 h-3.5 text-indigo-400" /> View Photo
                     </button>
-                    <button 
-                      onClick={() => { fileInputRef.current?.click(); }}
-                      className="w-full px-4 py-2.5 text-xs font-bold flex items-center gap-3 hover:bg-white/5 text-slate-200 transition-colors"
-                    >
-                      <Camera className="w-4 h-4 text-emerald-400" /> Change Photo
+                    <button onClick={() => { fileInputRef.current?.click(); setShowProfileActions(false); }}
+                      className="w-full px-4 py-2 text-xs font-bold flex items-center gap-3 hover:bg-white/5 text-slate-300 transition-colors">
+                      <Camera className="w-3.5 h-3.5 text-emerald-400" /> Change Photo
                     </button>
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleImageUpload} 
-                      className="hidden" 
-                      accept="image/*" 
-                    />
                   </motion.div>
                 </>
               )}
@@ -170,68 +145,70 @@ export const AdminSidebar = () => {
         </div>
       )}
 
+      {/* Divider */}
+      <div className="mx-4 mb-2 border-t border-white/5" />
+
       {/* Navigation */}
-      <div className="flex-1 px-4 py-2 space-y-1 overflow-y-auto custom-scrollbar">
-        {menuItems.map((item) => {
+      <div
+        className="flex-1 px-3 space-y-0.5 overflow-y-auto"
+        style={{ scrollbarWidth: 'none' }}
+        onScroll={(e) => { e.currentTarget.scrollTop = 0; }}
+      >
+        {menuItems.map((item, idx) => {
           const active = isActive(item.path);
+          const showDivider = idx === menuItems.length - 2;
           return (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={`group flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 relative ${
-                active 
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <item.icon className={`w-5 h-5 transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
-              {(!isCollapsed || mobile) && (
-                <motion.span 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-sm font-bold tracking-tight"
-                >
-                  {item.name}
-                </motion.span>
+            <React.Fragment key={item.name}>
+              {showDivider && (!isCollapsed || mobile) && (
+                <div className="mx-1 my-1.5 border-t border-white/5" />
               )}
-              {active && !isCollapsed && (
-                <motion.div 
-                  layoutId="active-pill"
-                  className="absolute right-2 w-1 h-5 bg-white rounded-full" 
-                />
-              )}
-              
-              {/* Tooltip for collapsed mode */}
-              {isCollapsed && !mobile && (
-                <div className="absolute left-full ml-4 px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 border border-white/10 shadow-xl">
-                  {item.name}
-                </div>
-              )}
-            </Link>
+              <Link
+                to={item.path}
+                preventScrollReset={true}
+                onClick={() => { window.scrollTo(0, 0); }}
+                className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 relative ${
+                  active 
+                    ? 'bg-indigo-600/90 text-white shadow-md shadow-indigo-900/50' 
+                    : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
+                }`}
+              >
+                <item.icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-200'}`} />
+                {(!isCollapsed || mobile) && (
+                  <span className={`text-[13px] font-semibold tracking-tight truncate ${ active ? 'text-white' : '' }`}>
+                    {item.name}
+                  </span>
+                )}
+                {active && !isCollapsed && (
+                  <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white/90" />
+                )}
+                {isCollapsed && !mobile && (
+                  <div className="absolute left-full ml-3 px-2.5 py-1.5 bg-slate-800 text-white text-xs font-bold rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 border border-white/10 shadow-xl">
+                    {item.name}
+                  </div>
+                )}
+              </Link>
+            </React.Fragment>
           );
         })}
       </div>
 
-      {/* Footer / Actions */}
-      <div className="p-4 space-y-2">
+      {/* Footer */}
+      <div className="px-3 pt-2 pb-4 border-t border-white/5 space-y-0.5 mt-2">
         {!mobile && (
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-white hover:bg-white/5 transition-all text-sm font-bold"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-all text-[13px] font-semibold"
           >
-            {isCollapsed ? <ChevronRight className="w-5 h-5" /> : (
-              <>
-                <X className="w-5 h-5 rotate-45" />
-                <span>Collapse Sidebar</span>
-              </>
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : (
+              <><X className="w-4 h-4 rotate-45" /><span>Collapse Sidebar</span></>
             )}
           </button>
         )}
         <button
-          onClick={() => { logout(); }}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-sm font-bold"
+          onClick={() => logout()}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all text-[13px] font-semibold"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-4 h-4" />
           {(!isCollapsed || mobile) && <span>Sign Out</span>}
         </button>
       </div>

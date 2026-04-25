@@ -1,10 +1,55 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { api } from '../services/api';
 import { Order } from '../types';
 import { formatPrice, formatDate } from '../lib/utils';
 import { Loader2, Calendar, TrendingUp, Search, Banknote, Smartphone, Shuffle, Clock, Download, Printer } from 'lucide-react';
 import jsPDF from 'jspdf';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
+
+/* ─── 3D Tilt Card ──────────────────────────────────────────── */
+const Card3D = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [rot, setRot] = useState({ x: 0, y: 0 });
+  const [glare, setGlare] = useState({ x: 50, y: 50 });
+  const [hovering, setHovering] = useState(false);
+
+  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+    setRot({ x: ((r.height / 2 - y) / r.height) * 15, y: ((x - r.width / 2) / r.width) * 15 });
+    setGlare({ x: (x / r.width) * 100, y: (y / r.height) * 100 });
+  }, []);
+
+  return (
+    <div style={{ perspective: '900px' }}>
+      <motion.div
+        ref={ref}
+        onMouseMove={onMove}
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => { setHovering(false); setRot({ x: 0, y: 0 }); }}
+        animate={{ rotateX: rot.x, rotateY: rot.y, scale: hovering ? 1.03 : 1 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+        style={{ transformStyle: 'preserve-3d', position: 'relative' }}
+        className={className}
+      >
+        {children}
+        {/* Glare highlight */}
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-300"
+          style={{
+            opacity: hovering ? 1 : 0,
+            background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255,255,255,0.22) 0%, transparent 65%)`,
+          }}
+        />
+      </motion.div>
+    </div>
+  );
+};
+/* ──────────────────────────────────────────────────────────── */
+
 
 export const TodayReport = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -490,12 +535,24 @@ export const TodayReport = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-10">
+      {/* Page Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mb-10"
+      >
         <h1 className="text-4xl font-bold tracking-tight text-black mb-2">Reports</h1>
         <p className="text-black/40">Analyze sales and monitor daily performance</p>
-      </div>
+      </motion.div>
 
-      <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md mb-8"
+      >
+        {/* Filter Tabs */}
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
           <div className="flex gap-2 p-1 bg-black/5 rounded-2xl w-full md:w-auto">
              <button
@@ -523,7 +580,7 @@ export const TodayReport = () => {
               <select 
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full md:w-48 px-4 py-2.5 bg-black/5 text-black border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-black"
+                className="w-full md:w-48 px-4 py-2.5 bg-slate-50 text-black border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-black"
               >
                 <option value="All">All Months</option>
                 {availableMonths.map(m => <option key={m} value={m}>{m}</option>)}
@@ -536,85 +593,145 @@ export const TodayReport = () => {
                   type="date" 
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full md:w-auto px-4 py-2.5 bg-black/5 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-black"
+                  className="w-full md:w-auto px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-black"
                 />
                 <span className="text-black/40 font-bold">to</span>
                 <input 
                   type="date" 
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full md:w-auto px-4 py-2.5 bg-black/5 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-black"
+                  className="w-full md:w-auto px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-black"
                 />
               </div>
             )}
           </div>
         </div>
 
-        {/* Summary Cards */}
-         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 flex items-center justify-between">
-               <div>
-                 <p className="text-sm font-bold text-emerald-800 uppercase tracking-widest mb-1">Online Revenue Today</p>
-                 <p className="text-3xl font-black text-emerald-900">{formatPrice(onlineRevenue)}</p>
-               </div>
-               <div className="p-4 bg-emerald-100/50 rounded-2xl">
-                 <TrendingUp className="w-8 h-8 text-emerald-600" />
-               </div>
-            </div>
-            <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100 flex items-center justify-between">
-               <div>
-                 <p className="text-sm font-bold text-indigo-800 uppercase tracking-widest mb-1">Online Orders Today</p>
-                 <p className="text-3xl font-black text-indigo-900">{onlineOrdersCount}</p>
-               </div>
-               <div className="p-4 bg-indigo-100/50 rounded-2xl">
-                 <Calendar className="w-8 h-8 text-indigo-600" />
-               </div>
-            </div>
-         </div>
+        {/* Premium Summary Cards */}
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6"
+          variants={{ show: { transition: { staggerChildren: 0.15 } } }}
+          initial="hidden"
+          animate="show"
+        >
+          {[
+            {
+              label: 'Online Revenue Today',
+              value: formatPrice(onlineRevenue),
+              icon: TrendingUp,
+              bg: 'from-[#040d10] via-[#0a1a20] to-[#0f2430]',
+              border: 'border-teal-900/60',
+              glow: 'shadow-teal-950/70',
+              textColor: 'text-white',
+              subtextColor: 'text-teal-300',
+              iconBg: 'from-teal-400/30 to-cyan-500/20',
+              x: -60,
+            },
+            {
+              label: 'Online Orders Today',
+              value: String(onlineOrdersCount),
+              icon: Calendar,
+              bg: 'from-[#080812] via-[#0c1228] to-[#0a1845]',
+              border: 'border-indigo-900/60',
+              glow: 'shadow-indigo-950/70',
+              textColor: 'text-white',
+              subtextColor: 'text-indigo-300',
+              iconBg: 'from-indigo-400/30 to-violet-500/20',
+              x: 60,
+            },
+          ].map((card) => (
+            <motion.div
+              key={card.label}
+              variants={{
+                hidden: { opacity: 0, y: 50, x: card.x, scale: 0.92 },
+                show:   { opacity: 1, y: 0,  x: 0,      scale: 1,
+                  transition: { type: 'spring', stiffness: 200, damping: 20 }
+                }
+              }}
+            >
+              <Card3D
+                className={`bg-gradient-to-br ${card.bg} border ${card.border} rounded-2xl p-6 flex items-center justify-between shadow-xl ${card.glow} cursor-default relative overflow-hidden`}
+              >
+                {/* Subtle shimmer overlay */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
+                <div>
+                  <p className={`text-[10px] font-bold ${card.subtextColor} uppercase tracking-[0.2em] mb-2`}>{card.label}</p>
+                  <motion.p
+                    key={card.value}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
+                    className={`text-3xl font-black ${card.textColor} drop-shadow-sm`}
+                  >
+                    {card.value}
+                  </motion.p>
+                </div>
+                <div className={`p-4 rounded-2xl bg-gradient-to-br ${card.iconBg} backdrop-blur-sm border border-white/10 shadow-inner`}>
+                  <card.icon className="w-8 h-8 text-white drop-shadow" />
+                </div>
+              </Card3D>
+            </motion.div>
+          ))}
+        </motion.div>
 
-        {/* Store (Walk-in) Payment Breakdown — Today */}
-        <div className="mt-6">
-          <h3 className="text-sm font-black uppercase tracking-widest text-black/40 mb-3">💳 Today's Walk-in Sales — Payment Breakdown</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-emerald-700">
-                <Banknote className="w-5 h-5" />
-                <span className="text-xs font-black uppercase tracking-wider">Cash</span>
-              </div>
-              <p className="text-2xl font-black text-emerald-900">{formatPrice(paymentBreakdown.Cash)}</p>
-              <p className="text-[11px] text-emerald-600 font-medium">{storeSales.filter(s => (s.payment_method || 'Cash') === 'Cash').length} bills</p>
-            </div>
-            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-blue-700">
-                <Smartphone className="w-5 h-5" />
-                <span className="text-xs font-black uppercase tracking-wider">UPI</span>
-              </div>
-              <p className="text-2xl font-black text-blue-900">{formatPrice(paymentBreakdown.UPI)}</p>
-              <p className="text-[11px] text-blue-600 font-medium">{storeSales.filter(s => s.payment_method === 'UPI').length} bills</p>
-            </div>
-            <div className="bg-violet-50 border border-violet-100 rounded-2xl p-4 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-violet-700">
-                <Shuffle className="w-5 h-5" />
-                <span className="text-xs font-black uppercase tracking-wider">Mixed</span>
-              </div>
-              <p className="text-2xl font-black text-violet-900">{formatPrice(paymentBreakdown.Mixed)}</p>
-              <p className="text-[11px] text-violet-600 font-medium">{storeSales.filter(s => s.payment_method === 'Mixed').length} bills</p>
-            </div>
-            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-amber-700">
-                <Clock className="w-5 h-5" />
-                <span className="text-xs font-black uppercase tracking-wider">Pending</span>
-              </div>
-              <p className="text-2xl font-black text-amber-900">{formatPrice(paymentBreakdown.Pending)}</p>
-              <p className="text-[11px] text-amber-600 font-medium">{storeSales.filter(s => s.payment_method === 'Pending').length} bills</p>
-            </div>
-          </div>
-          <div className="mt-3 px-4 py-3 bg-black/5 rounded-2xl flex justify-between items-center">
-            <span className="text-sm font-bold text-black/60">Total Walk-in Revenue Today</span>
-            <span className="text-lg font-black text-black">{formatPrice(totalStoreSales)}</span>
-          </div>
+        {/* Payment Breakdown */}
+        <div>
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-4">💳 Today's Walk-in Sales — Payment Breakdown</h3>
+          <motion.div
+            className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+            variants={{ show: { transition: { staggerChildren: 0.1 } } }}
+            initial="hidden"
+            animate="show"
+          >
+            {[
+              { label: 'Cash',    icon: Banknote,   method: 'Cash',    bg: 'from-[#052e1c] to-[#0a4f2e]', border: 'border-emerald-900/50', sub: 'text-emerald-300', iconBg: 'bg-white/10' },
+              { label: 'UPI',     icon: Smartphone, method: 'UPI',     bg: 'from-[#0d1545] to-[#1a2570]', border: 'border-indigo-900/50',  sub: 'text-indigo-300',  iconBg: 'bg-white/10' },
+              { label: 'Mixed',   icon: Shuffle,    method: 'Mixed',   bg: 'from-[#3a0550] to-[#6b0f35]', border: 'border-pink-900/50',    sub: 'text-pink-300',    iconBg: 'bg-white/10' },
+              { label: 'Pending', icon: Clock,      method: 'Pending', bg: 'from-[#3d2000] to-[#5c3000]', border: 'border-amber-900/50',   sub: 'text-amber-300',   iconBg: 'bg-white/10' },
+            ].map((pm) => {
+              const amount = paymentBreakdown[pm.method] || 0;
+              const count = storeSales.filter(s => (s.payment_method || 'Cash') === pm.method).length;
+              return (
+                <motion.div
+                  key={pm.label}
+                  variants={{
+                    hidden: { opacity: 0, y: 40, scale: 0.88 },
+                    show:   { opacity: 1, y: 0,  scale: 1,
+                      transition: { type: 'spring', stiffness: 220, damping: 18 }
+                    }
+                  }}
+                >
+                  <Card3D
+                    className={`bg-gradient-to-br ${pm.bg} border ${pm.border} rounded-2xl p-4 flex flex-col gap-3 cursor-default relative overflow-hidden h-full`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />
+                    <div className="flex items-center justify-between">
+                      <div className={`p-2 rounded-xl ${pm.iconBg} border border-white/10`}>
+                        <pm.icon className="w-4 h-4 text-white drop-shadow" />
+                      </div>
+                      <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${pm.sub}`}>{pm.label}</span>
+                    </div>
+                    <div>
+                      <p className={`text-xl font-black text-white drop-shadow`}>{formatPrice(amount)}</p>
+                      <p className={`text-[10px] ${pm.sub} font-semibold mt-0.5 opacity-80`}>{count} bill{count !== 1 ? 's' : ''}</p>
+                    </div>
+                  </Card3D>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, type: 'spring', stiffness: 180, damping: 18 }}
+            className="mt-4 px-5 py-4 bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl flex justify-between items-center border border-slate-700/50 shadow-lg"
+          >
+            <span className="text-sm font-bold text-slate-300">Total Walk-in Revenue Today</span>
+            <span className="text-xl font-black text-white">{formatPrice(totalStoreSales)}</span>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">

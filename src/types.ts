@@ -16,6 +16,8 @@ export interface ProductVariant {
   sizes: {
     size: string;
     stock: number;
+    store_stock?: number;
+    online_stock?: number;
   }[];
 }
 
@@ -32,12 +34,15 @@ export interface Product {
   price: number;
   discount_price: number;
   stock: number;
+  store_stock?: number;
+  online_stock?: number;
   image_url: string;
   images?: string[];
   rating: number;
   reviewCount: number;
   variants?: ProductVariant[];
   created_at: string;
+  is_store_only?: boolean;
 }
 
 export interface Category {

@@ -282,7 +282,7 @@ export const AdminDashboard = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-gray-50/50 min-h-screen">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-slate-50 min-h-screen">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-slate-900 mb-2">Dashboard</h1>
@@ -315,7 +315,7 @@ export const AdminDashboard = () => {
           </div>
 
           {/* Month Filter */}
-          <div className="flex items-center gap-3 bg-white px-5 py-3 border border-gray-200 rounded-2xl shadow-xs transition-all hover:shadow-md">
+          <div className="flex items-center gap-3 bg-white px-5 py-3 border border-slate-200 rounded-2xl shadow-sm transition-all hover:shadow-md">
             <span className="text-sm font-bold text-indigo-600">Period:</span>
             <select
               value={selectedMonth}
@@ -420,7 +420,7 @@ export const AdminDashboard = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xs"
+              className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-md"
             >
               <div className="flex justify-between items-center mb-8">
                 <div>
@@ -520,7 +520,7 @@ export const AdminDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xs flex flex-col"
+              className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-md flex flex-col"
             >
               <div className="mb-4">
                 <h3 className="text-xl font-bold mb-1 text-gray-900">Revenue by Category</h3>
