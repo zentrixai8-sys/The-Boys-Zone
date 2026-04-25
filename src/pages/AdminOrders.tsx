@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Order } from '../types';
 import { formatPrice, formatDate } from '../lib/utils';
-import { Package, Loader2, User as UserIcon, Calendar, Clock, Filter, X } from 'lucide-react';
+import { Package, Loader2, User as UserIcon, Calendar, Clock, Filter, X, Download, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import jsPDF from 'jspdf';
 
 export const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -41,6 +42,196 @@ export const AdminOrders = () => {
       fetchData();
     } catch (error) {
       toast.error('Failed to update status');
+    }
+  };
+
+  const [gstEnabled, setGstEnabled] = useState(false);
+  const [gstPercentage, setGstPercentage] = useState(5);
+
+  useEffect(() => {
+    const enabled = localStorage.getItem('gstEnabled') === 'true';
+    const percent = localStorage.getItem('gstPercentage');
+    setGstEnabled(enabled);
+    if (percent) setGstPercentage(Number(percent));
+  }, []);
+
+  const generateInvoice = async (order: Order, mode: 'view' | 'download' = 'download') => {
+    try {
+      toast.loading('Generating Invoice...', { id: 'invoice' });
+      
+      const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      const W = 210;
+      const margin = 14;
+      let y = 0;
+
+      const NAVY     = [20, 30, 60]   as [number,number,number];
+      const COGNAC   = [160, 110, 60] as [number,number,number];
+      const SLATE    = [71, 85, 105]  as [number,number,number];
+      const BORDER   = [226, 232, 240] as [number,number,number];
+      const BG       = [248, 250, 252] as [number,number,number];
+
+      // Header Section
+      y = 20;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(28);
+      doc.setTextColor(...NAVY);
+      doc.text("THE BOY'S ZONE", margin, y);
+      
+      y += 7;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...COGNAC);
+      doc.text('MENSWEAR & ACCESSORIES STORE', margin, y, { charSpace: 1 });
+      
+      // Right Side - Invoice Meta
+      const metaX = W - margin - 45;
+      doc.setFillColor(...BG);
+      doc.roundedRect(metaX - 5, 12, 50, 25, 2, 2, 'F');
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...SLATE);
+      doc.text('INVOICE NO.', metaX, 20);
+      doc.text('DATE', metaX, 28);
+      
+      doc.setTextColor(...NAVY);
+      doc.setFontSize(9);
+      doc.text(`#BZ-${order.order_id.substring(0, 8).toUpperCase()}`, W - margin, 20, { align: 'right' });
+      doc.text(`${formatDate(order.created_at || order.date)}`, W - margin, 28, { align: 'right' });
+
+      y = 45;
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, W - margin, y);
+
+      // Client Info Section
+      y += 12;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...SLATE);
+      doc.text('CUSTOMER', margin, y);
+      doc.text('STORE ADDRESS', W/2 + 10, y);
+      
+      y += 6;
+      doc.setFontSize(11);
+      doc.setTextColor(...NAVY);
+      doc.text(order.profiles?.name || 'Valued Customer', margin, y);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...SLATE);
+      doc.text('Near Ripusudan Petrol Pump, Suhela', W/2 + 10, y);
+      doc.text('Baloda Bazar (C.G.) | +91 9617628157', W/2 + 10, y + 4.5);
+      
+      if (order.profiles?.phone) doc.text(`M: ${order.profiles.phone}`, margin, y + 5);
+      if (order.address) doc.text(doc.splitTextToSize(order.address, 65), margin, y + 10);
+
+      y += 28;
+      // Styled Table Header
+      doc.setFillColor(...NAVY);
+      doc.rect(margin, y, W - margin * 2, 10, 'F');
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      const col = { item: margin + 3, info: 90, qty: 130, unit: 155, total: W - margin - 3 };
+      doc.text('ITEM DESCRIPTION', col.item, y + 6.5);
+      doc.text('SIZE/COLOR', col.info, y + 6.5);
+      doc.text('QTY', col.qty, y + 6.5, { align: 'center' });
+      doc.text('PRICE', col.unit, y + 6.5, { align: 'right' });
+      doc.text('TOTAL', col.total, y + 6.5, { align: 'right' });
+      
+      y += 15;
+      const items = typeof order.products === 'string' ? JSON.parse(order.products) : order.products;
+      if (Array.isArray(items)) {
+        items.forEach((item: any) => {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9.5);
+          doc.setTextColor(...NAVY);
+          doc.text(item.product?.title || 'Clothing Item', col.item, y);
+          
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(...SLATE);
+          doc.text(`${item.selectedSize || 'N/A'} / ${item.product?.color || 'N/A'}`, col.info, y);
+          doc.text(String(item.quantity), col.qty, y, { align: 'center' });
+          doc.text(`${Number(item.product?.discount_price || item.product?.price || 0).toFixed(2)}`, col.unit, y, { align: 'right' });
+          
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(...NAVY);
+          doc.text(`${((item.product?.discount_price || item.product?.price || 0) * item.quantity).toFixed(2)}`, col.total, y, { align: 'right' });
+          
+          y += 4;
+          doc.setDrawColor(...BORDER);
+          doc.setLineWidth(0.1);
+          doc.line(margin, y, W - margin, y);
+          y += 9;
+        });
+      }
+
+      // Summary
+      y += 5;
+      const totalX = W - margin - 55;
+      const currentSubtotal = order.total_amount / (gstEnabled ? (1 + gstPercentage / 100) : 1);
+      const currentTax = order.total_amount - currentSubtotal;
+
+      doc.setFontSize(9);
+      doc.setTextColor(...SLATE);
+      doc.text('SUBTOTAL', totalX, y);
+      doc.setTextColor(...NAVY);
+      doc.text(`${currentSubtotal.toFixed(2)}`, W - margin - 3, y, { align: 'right' });
+      
+      y += 6;
+      doc.setTextColor(...SLATE);
+      doc.text(`GST (${gstEnabled ? gstPercentage : 0}%)`, totalX, y);
+      doc.text(`${currentTax.toFixed(2)}`, W - margin - 3, y, { align: 'right' });
+      
+      y += 10;
+      doc.setFillColor(...COGNAC);
+      doc.rect(totalX - 2, y - 6, 57 + 2, 11, 'F');
+      
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text('GRAND TOTAL', totalX + 2, y + 2);
+      doc.text(`Rs.${order.total_amount.toFixed(2)}`, W - margin - 3, y + 2, { align: 'right' });
+
+      // Footer
+      y = 245;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...NAVY);
+      doc.text('TERMS & CONDITIONS', margin, y);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...SLATE);
+      const terms = [
+        '• Accessories and discounted items are final sale.',
+        '• Exchanges within 7 days with original tags and invoice.',
+        '• This is a system generated record for The Boy\'s Zone.'
+      ];
+      terms.forEach((t, i) => doc.text(t, margin, y + 5 + (i * 4)));
+
+      y = 282;
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...SLATE);
+      doc.text('SYSTEM GENERATED STORE RECORD', W/2, y, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...NAVY);
+      doc.text('THANK YOU FOR SHOPPING AT THE BOY\'S ZONE', W/2, y + 5, { align: 'center' });
+
+      if (mode === 'view') {
+        window.open(doc.output('bloburl'), '_blank');
+        toast.success('Preview Opened', { id: 'invoice' });
+      } else {
+        doc.save(`Invoice_${order.profiles?.name || 'Customer'}.pdf`);
+        toast.success('Invoice Saved', { id: 'invoice' });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to generate invoice', { id: 'invoice' });
     }
   };
 
@@ -391,12 +582,26 @@ export const AdminOrders = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 bg-white flex justify-end border-t border-black/5">
+              <div className="p-4 bg-slate-50 flex justify-between items-center border-t border-black/5 rounded-b-[2.5rem]">
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => generateInvoice(selectedOrder, 'download')}
+                    className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
+                  >
+                    <Download className="w-4 h-4" /> Download Invoice
+                  </button>
+                  <button 
+                    onClick={() => generateInvoice(selectedOrder, 'view')}
+                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-600/20"
+                  >
+                    <Printer className="w-4 h-4" /> Print
+                  </button>
+                </div>
                 <button 
                   onClick={() => setSelectedOrder(null)}
                   className="px-8 py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/20"
                 >
-                  Close Detail
+                  Close
                 </button>
               </div>
             </motion.div>

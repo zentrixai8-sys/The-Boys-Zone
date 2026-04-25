@@ -365,11 +365,20 @@ export const api = {
                 itemsCount: 0,
                 pdf_url: row.pdf_url || null,
                 payment_method: row.payment_method || 'Cash',
+                items: [],
+                created_at: row.created_at
               });
             }
             const inv = invoiceMap.get(row.invoice_id);
             inv.total += Number(row.item_total) || 0;
             inv.itemsCount += 1;
+            inv.items.push({
+              productName: row.product_name,
+              category: row.category,
+              quantity: row.quantity,
+              price: row.price,
+              item_total: row.item_total
+            });
           }
           return Array.from(invoiceMap.values());
         }
@@ -597,8 +606,14 @@ export const api = {
           formData.append('file', file);
           formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
+          // Force resource_type in the payload for better reliability
+          const isPdf = (file instanceof File && file.name.toLowerCase().endsWith('.pdf')) || 
+                        (file instanceof Blob && file.type === 'application/pdf');
+          
+          formData.append('resource_type', isPdf ? 'raw' : 'auto');
+
           const response = await axios.post(
-            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/auto/upload`,
+            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`,
             formData
           );
 

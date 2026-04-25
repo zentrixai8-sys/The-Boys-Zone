@@ -119,8 +119,18 @@ export const Billing = () => {
     setItems(items.filter(item => item.id !== id));
   };
 
+  const [gstEnabled, setGstEnabled] = useState(false);
+  const [gstPercentage, setGstPercentage] = useState(5);
+
+  useEffect(() => {
+    const enabled = localStorage.getItem('gstEnabled') === 'true';
+    const percent = localStorage.getItem('gstPercentage');
+    setGstEnabled(enabled);
+    if (percent) setGstPercentage(Number(percent));
+  }, []);
+
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.18; // Assuming 18% GST or similar
+  const tax = gstEnabled ? (subtotal * (gstPercentage / 100)) : 0;
   const total = subtotal + tax;
 
   const handleSave = async () => {
@@ -292,7 +302,7 @@ export const Billing = () => {
         doc.setFontSize(9);
         doc.setTextColor(...GRAY);
         doc.text('Subtotal',      totX + 4,  y + 6);
-        doc.text('Tax / GST (18%)', totX + 4, y + 13);
+        doc.text(`Tax / GST (${gstEnabled ? gstPercentage : 0}%)`, totX + 4, y + 13);
         doc.setTextColor(...BLACK);
         doc.text(`Rs.${subtotal.toFixed(2)}`, W - margin - 2, y + 6,  { align: 'right' });
         doc.text(`Rs.${tax.toFixed(2)}`,      W - margin - 2, y + 13, { align: 'right' });
@@ -388,6 +398,15 @@ export const Billing = () => {
 
       toast.success('Sale logged successfully');
 
+      // 4. Force immediate download if save was successful
+      if (pdfUrl) {
+         const link = document.createElement('a');
+         link.href = pdfUrl;
+         link.download = `Invoice_${customerName || 'Customer'}_${Date.now()}.pdf`;
+         document.body.appendChild(link);
+         link.click();
+         document.body.removeChild(link);
+      }
       
       setItems([]);
       setCustomerName('');
@@ -558,7 +577,7 @@ export const Billing = () => {
                     <span className="text-xs font-bold text-slate-700">{formatPrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-100">
-                    <span className="text-xs text-slate-500">GST / Tax (18%)</span>
+                    <span className="text-xs text-slate-500">GST / Tax ({gstEnabled ? gstPercentage : 0}%)</span>
                     <span className="text-xs font-bold text-slate-700">{formatPrice(tax)}</span>
                   </div>
                   <div className="flex justify-between px-4 py-3" style={{background:'linear-gradient(135deg,#059669,#10b981)'}}>
@@ -971,21 +990,33 @@ export const Billing = () => {
                         <div className="font-black text-emerald-600 text-base">{formatPrice(log.total)}</div>
                         {log.pdf_url && (
                           <div className="flex items-center gap-2 mt-1">
-                            <a
-                              href={log.pdf_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors"
+                            <button
+                              onClick={() => window.open(log.pdf_url!, '_blank')}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors"
                             >
                               <Printer className="w-3 h-3" /> View
-                            </a>
-                            <a
-                              href={log.pdf_url}
-                              download={`Invoice_${log.customer.replace(/\s+/g, '_')}_${log.id}.pdf`}
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(log.pdf_url!);
+                                  const blob = await response.blob();
+                                  const url = window.URL.createObjectURL(blob);
+                                  const link = document.createElement('a');
+                                  link.href = url;
+                                  link.download = `Invoice_${log.customer.replace(/\s+/g, '_')}_${log.id}.pdf`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  window.URL.revokeObjectURL(url);
+                                } catch (err) {
+                                  window.open(log.pdf_url!, '_blank');
+                                }
+                              }}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors"
                             >
                               <Download className="w-3 h-3" /> Download
-                            </a>
+                            </button>
                           </div>
                         )}
                       </div>
