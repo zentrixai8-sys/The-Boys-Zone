@@ -53,7 +53,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </button>
 
         <img 
-          src={product.image_url || 'https://picsum.photos/400/500'} 
+          src={product.image_url} 
           alt={product.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
           referrerPolicy="no-referrer"

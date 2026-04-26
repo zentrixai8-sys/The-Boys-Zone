@@ -436,7 +436,7 @@ export const Home = () => {
                   <motion.img
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.7, ease: "easeOut" }}
-                    src={product.images?.[0] || product.image_url || 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&q=80'}
+                    src={product.images?.[0] || product.image_url}
                     alt={product.title}
                     className="w-full h-full object-cover object-center opacity-90 group-hover/card:opacity-100 transition-opacity"
                   />
