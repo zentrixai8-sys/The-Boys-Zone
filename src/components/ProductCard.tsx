@@ -12,6 +12,36 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [isWishlisted, setIsWishlisted] = React.useState(false);
+  const [currentImgIndex, setCurrentImgIndex] = React.useState(0);
+
+  // Collect all unique images from main gallery and variants
+  const allImages = React.useMemo(() => {
+    const imgs = new Set<string>();
+    if (product.image_url) imgs.add(product.image_url);
+    if (product.images && Array.isArray(product.images)) {
+      product.images.forEach(img => imgs.add(img));
+    }
+    if (product.variants && Array.isArray(product.variants)) {
+      product.variants.forEach(v => {
+        if (v.colorImage) imgs.add(v.colorImage);
+        if (v.images && Array.isArray(v.images)) {
+          v.images.forEach(img => imgs.add(img));
+        }
+      });
+    }
+    return Array.from(imgs);
+  }, [product]);
+
+  // Auto-slide effect
+  React.useEffect(() => {
+    if (allImages.length <= 1) return;
+    
+    const interval = setInterval(() => {
+      setCurrentImgIndex((prev) => (prev + 1) % allImages.length);
+    }, 3000); // Change image every 3 seconds
+    
+    return () => clearInterval(interval);
+  }, [allImages]);
 
   const toggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -53,8 +83,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </button>
 
         <img 
-          src={product.image_url} 
+          src={allImages[currentImgIndex] || product.image_url} 
           alt={product.title}
+          key={allImages[currentImgIndex]}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
           referrerPolicy="no-referrer"
         />

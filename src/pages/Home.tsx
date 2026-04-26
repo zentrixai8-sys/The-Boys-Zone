@@ -52,6 +52,44 @@ const AnimatedTitle = ({ text, className }: { text: string; className?: string }
   );
 };
 
+const AutoSlidingImage = ({ product, className }: { product: Product, className?: string }) => {
+  const [currentImgIndex, setCurrentImgIndex] = useState(0);
+
+  const allImages = React.useMemo(() => {
+    const imgs = new Set<string>();
+    if (product.image_url) imgs.add(product.image_url);
+    if (product.images && Array.isArray(product.images)) {
+      product.images.forEach(img => imgs.add(img));
+    }
+    if (product.variants && Array.isArray(product.variants)) {
+      product.variants.forEach(v => {
+        if (v.colorImage) imgs.add(v.colorImage);
+        if (v.images && Array.isArray(v.images)) {
+          v.images.forEach(img => imgs.add(img));
+        }
+      });
+    }
+    return Array.from(imgs);
+  }, [product]);
+
+  useEffect(() => {
+    if (allImages.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentImgIndex((prev) => (prev + 1) % allImages.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [allImages]);
+
+  return (
+    <img
+      src={allImages[currentImgIndex] || product.image_url}
+      alt={product.title}
+      key={allImages[currentImgIndex]}
+      className={className}
+    />
+  );
+};
+
 export const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
@@ -433,11 +471,8 @@ export const Home = () => {
                 className="min-w-[280px] sm:min-w-[320px] pb-4 flex flex-col group snap-start cursor-pointer relative"
               >
                 <div className="relative aspect-[3/4] bg-zinc-900 mb-5 overflow-hidden group/card border border-white/10 hover:border-red-600/50 transition-all duration-500 rounded-sm">
-                  <motion.img
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.7, ease: "easeOut" }}
-                    src={product.images?.[0] || product.image_url}
-                    alt={product.title}
+                  <AutoSlidingImage
+                    product={product}
                     className="w-full h-full object-cover object-center opacity-90 group-hover/card:opacity-100 transition-opacity"
                   />
                   
@@ -499,11 +534,8 @@ export const Home = () => {
                 className="flex flex-col group cursor-pointer"
               >
                 <div className="relative aspect-[3/4] bg-gray-100 mb-4 overflow-hidden border-2 border-transparent hover:border-black transition-colors duration-300">
-                  <motion.img
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.5 }}
-                    src={product.images?.[0] || product.image_url}
-                    alt={product.title}
+                  <AutoSlidingImage
+                    product={product}
                     className="w-full h-full object-cover"
                   />
                   
