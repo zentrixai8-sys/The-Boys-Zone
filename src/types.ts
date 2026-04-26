@@ -41,6 +41,7 @@ export interface Product {
   rating: number;
   reviewCount: number;
   variants?: ProductVariant[];
+  video_url?: string;
   created_at: string;
   is_store_only?: boolean;
 }

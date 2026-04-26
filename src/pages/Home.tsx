@@ -101,7 +101,14 @@ export const Home = () => {
       const fetchProducts = async () => {
         try {
           const res = await api.request('getProducts', { limit: 12 });
-          setProducts(res.products || []);
+          const allProds = res.products || [];
+          // Media-based filtering: Show only if it has an image or video
+          const onlineProds = allProds.filter((p: any) => {
+            const hasMedia = p.image_url || p.video_url || 
+                             (p.variants && p.variants.some((v: any) => v.colorImage || (v.images && v.images.length > 0)));
+            return !!hasMedia;
+          });
+          setProducts(onlineProds);
         } catch (e) {
           console.error('Products fetch failed:', e);
         }
@@ -110,7 +117,14 @@ export const Home = () => {
       const fetchBestSellers = async () => {
         try {
           const res = await api.request('getBestSellers');
-          setBestSellers(res || []);
+          const allBS = res || [];
+          // Media-based filtering: Show only if it has an image or video
+          const onlineBS = allBS.filter((p: any) => {
+            const hasMedia = p.image_url || p.video_url || 
+                             (p.variants && p.variants.some((v: any) => v.colorImage || (v.images && v.images.length > 0)));
+            return !!hasMedia;
+          });
+          setBestSellers(onlineBS);
         } catch (e) {
           console.error('Best Sellers fetch failed:', e);
         }
