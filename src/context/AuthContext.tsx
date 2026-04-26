@@ -156,30 +156,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = user?.role === 'admin';
 
-  // Inactivity session logic
+  // Inactivity session logic (30 minutes)
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    let lastActivity = Date.now();
+    let intervalId: any;
     const INACTIVITY_LIMIT = 30 * 60 * 1000;
+    const ACTIVITY_KEY = 'tbz_last_activity';
 
     const checkInactivity = () => {
+      const lastActivity = parseInt(localStorage.getItem(ACTIVITY_KEY) || Date.now().toString());
       const now = Date.now();
+      
       if (user && (now - lastActivity >= INACTIVITY_LIMIT)) {
         logout();
         toast.error('Session expired due to inactivity.', { id: 'session-expired' });
       }
     };
 
-    const resetTimer = () => { lastActivity = Date.now(); };
+    const resetTimer = () => { 
+      localStorage.setItem(ACTIVITY_KEY, Date.now().toString()); 
+    };
 
     if (user) {
-      intervalId = setInterval(checkInactivity, 5000);
-      const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+      // Set initial activity time if not present
+      if (!localStorage.getItem(ACTIVITY_KEY)) {
+        resetTimer();
+      }
+
+      intervalId = setInterval(checkInactivity, 10000); // Check every 10 seconds
+      const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+      
       events.forEach(e => window.addEventListener(e, resetTimer, { passive: true }));
+      
       return () => {
         clearInterval(intervalId);
         events.forEach(e => window.removeEventListener(e, resetTimer));
       };
+    } else {
+      localStorage.removeItem(ACTIVITY_KEY);
     }
   }, [user]);
 
