@@ -4,12 +4,14 @@ import { supabase } from './lib/supabase';
 import toast, { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { WishlistProvider } from './context/WishlistContext';
 import { Navbar } from './components/Navbar';
 import { Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { Home } from './pages/Home';
 import { Products } from './pages/Products';
 import { ProductDetail } from './pages/ProductDetail';
 import { Cart } from './pages/Cart';
+import { Wishlist } from './pages/Wishlist';
 import { Checkout } from './pages/Checkout';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -116,6 +118,7 @@ const AppContent = () => {
           <Route path="/products" element={<Products />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -285,10 +288,12 @@ export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <Router>
-          <ScrollToTop />
-          <AppContent />
-        </Router>
+        <WishlistProvider>
+          <Router>
+            <ScrollToTop />
+            <AppContent />
+          </Router>
+        </WishlistProvider>
       </CartProvider>
     </AuthProvider>
   );

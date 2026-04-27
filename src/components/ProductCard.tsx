@@ -4,6 +4,7 @@ import { Product } from '../types';
 import { formatPrice } from '../lib/utils';
 import { motion } from 'motion/react';
 import { Star, Heart } from 'lucide-react';
+import { useWishlist } from '../context/WishlistContext';
 import toast from 'react-hot-toast';
 
 interface ProductCardProps {
@@ -11,7 +12,8 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const [isWishlisted, setIsWishlisted] = React.useState(false);
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const isWishlisted = isInWishlist(product.product_id);
   const [currentImgIndex, setCurrentImgIndex] = React.useState(0);
 
   // Collect all unique images from main gallery and variants
@@ -43,16 +45,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     return () => clearInterval(interval);
   }, [allImages]);
 
-  const toggleWishlist = (e: React.MouseEvent) => {
+  const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsWishlisted(!isWishlisted);
-    if (!isWishlisted) {
-      toast.success('Added to Wishlist!', {
-        icon: '❤️',
-        style: { borderRadius: '14px', fontSans: 'Inter', fontWeight: 'bold', fontSize: '13px' }
-      });
-    }
+    toggleWishlist(product);
   };
 
   return (
@@ -74,7 +70,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         
         {/* Wishlist Heart Icon */}
         <button 
-          onClick={toggleWishlist}
+          onClick={handleToggleWishlist}
           className="absolute top-2 right-2 z-20 p-2 bg-white/70 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-all transform hover:scale-110 active:scale-95 group/wish"
         >
           <Heart 

@@ -207,8 +207,12 @@ export const Home = () => {
       const fetchOffers = async () => {
         try {
           const res = await api.request('getOffers');
+          console.log('Offers fetched:', res);
           setOffers(res || []);
-        } catch (e) { setOffers([]); }
+        } catch (e) { 
+          console.error('Offers fetch failed:', e);
+          setOffers([]); 
+        }
       };
 
       await Promise.allSettled([fetchProducts(), fetchBestSellers(), fetchCategories(), fetchOffers()]);
@@ -342,6 +346,7 @@ export const Home = () => {
                     src={offer.image_url} 
                     alt={offer.title} 
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.5s] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:scale-105" 
+                    referrerPolicy="no-referrer"
                   />
                   
                   {/* Premium Hover Glass Overlay */}

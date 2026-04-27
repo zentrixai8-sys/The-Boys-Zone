@@ -50,7 +50,12 @@ export const api = {
     }
 
     // 2. Clear cache on mutations to ensure data consistency
-    const mutations = ['addProduct', 'updateProduct', 'deleteProduct', 'addCategory', 'deleteCategory', 'updateCategory', 'createOrder', 'createStoreSale', 'updateOrderStatus', 'updateProfile'];
+    const mutations = [
+      'addProduct', 'updateProduct', 'deleteProduct', 
+      'addCategory', 'deleteCategory', 'updateCategory', 
+      'createOrder', 'createStoreSale', 'updateOrderStatus', 'updateProfile',
+      'addOffer', 'updateOffer', 'deleteOffer'
+    ];
     if (mutations.includes(action)) {
       Object.keys(sessionCache).forEach(key => delete sessionCache[key]);
     }

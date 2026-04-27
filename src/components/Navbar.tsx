@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, User, LogOut, Menu, X, Search, Camera, Eye, Loader2, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
@@ -11,7 +12,8 @@ export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { cart } = useCart();
+  const { cart, totalItems } = useCart();
+  const { wishlistCount } = useWishlist();
   const { user, loginTime, logout, isAdmin, updateUser } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isViewingDP, setIsViewingDP] = useState(false);
@@ -98,19 +100,21 @@ export const Navbar = () => {
               <Link
                 key={link.name}
                 to={link.path}
-                className={`text-[13px] font-semibold tracking-wide transition-colors ${isActive(link.path) ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
+                className={`relative group py-1 text-[13px] font-semibold tracking-wide transition-colors ${isActive(link.path) ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 {link.name}
+                <span className={`absolute bottom-0 left-0 w-full h-[2px] bg-indigo-600 transform origin-left transition-transform duration-300 ease-out ${isActive(link.path) ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
               </Link>
             ))}
             {isAdmin && (
               <div className="relative group">
-                <button className="flex items-center gap-1.5 text-[13px] font-semibold tracking-wide text-gray-600 hover:text-gray-900 transition-colors">
+                <button className="relative py-1 flex items-center gap-1.5 text-[13px] font-semibold tracking-wide text-gray-600 hover:text-gray-900 transition-colors">
                   Admin
                   <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
+                  <span className="absolute bottom-0 left-0 w-full h-[2px] bg-indigo-600 transform origin-left transition-transform duration-300 ease-out scale-x-0 group-hover:scale-x-100" />
                 </button>
                 <div className="absolute top-full left-1/2 -translate-x-1/2 pt-6 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <div className="bg-white border border-gray-100 shadow-xl rounded-2xl w-48 py-2 flex flex-col overflow-hidden relative">
@@ -156,23 +160,23 @@ export const Navbar = () => {
                   navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
                 }
               }}
-              className="relative hidden lg:block w-64 mr-2"
+              className="relative hidden lg:block w-48 mr-2 group"
             >
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-50 text-[13px] font-medium text-gray-900 rounded-full pl-10 pr-4 py-2 border border-black/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black/10 transition-all placeholder:text-gray-400"
+                className="w-full bg-[#f8f8f8] text-[12px] font-bold tracking-wide text-[#051F20] rounded-full pl-10 pr-4 py-2 border border-transparent focus:bg-white focus:outline-none focus:border-[#8EB69B] focus:ring-2 focus:ring-[#8EB69B]/20 transition-all placeholder:text-gray-400 group-hover:bg-[#f0f0f0]"
               />
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-hover:text-[#051F20] transition-colors" />
             </form>
 
 
             {user ? (
               <div className="relative group">
-                <div className="flex items-center gap-2 group-hover:bg-gray-50 md:pr-4 md:pl-1.5 py-1.5 rounded-full md:border border-gray-100 hover:border-gray-300 transition-all cursor-pointer">
-                  <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100/50 overflow-hidden shrink-0">
+                <div className="flex items-center gap-2 md:pr-4 md:pl-1.5 py-1.5 rounded-full transition-all cursor-pointer hover:bg-gray-50 border border-transparent hover:border-gray-100">
+                  <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100/50 overflow-hidden shrink-0 shadow-sm">
                     {isUploading ? (
                       <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
                     ) : user.avatar_url ? (
@@ -184,12 +188,12 @@ export const Navbar = () => {
                     )}
                   </div>
                   <div className="hidden md:flex flex-col items-start pr-1">
-                    <span className="text-[14px] font-bold text-gray-800 leading-tight">
+                    <span className="text-[13px] font-bold text-[#051F20] leading-tight tracking-wide">
                       {(user.name || 'User').toUpperCase()}
                     </span>
                     {loginTime && (
-                      <span className="text-[10px] font-semibold text-emerald-600 tracking-widest uppercase">
-                        Logged in • {new Date(loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <span className="text-[9px] font-bold text-[#8EB69B] tracking-widest uppercase mt-0.5">
+                        Logged in
                       </span>
                     )}
                   </div>
@@ -256,16 +260,20 @@ export const Navbar = () => {
               </Link>
             )}
 
-            <Link to="/wishlist" className="text-gray-600 hover:text-gray-900 transition-colors relative group/wishlist">
-              <Heart className="w-5 h-5 stroke-[1.5] group-hover/wishlist:fill-red-500 group-hover/wishlist:text-red-500 transition-all" />
-              <span className="absolute -top-1 -right-1 bg-red-500 w-1.5 h-1.5 rounded-full opacity-0 group-hover/wishlist:opacity-100 transition-opacity" />
+            <Link to="/wishlist" className="relative group/wishlist flex items-center justify-center w-10 h-10 rounded-full hover:bg-rose-50 transition-colors">
+              <Heart className={`w-5 h-5 stroke-[1.5] transition-all ${wishlistCount > 0 ? 'fill-rose-500 text-rose-500' : 'text-gray-600 group-hover/wishlist:text-rose-500 group-hover/wishlist:fill-rose-50'}`} />
+              {wishlistCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 bg-rose-500 text-white text-[9px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-1 shadow-sm border-2 border-white ring-1 ring-rose-500/20">
+                  {wishlistCount}
+                </span>
+              )}
             </Link>
 
-            <Link to="/cart" className="text-gray-600 hover:text-gray-900 transition-colors relative">
-              <ShoppingCart className="w-5 h-5 stroke-[1.5]" />
-              {cart.totalItems > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-gray-900 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
-                  {cart.totalItems}
+            <Link to="/cart" className="relative group/cart flex items-center justify-center w-10 h-10 rounded-full hover:bg-indigo-50 transition-colors">
+              <ShoppingCart className="w-5 h-5 stroke-[1.5] text-gray-600 group-hover/cart:text-indigo-600 transition-colors" />
+              {totalItems > 0 && (
+                <span className="absolute top-1.5 right-1.5 bg-[#051F20] text-white text-[9px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-1 shadow-sm border-2 border-white">
+                  {totalItems}
                 </span>
               )}
             </Link>
@@ -273,9 +281,9 @@ export const Navbar = () => {
             {user && (
               <button
                 onClick={() => { logout(); navigate('/'); }}
-                className="hidden lg:flex items-center gap-1.5 text-gray-600 hover:text-red-600 font-semibold text-[13px] ml-2 transition-colors"
+                className="hidden lg:flex items-center gap-1.5 text-gray-400 hover:text-red-600 font-bold tracking-widest uppercase text-[11px] ml-2 px-3 py-2 rounded-full hover:bg-red-50 transition-colors"
               >
-                <LogOut className="w-4 h-4 stroke-2" />
+                <LogOut className="w-4 h-4 stroke-[2]" />
                 <span>Sign Out</span>
               </button>
             )}
