@@ -120,7 +120,7 @@ export const Checkout = () => {
 
           await api.request('createOrder', {
             user_id: user?.id,
-            products: cart, // Pass object directly, api will handle stringification
+            products: JSON.stringify(cart), // Stringify cart to match Supabase expectations
             total_amount: totalPrice,
             payment_id: response.razorpay_payment_id,
             payment_status: 'Paid',

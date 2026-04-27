@@ -636,7 +636,8 @@ export const api = {
       return result;
 
     } catch (error) {
-      console.error(`API Error [${action}]:`, error);
+      console.error(`API Error [${action}]:`, JSON.stringify(error, null, 2), error);
+
       throw error;
     }
   },
