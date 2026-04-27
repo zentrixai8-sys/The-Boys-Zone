@@ -119,6 +119,8 @@ export const api = {
     ];
     if (mutations.includes(action)) {
       Object.keys(sessionCache).forEach(key => delete sessionCache[key]);
+      // Also clear localStorage so mobile browsers don't serve stale data on reload
+      try { localStorage.removeItem(SHOP_CACHE_KEY); } catch (e) {}
     }
 
     // 3. Check Session Cache (Memory Only - super fast)
