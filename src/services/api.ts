@@ -29,6 +29,67 @@ const saveToCache = (data: any) => {
   } catch (e) { console.error('Cache save failed', e); }
 };
 
+/**
+ * Compresses an image File using Canvas API.
+ * Resizes to max 1280px dimension and encodes at fixed 85% JPEG quality.
+ * Quality never drops — only dimensions are reduced if needed.
+ */
+const compressImage = (file: File, maxDimension = 1280): Promise<File> => {
+  return new Promise((resolve) => {
+    // Only compress image types (not PDF, video, etc.)
+    if (!file.type.startsWith('image/')) {
+      resolve(file);
+      return;
+    }
+
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      // Calculate new dimensions while maintaining aspect ratio
+      let { width, height } = img;
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d')!;
+
+      // High-quality rendering
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Fixed 85% quality — looks sharp, still much smaller than original
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { resolve(file); return; }
+          const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+          resolve(compressed);
+        },
+        'image/jpeg',
+        0.85
+      );
+    };
+
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+    img.src = objectUrl;
+  });
+};
+
 export const api = {
   async request(action: string, data: any = {}) {
     // 1. Safe Cache Key Generation (Handles non-serializable objects like Files)
@@ -646,12 +707,16 @@ export const api = {
         case 'uploadFile': {
           const { file } = data;
           const isPdf = file.name?.toLowerCase().endsWith('.pdf');
-          const resourceType = isPdf ? 'raw' : 'auto';
+          const isVideo = file.type?.startsWith('video/');
+          const resourceType = isPdf ? 'raw' : isVideo ? 'video' : 'auto';
           const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
           const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
+          // Compress image before upload (non-destructive — PDF/video skip compression)
+          const fileToUpload = (!isPdf && !isVideo) ? await compressImage(file, 1280) : file;
+
           const formData = new FormData();
-          formData.append('file', file);
+          formData.append('file', fileToUpload);
           formData.append('upload_preset', uploadPreset);
 
           // resource_type must go in the URL path, NOT in FormData
