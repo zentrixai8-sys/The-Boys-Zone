@@ -49,10 +49,10 @@ export const Profile = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user) return;
+      setLoading(true);
       try {
-        const allOrders = await api.request('getOrders');
-        const userOrders = Array.isArray(allOrders) ? allOrders.filter((o: Order) => o.user_id === user.id) : [];
-        setOrders([...userOrders].reverse());
+        const userOrders = await api.request('getUserOrders', { user_id: user.id });
+        setOrders(Array.isArray(userOrders) ? userOrders : []);
       } catch (error) {
         console.error('Error fetching orders:', error);
       } finally {

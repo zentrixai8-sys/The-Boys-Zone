@@ -34,11 +34,30 @@ export const ProductDetail = () => {
 
   useEffect(() => {
     const fetchProduct = async () => {
+      // 1. Immediate Hydration from Cache (Super Fast)
       try {
-        const res = await api.request('getProducts');
-        const products = res.products || [];
-        setAllProducts(products);
-        const found = products.find((p: Product) => p.product_id === id);
+        const cached = localStorage.getItem('tbz_shop_cache');
+        if (cached) {
+          const { products } = JSON.parse(cached);
+          if (products) {
+            setAllProducts(products);
+            const found = products.find((p: Product) => p.product_id === id);
+            if (found) {
+              setProduct(found);
+              setLoading(false);
+              // Set initial color/size from cached data too
+              if (found.variants && found.variants.length > 0) {
+                setSelectedColor(found.variants[0].color);
+                if (found.variants[0].sizes.length > 0) setSelectedSize(found.variants[0].sizes[0].size);
+              }
+            }
+          }
+        }
+      } catch (e) { console.warn('Cache hydration failed'); }
+
+      // 2. Targeted Fetch for specific product (Fast row-level fetch)
+      try {
+        const found = await api.request('getProduct', { id });
         if (found) {
           setProduct(found);
           if (found.variants && found.variants.length > 0) {
@@ -55,6 +74,12 @@ export const ProductDetail = () => {
         } else {
           navigate('/products');
         }
+
+        // 3. Background fetch for Related Products (Non-blocking)
+        api.request('getProducts').then(res => {
+          if (res.products) setAllProducts(res.products);
+        });
+
       } catch (error) {
         console.error('Error fetching product:', error);
       } finally {

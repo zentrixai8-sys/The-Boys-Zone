@@ -24,10 +24,10 @@ export const AdminOrders = () => {
   }, []);
 
   const fetchData = async () => {
-    setLoading(true);
     try {
       const ordersData = await api.request('getOrders');
       setOrders(Array.isArray(ordersData) ? [...ordersData].reverse() : []);
+      setLoading(false);
     } catch (error) {
       console.error("Failed to fetch admin data:", error);
     } finally {

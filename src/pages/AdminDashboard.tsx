@@ -29,38 +29,60 @@ export const AdminDashboard = () => {
   }, []);
 
   const fetchData = async () => {
-    setLoading(true);
+    // 1. Instant Hydration from Cache
     try {
-      try {
-        const productsData = await api.request('getProducts');
-        setProducts(Array.isArray(productsData) ? productsData : []);
-      } catch (err) { console.error("Failed to fetch products:", err); }
+      const cached = localStorage.getItem('tbz_shop_cache');
+      if (cached) {
+        const { products: cProds } = JSON.parse(cached);
+        if (cProds) {
+          setProducts(cProds);
+          setLoading(false);
+        }
+      }
+    } catch (e) {}
 
+    // 2. Fetch each independently so one slow call doesn't block the UI
+    const loadProducts = async () => {
       try {
-        const ordersData = await api.request('getOrders');
-        setOrders(Array.isArray(ordersData) ? [...ordersData].reverse() : []);
-      } catch (err) { console.error("Failed to fetch orders:", err); }
+        const res = await api.request('getProducts');
+        setProducts(res.products || []);
+        setLoading(false);
+      } catch (e) {}
+    };
 
+    const loadOrders = async () => {
       try {
-        const usersData = await api.request('getUsers');
-        setUsers(Array.isArray(usersData) ? usersData : []);
-      } catch (err) { console.error("Failed to fetch users:", err); }
+        const res = await api.request('getOrders');
+        setOrders(Array.isArray(res) ? [...res].reverse() : []);
+        setLoading(false);
+      } catch (e) {}
+    };
 
+    const loadUsers = async () => {
       try {
-        const storeData = await api.request('getStoreSalesAll');
-        setStoreSales(Array.isArray(storeData) ? storeData : []);
-      } catch (err) { console.error("Failed to fetch store sales:", err); }
+        const res = await api.request('getUsers');
+        setUsers(Array.isArray(res) ? res : []);
+      } catch (e) {}
+    };
 
+    const loadStoreSales = async () => {
       try {
-        const rawItems = await api.request('getStoreSalesRaw');
-        setStoreItems(Array.isArray(rawItems) ? rawItems : []);
-      } catch (err) { console.error("Failed to fetch store items:", err); }
+        const res = await api.request('getStoreSalesAll');
+        setStoreSales(Array.isArray(res) ? res : []);
+      } catch (e) {}
+    };
 
-    } catch (error) {
-      console.error("Dashboard general fetch error:", error);
-    } finally {
+    const loadStoreItems = async () => {
+      try {
+        const res = await api.request('getStoreSalesRaw');
+        setStoreItems(Array.isArray(res) ? res : []);
+      } catch (e) {}
+    };
+
+    // Run all in parallel, they will update state as they finish
+    Promise.allSettled([loadProducts(), loadOrders(), loadUsers(), loadStoreSales(), loadStoreItems()]).then(() => {
       setLoading(false);
-    }
+    });
   };
 
   // Safe date parsing helper

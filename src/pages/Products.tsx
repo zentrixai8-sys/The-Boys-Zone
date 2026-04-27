@@ -42,14 +42,10 @@ export const Products = () => {
         const allProds = productsRes.products || [];
         const freshCategories = Array.isArray(categoriesData) ? categoriesData : [];
 
-        // Media-based filtering: Show only if it has an image or video
-        const freshProducts = allProds.filter((p: any) => {
-          const hasMedia = p.image_url || p.video_url || 
-                           (p.variants && p.variants.some((v: any) => v.colorImage || (v.images && v.images.length > 0)));
-          return p.sale_type === 'Online' && !!hasMedia;
-        });
-        
-        setProducts(freshProducts);
+        // Inclusive filtering: Show everything except 'Store'
+        const onlineProds = allProds.filter((p: any) => p.sale_type !== 'Store');
+
+        setProducts(onlineProds);
         
         // Update categories
         if (freshCategories.length > 0) {

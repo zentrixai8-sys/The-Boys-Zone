@@ -120,7 +120,7 @@ export const Checkout = () => {
 
           await api.request('createOrder', {
             user_id: user?.id,
-            products: JSON.stringify(cart),
+            products: cart, // Pass object directly, api will handle stringification
             total_amount: totalPrice,
             payment_id: response.razorpay_payment_id,
             payment_status: 'Paid',
@@ -130,8 +130,9 @@ export const Checkout = () => {
           toast.success('Order placed successfully!');
           clearCart();
           navigate('/order-success');
-        } catch (error) {
-          toast.error('Failed to save order');
+        } catch (error: any) {
+          console.error('Order Creation Error:', error);
+          toast.error('Payment successful, but failed to save order. Please contact support with Payment ID: ' + response.razorpay_payment_id);
         }
       },
       prefill: {

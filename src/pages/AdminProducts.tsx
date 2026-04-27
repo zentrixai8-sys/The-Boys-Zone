@@ -94,14 +94,25 @@ export const AdminProducts = () => {
   }, []);
 
   const fetchData = async () => {
-    setLoading(true);
+    // 1. Instant Hydration
+    try {
+      const cached = localStorage.getItem('tbz_shop_cache');
+      if (cached) {
+        const { products: cProds, categories: cCats } = JSON.parse(cached);
+        if (cProds) setProducts(cProds);
+        if (cCats) setCategories(cCats);
+        setLoading(false);
+      }
+    } catch (e) {}
+
+    // 2. Background Revalidation
     try {
       const [productsRes, categoriesData] = await Promise.all([
         api.request('getProducts'),
         api.request('getCategories')
       ]);
       setProducts(productsRes.products || []);
-      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+      setCategories(Array.isArray(categoriesData) ? categoriesData : (categoriesData as any)?.categories || []);
     } catch (error) {
       console.error("Failed to fetch admin data:", error);
     } finally {
@@ -413,7 +424,7 @@ export const AdminProducts = () => {
                 discount_price: 0,
                 stock: 0,
                 image_url: '',
-                is_store_only: null
+                is_store_only: false // Default to Online Product
               });
               setIsModalOpen(true);
             }}
@@ -611,7 +622,7 @@ export const AdminProducts = () => {
                     <button
                       type="button"
                       onClick={() => setEditingProduct({ ...editingProduct, is_store_only: false } as any)}
-                      className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${!editingProduct?.is_store_only ? 'bg-blue-500 text-white shadow-lg shadow-blue-100' : 'bg-slate-100 text-slate-400'}`}
+                      className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${editingProduct?.is_store_only === false ? 'bg-blue-500 text-white shadow-lg shadow-blue-100' : 'bg-slate-100 text-slate-400'}`}
                     >
                       Online Product
                     </button>

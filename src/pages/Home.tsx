@@ -133,58 +133,50 @@ export const Home = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
-      
-      // Fetching each independently so one failure doesn't block others
+      // 1. Immediate Hydration from Cache (Super Fast)
+      try {
+        const cached = localStorage.getItem('tbz_shop_cache');
+        if (cached) {
+          const { products, categories: cachedCats } = JSON.parse(cached);
+          if (products) {
+            const onlineProds = products.filter((p: any) => p.sale_type !== 'Store').slice(0, 12);
+            setProducts(onlineProds);
+          }
+          if (cachedCats) setCategories(cachedCats);
+          setLoading(false); // Stop showing main loader if we have some data
+        }
+      } catch (e) { console.warn('Home cache hydration failed'); }
+
+      // 2. Parallel Background Fetch (Non-blocking)
       const fetchProducts = async () => {
         try {
           const res = await api.request('getProducts', { limit: 12 });
           const allProds = res.products || [];
-          // Media-based filtering: Show only if it has an image or video
-          const onlineProds = allProds.filter((p: any) => {
-            const hasMedia = p.image_url || p.video_url || 
-                             (p.variants && p.variants.some((v: any) => v.colorImage || (v.images && v.images.length > 0)));
-            return p.sale_type === 'Online' && !!hasMedia;
-          });
+          const onlineProds = allProds.filter((p: any) => p.sale_type !== 'Store');
           setProducts(onlineProds);
-        } catch (e) {
-          console.error('Products fetch failed:', e);
-        }
+        } catch (e) { console.error('Products fetch failed:', e); }
       };
 
       const fetchBestSellers = async () => {
         try {
           const res = await api.request('getBestSellers');
-          const allBS = res || [];
-          // Media-based filtering: Show only if it has an image or video
-          const onlineBS = allBS.filter((p: any) => {
-            const hasMedia = p.image_url || p.video_url || 
-                             (p.variants && p.variants.some((v: any) => v.colorImage || (v.images && v.images.length > 0)));
-            return !!hasMedia;
-          });
+          const onlineBS = (res || []).filter((p: any) => p.sale_type !== 'Store');
           setBestSellers(onlineBS);
-        } catch (e) {
-          console.error('Best Sellers fetch failed:', e);
-        }
+        } catch (e) { console.error('Best Sellers fetch failed:', e); }
       };
 
       const fetchCategories = async () => {
         try {
           const res = await api.request('getCategories');
-          setCategories(res.categories || []);
-        } catch (e) {
-          console.error('Categories fetch failed:', e);
-        }
+          setCategories(res.categories || res || []);
+        } catch (e) { console.error('Categories fetch failed:', e); }
       };
 
       const fetchOffers = async () => {
         try {
           const res = await api.request('getOffers');
           setOffers(res || []);
-        } catch (e) {
-          console.warn('Offers table might not exist yet:', e);
-          setOffers([]);
-        }
+        } catch (e) { setOffers([]); }
       };
 
       await Promise.allSettled([fetchProducts(), fetchBestSellers(), fetchCategories(), fetchOffers()]);

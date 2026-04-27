@@ -83,10 +83,10 @@ export const AdminInventory = () => {
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
-    setLoading(true);
     try {
       const res = await api.request('getProducts');
       setProducts(res.products || []);
+      setLoading(false);
     } catch (error) {
       console.error('Failed to fetch inventory:', error);
     } finally {

@@ -94,6 +94,15 @@ export const Billing = () => {
 
   useEffect(() => {
     const loadProducts = async () => {
+      // Instant Hydration
+      try {
+        const cached = localStorage.getItem('tbz_shop_cache');
+        if (cached) {
+          const { products } = JSON.parse(cached);
+          if (products) setAllProducts(products);
+        }
+      } catch (e) {}
+
       try {
         const res = await api.request('getProducts');
         setAllProducts(res.products || []);
@@ -102,7 +111,7 @@ export const Billing = () => {
       }
     };
     loadProducts();
-  }, [items]); // Reload stock after sale/item added
+  }, []); // Only load on mount, or after a specific trigger
 
   const handleDropdownSelect = (id: string) => {
     setSelectedCustomerId(id);

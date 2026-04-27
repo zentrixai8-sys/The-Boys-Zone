@@ -12,8 +12,10 @@ const getRatingBase = (productId: string) => {
   return { count, avg: baseAvg };
 };
 
-// Caching Helpers
 const SHOP_CACHE_KEY = 'tbz_shop_cache';
+const sessionCache: Record<string, { data: any, timestamp: number }> = {};
+const CACHE_TTL = 300000; // 5 minutes
+
 const getCachedData = () => {
   try {
     const cached = localStorage.getItem(SHOP_CACHE_KEY);
@@ -29,7 +31,14 @@ const saveToCache = (data: any) => {
 
 export const api = {
   async request(action: string, data: any = {}) {
+    // Check Session Cache (Memory Only - super fast)
+    const cacheKey = `${action}_${JSON.stringify(data)}`;
+    if (sessionCache[cacheKey] && (Date.now() - sessionCache[cacheKey].timestamp < CACHE_TTL)) {
+      return sessionCache[cacheKey].data;
+    }
+
     try {
+      let result: any;
       switch (action) {
         case 'getProducts': {
           const { data: products, error: pError } = await supabase
@@ -38,24 +47,22 @@ export const api = {
             .order('created_at', { ascending: false });
           if (pError) throw pError;
 
-          const { data: reviews, error: rError } = await supabase
-            .from('review_summaries') // Using a summary view for speed if available, fallback to reviews
-            .select('*');
+          const { data: reviews } = await supabase.from('reviews').select('product_id, rating');
           
-          let reviewsData = reviews;
-          if (rError) {
-             const { data: rawReviews } = await supabase.from('reviews').select('product_id, rating');
-             reviewsData = rawReviews;
-          }
+          const statsMap = new Map<string, { count: number, sum: number }>();
+          (reviews || []).forEach(r => {
+            const current = statsMap.get(r.product_id) || { count: 0, sum: 0 };
+            statsMap.set(r.product_id, {
+              count: current.count + 1,
+              sum: current.sum + (r.rating || 0)
+            });
+          });
 
           const productsWithRatings = products?.map(product => {
-            const productReviews = reviewsData?.filter(r => r.product_id === product.product_id) || [];
-            const realReviewCount = productReviews.length;
-            const realRatingSum = productReviews.reduce((sum, r) => sum + (r.rating || 0), 0);
-
+            const stats = statsMap.get(product.product_id) || { count: 0, sum: 0 };
             const { count: baseCount, avg: baseAvg } = getRatingBase(product.product_id);
-            const totalCount = baseCount + realReviewCount;
-            const finalAvg = ((baseAvg * baseCount) + realRatingSum) / totalCount;
+            const totalCount = baseCount + stats.count;
+            const finalAvg = ((baseAvg * baseCount) + stats.sum) / totalCount;
 
             return {
               ...product,
@@ -67,6 +74,30 @@ export const api = {
           const result = { products: productsWithRatings || [] };
           saveToCache({ products: result.products });
           return result;
+        }
+
+        case 'getProduct': {
+          const { data: product, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('product_id', data.id)
+            .single();
+          if (error) throw error;
+
+          const { count: baseCount, avg: baseAvg } = getRatingBase(product.product_id);
+          const { data: reviews } = await supabase.from('reviews').select('rating').eq('product_id', product.product_id);
+          
+          const realReviewCount = reviews?.length || 0;
+          const realRatingSum = reviews?.reduce((sum, r) => sum + r.rating, 0) || 0;
+          
+          const totalCount = baseCount + realReviewCount;
+          const finalAvg = ((baseAvg * baseCount) + realRatingSum) / totalCount;
+
+          return {
+            ...product,
+            rating: Number(finalAvg.toFixed(1)),
+            reviewCount: totalCount
+          };
         }
 
         case 'getBestSellers': {
@@ -306,15 +337,26 @@ export const api = {
             .from('orders')
             .insert([{
               user_id: data.user_id,
-              products: data.products,
-              total_amount: data.total_amount,
+              products: typeof data.products === 'string' ? data.products : JSON.stringify(data.products),
+              total_amount: Number(data.total_amount),
               payment_id: data.payment_id,
-              payment_status: data.payment_status,
+              payment_status: data.payment_status || 'Paid',
               order_status: 'Processing',
-              address: data.address
+              address: data.address,
+              date: new Date().toISOString()
             }]);
           if (error) throw error;
           return true;
+        }
+
+        case 'getUserOrders': {
+          const { data: orders, error } = await supabase
+            .from('orders')
+            .select('*, profiles(name, phone)')
+            .eq('user_id', data.user_id)
+            .order('date', { ascending: false });
+          if (error) throw error;
+          return orders || [];
         }
 
         case 'createStoreSale': {
@@ -709,9 +751,14 @@ export const api = {
         default:
           throw new Error(`Action ${action} not implemented for Supabase`);
       }
-    } catch (error: any) {
-      console.error(`Supabase Error (${action}):`, error);
+      // Final return with session cache update
+      if (result !== undefined) {
+        sessionCache[cacheKey] = { data: result, timestamp: Date.now() };
+      }
+      return result;
+    } catch (error) {
+      console.error(`API Error [${action}]:`, error);
       throw error;
     }
-  }
+  },
 };
