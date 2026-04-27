@@ -87,9 +87,9 @@ export const Navbar = () => {
             </span>
           </Link>
 
-          {/* Centered Brand Name (Mobile Only) */}
-          <div className="flex-1 md:hidden flex justify-center px-1">
-            <span className="text-[12px] font-serif font-black tracking-[0.15em] uppercase whitespace-nowrap animate-premium-shine">
+          {/* Brand Name next to logo on mobile */}
+          <div className="flex-1 md:hidden flex justify-start px-2">
+            <span className="text-[11px] font-serif font-black tracking-[0.15em] uppercase whitespace-nowrap animate-premium-shine">
               The Boys Zone
             </span>
           </div>

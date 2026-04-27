@@ -19,7 +19,14 @@ const CACHE_TTL = 300000; // 5 minutes
 const getCachedData = () => {
   try {
     const cached = localStorage.getItem(SHOP_CACHE_KEY);
-    return cached ? JSON.parse(cached) : null;
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    // Invalidate localStorage cache after 5 minutes (same as sessionCache TTL)
+    if (parsed.timestamp && Date.now() - parsed.timestamp > CACHE_TTL) {
+      localStorage.removeItem(SHOP_CACHE_KEY);
+      return null;
+    }
+    return parsed;
   } catch { return null; }
 };
 const saveToCache = (data: any) => {
