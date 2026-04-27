@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Order } from '../types';
 import { formatPrice, formatDate } from '../lib/utils';
-import { Package, Clock, MapPin, ChevronRight, User as UserIcon, Phone, Mail, Camera, Save, Loader2, Upload, ChevronDown } from 'lucide-react';
+import { Package, Clock, MapPin, ChevronRight, User as UserIcon, Phone, Mail, Camera, Save, Loader2, Upload, ChevronDown, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
@@ -18,6 +18,8 @@ export const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [reviewingProduct, setReviewingProduct] = useState<{order_id: string, product_id: string, rating: number, comment: string} | null>(null);
+  const [submittingReview, setSubmittingReview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState(() => {
     const addr = user?.address || '';
@@ -132,6 +134,31 @@ export const Profile = () => {
       toast.error('Failed to update profile');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewingProduct || !user) return;
+    if (reviewingProduct.rating === 0) {
+      toast.error('Please select a rating');
+      return;
+    }
+    
+    setSubmittingReview(true);
+    try {
+      await api.request('addReview', {
+        product_id: reviewingProduct.product_id,
+        user_id: user.id,
+        rating: reviewingProduct.rating,
+        comment: reviewingProduct.comment
+      });
+      toast.success('Review submitted successfully!');
+      setReviewingProduct(null);
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+      toast.error('Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -442,26 +469,91 @@ export const Profile = () => {
                                 try {
                                   const products = JSON.parse(order.products || '[]');
                                   return Array.isArray(products) ? products.map((item: any, i: number) => (
-                                    <Link 
-                                      key={i} 
-                                      to={`/product/${item.product?.product_id}`}
-                                      className="flex items-center gap-4 group/item hover:bg-white p-2 -m-2 rounded-2xl transition-all"
-                                    >
-                                      <div className="w-14 h-14 bg-white rounded-2xl overflow-hidden shrink-0 shadow-sm border border-black/5 group-hover/item:border-indigo-200 transition-colors">
-                                        <img src={item.product?.image_url} alt="" className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-black text-slate-800 line-clamp-1 mb-1 group-hover/item:text-indigo-600 transition-colors">{item.product?.title}</p>
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-[10px] font-bold text-slate-400">QTY: {item.quantity}</span>
-                                          <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                                          <span className="text-[10px] font-black text-indigo-500">{formatPrice(item.product?.discount_price || item.product?.price)}</span>
+                                    <div key={i} className="flex flex-col gap-3 group/item p-4 -mx-4 rounded-3xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
+                                      <div className="flex items-center gap-4">
+                                        <Link to={`/product/${item.product?.product_id}`} className="w-16 h-16 bg-white rounded-2xl overflow-hidden shrink-0 shadow-sm border border-slate-100 group-hover/item:border-indigo-200 transition-colors">
+                                          <img src={item.product?.image_url} alt="" className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                                        </Link>
+                                        <div className="flex-1 min-w-0">
+                                          <Link to={`/product/${item.product?.product_id}`} className="block">
+                                            <p className="text-sm font-black text-slate-800 line-clamp-1 mb-1 group-hover/item:text-indigo-600 transition-colors">{item.product?.title}</p>
+                                          </Link>
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">QTY: {item.quantity}</span>
+                                            <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                            <span className="text-[10px] font-black text-indigo-500">{formatPrice(item.product?.discount_price || item.product?.price)}</span>
+                                          </div>
+                                        </div>
+                                        <div className="text-right flex flex-col items-end gap-2">
+                                           <p className="text-sm font-black text-slate-900">{formatPrice((item.product?.discount_price || item.product?.price || 0) * item.quantity)}</p>
+                                           {order.order_status === 'Delivered' && (
+                                             <button 
+                                               onClick={(e) => {
+                                                 e.preventDefault();
+                                                 setReviewingProduct(reviewingProduct?.product_id === item.product?.product_id 
+                                                   ? null 
+                                                   : { order_id: order.order_id, product_id: item.product?.product_id, rating: 0, comment: '' }
+                                                 );
+                                               }}
+                                               className="text-[9px] font-black uppercase tracking-[0.1em] px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all"
+                                             >
+                                               {reviewingProduct?.product_id === item.product?.product_id ? 'Cancel' : 'Rate Product'}
+                                             </button>
+                                           )}
                                         </div>
                                       </div>
-                                      <div className="text-right">
-                                         <p className="text-xs font-black text-slate-700">{formatPrice((item.product?.discount_price || item.product?.price || 0) * item.quantity)}</p>
-                                      </div>
-                                    </Link>
+                                      
+                                      {/* Review Form */}
+                                      <AnimatePresence>
+                                        {reviewingProduct?.order_id === order.order_id && reviewingProduct?.product_id === item.product?.product_id && (
+                                          <motion.div 
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden"
+                                          >
+                                            <div className="mt-2 p-4 bg-white rounded-2xl border border-indigo-100 shadow-sm shadow-indigo-500/5 space-y-4">
+                                              <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Rate this item</p>
+                                                <div className="flex gap-1">
+                                                  {[1, 2, 3, 4, 5].map((star) => (
+                                                    <button
+                                                      key={star}
+                                                      type="button"
+                                                      onClick={(e) => {
+                                                        e.preventDefault();
+                                                        setReviewingProduct({ ...reviewingProduct, rating: star });
+                                                      }}
+                                                      className="p-1 hover:scale-110 transition-transform focus:outline-none"
+                                                    >
+                                                      <Star className={`w-6 h-6 ${reviewingProduct.rating >= star ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
+                                                    </button>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                              <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Share your experience</p>
+                                                <textarea
+                                                  value={reviewingProduct.comment}
+                                                  onChange={(e) => setReviewingProduct({ ...reviewingProduct, comment: e.target.value })}
+                                                  placeholder="What did you like about it?"
+                                                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none h-24"
+                                                />
+                                              </div>
+                                              <div className="flex justify-end">
+                                                <button
+                                                  onClick={(e) => { e.preventDefault(); handleSubmitReview(); }}
+                                                  disabled={submittingReview || reviewingProduct.rating === 0}
+                                                  className="px-6 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                >
+                                                  {submittingReview ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit Review'}
+                                                </button>
+                                              </div>
+                                            </div>
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                    </div>
                                   )) : null;
                                 } catch (e) {
                                   return <p className="text-xs text-red-500">Error loading items</p>;

@@ -54,7 +54,7 @@ export const api = {
       'addProduct', 'updateProduct', 'deleteProduct', 
       'addCategory', 'deleteCategory', 'updateCategory', 
       'createOrder', 'createStoreSale', 'updateOrderStatus', 'updateProfile',
-      'addOffer', 'updateOffer', 'deleteOffer'
+      'addOffer', 'updateOffer', 'deleteOffer', 'addReview'
     ];
     if (mutations.includes(action)) {
       Object.keys(sessionCache).forEach(key => delete sessionCache[key]);
@@ -241,6 +241,21 @@ export const api = {
             .single();
           if (catUpdErr) throw catUpdErr;
           result = updCat;
+          break;
+        }
+
+        case 'addReview': {
+          const { error } = await supabase
+            .from('reviews')
+            .insert([{
+              product_id: data.product_id,
+              user_id: data.user_id,
+              rating: data.rating,
+              comment: data.comment,
+              date: new Date().toISOString()
+            }]);
+          if (error) throw error;
+          result = true;
           break;
         }
 
