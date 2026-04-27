@@ -3,7 +3,7 @@ import { api } from '../services/api';
 import { Product, Category } from '../types';
 import { formatPrice } from '../lib/utils';
 import {
-  Plus, Edit2, Trash2, Loader2, X, DollarSign, Package, Save
+  Plus, Edit2, Trash2, Loader2, X, DollarSign, Package, Save, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
@@ -86,6 +86,8 @@ export const AdminProducts = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const variantFileInputRef = useRef<HTMLInputElement>(null);
   const [activeVariantIdx, setActiveVariantIdx] = useState<number | null>(null);
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [stockProduct, setStockProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -355,7 +357,10 @@ export const AdminProducts = () => {
       }
 
       // Clean payload: Remove internal-only fields that don't exist in Supabase table
-      const finalPayload = { ...payload };
+      const finalPayload = { 
+        ...payload,
+        sale_type: payload.is_store_only === true ? 'Store' : 'Online'
+      };
       delete finalPayload.is_store_only;
       delete finalPayload.store_stock;
       delete finalPayload.online_stock;
@@ -408,7 +413,7 @@ export const AdminProducts = () => {
                 discount_price: 0,
                 stock: 0,
                 image_url: '',
-                is_store_only: false
+                is_store_only: null
               });
               setIsModalOpen(true);
             }}
@@ -510,10 +515,17 @@ export const AdminProducts = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredProducts.map((product) => (
-                  <tr key={product.product_id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr 
+                    key={product.product_id}
+                    className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                    onClick={() => {
+                      setStockProduct(product);
+                      setIsStockModalOpen(true);
+                    }}
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 shadow-sm">
+                        <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 shadow-sm group-hover:scale-105 transition-transform">
                           <img src={product.image_url} alt="" className="w-full h-full object-cover" />
                         </div>
                         <div>
@@ -542,13 +554,16 @@ export const AdminProducts = () => {
                       <p className="font-bold text-sm">{formatPrice(product.discount_price || product.price)}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className={`text-sm font-bold ${product.stock <= 30 && product.stock > 0 ? 'text-orange-500' : product.stock === 0 ? 'text-red-500' : 'text-emerald-600'}`}>{product.stock}</p>
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm font-bold ${product.stock <= 30 && product.stock > 0 ? 'text-orange-500' : product.stock === 0 ? 'text-red-500' : 'text-emerald-600'}`}>{product.stock}</p>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-black transition-colors" />
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => {
-                            const isStoreOnly = !product.image_url && (!product.variants || product.variants.length === 0 || product.variants.every(v => !v.colorImage));
+                            const isStoreOnly = product.sale_type === 'Store' || (!product.image_url && (!product.variants || product.variants.length === 0 || product.variants.every(v => !v.colorImage)));
                             setEditingProduct({ ...product, is_store_only: isStoreOnly } as any);
                             setIsModalOpen(true);
                           }}
@@ -879,15 +894,112 @@ export const AdminProducts = () => {
 
                 <button
                   type="submit"
-                  disabled={uploading}
+                  disabled={uploading || editingProduct?.is_store_only === null}
                   className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] text-sm font-black uppercase tracking-widest hover:bg-black hover:shadow-xl hover:shadow-slate-200 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                  {editingProduct?.product_id ? 'Update Product Details' : 'Launch New Product'}
+                  {editingProduct?.product_id ? 'Update Product Details' : (editingProduct?.is_store_only === null ? 'Select Channel to Launch' : 'Launch New Product')}
                 </button>
               </form>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+      
+      {/* Stock Details Modal */}
+      <AnimatePresence>
+        {isStockModalOpen && stockProduct && (
+          <div className="fixed inset-0 z-150 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsStockModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                 <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-sm">
+                       <img src={stockProduct.image_url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                       <h3 className="text-xl font-black text-slate-900">{stockProduct.title}</h3>
+                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{stockProduct.category} • {stockProduct.brand}</p>
+                    </div>
+                 </div>
+                 <button 
+                   onClick={() => setIsStockModalOpen(false)}
+                   className="p-3 bg-white hover:bg-slate-100 rounded-2xl text-slate-400 transition-colors border border-slate-100 shadow-sm"
+                 >
+                   <X className="w-5 h-5" />
+                 </button>
+              </div>
+
+              <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {stockProduct.variants && stockProduct.variants.length > 0 ? (
+                      stockProduct.variants.map((v, vIdx) => (
+                        <div key={vIdx} className="bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100 space-y-4">
+                           <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                 <div className="w-4 h-4 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: v.color?.toLowerCase() }} />
+                                 <span className="font-black text-sm uppercase text-slate-800">{v.color}</span>
+                              </div>
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Variant #{vIdx + 1}</span>
+                           </div>
+
+                           <div className="space-y-2">
+                              {v.sizes.map((s: any, sIdx: number) => (
+                                <div key={sIdx} className="bg-white px-4 py-3 rounded-xl border border-slate-100 flex items-center justify-between group/size hover:border-slate-300 transition-all">
+                                   <span className="text-xs font-black text-slate-400 group-hover/size:text-slate-900 transition-colors">SIZE {s.size}</span>
+                                   <div className="flex items-center gap-4">
+                                      <div className="text-right">
+                                         <p className="text-[10px] font-black text-emerald-500 uppercase leading-none mb-0.5">Store</p>
+                                         <p className="text-sm font-black text-slate-700">{s.store_stock || 0}</p>
+                                      </div>
+                                      <div className="w-px h-6 bg-slate-100" />
+                                      <div className="text-right">
+                                         <p className="text-[10px] font-black text-blue-500 uppercase leading-none mb-0.5">Online</p>
+                                         <p className="text-sm font-black text-slate-700">{s.online_stock || 0}</p>
+                                      </div>
+                                   </div>
+                                </div>
+                              ))}
+                           </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="col-span-full py-12 text-center space-y-3">
+                         <Package className="w-12 h-12 text-slate-200 mx-auto" />
+                         <p className="text-sm font-bold text-slate-400 italic">No detailed variant breakdown available.</p>
+                      </div>
+                    )}
+                 </div>
+              </div>
+
+              <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+                 <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-slate-400 uppercase">Total Unit Stock:</span>
+                    <span className="text-lg font-black text-slate-900">{stockProduct.stock} Pcs</span>
+                 </div>
+                 <button 
+                   onClick={() => {
+                     setIsStockModalOpen(false);
+                     const isStoreOnly = stockProduct.sale_type === 'Store' || (!stockProduct.image_url && (!stockProduct.variants || stockProduct.variants.length === 0 || stockProduct.variants.every(v => !v.colorImage)));
+                     setEditingProduct({ ...stockProduct, is_store_only: isStoreOnly } as any);
+                     setIsModalOpen(true);
+                   }}
+                   className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-200"
+                 >
+                   <Edit2 className="w-4 h-4" /> Edit Inventory
+                 </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

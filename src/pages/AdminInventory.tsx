@@ -101,7 +101,25 @@ export const AdminInventory = () => {
     const newStock = (product.stock || 0) + qty;
     setUpdatingId(product.product_id);
     try {
-      await api.request('updateProduct', { product_id: product.product_id, stock: newStock });
+      const updateData: any = { product_id: product.product_id, stock: newStock };
+      
+      // Also update variants if they exist for consistency
+      if (product.variants && product.variants.length > 0) {
+        const v = [...product.variants];
+        if (v[0].sizes && v[0].sizes.length > 0) {
+          const s = { ...v[0].sizes[0] };
+          if (product.sale_type === 'Store') {
+            s.store_stock = (s.store_stock || 0) + qty;
+          } else {
+            s.online_stock = (s.online_stock || 0) + qty;
+          }
+          s.stock = (s.store_stock || 0) + (s.online_stock || 0);
+          v[0].sizes[0] = s;
+          updateData.variants = v;
+        }
+      }
+
+      await api.request('updateProduct', updateData);
 
       // Save log to localStorage
       addStockLog({
@@ -141,14 +159,12 @@ export const AdminInventory = () => {
       const matchesCat = categoryFilter === 'All' || p.category?.toLowerCase() === categoryFilter.toLowerCase();
       const matchesSub = subCategoryFilter === 'All' || p.sub_category?.toLowerCase() === subCategoryFilter.toLowerCase();
       
-      // Intelligent detection: Store products have no images OR specific description
-      const isStoreOnly = (!p.image_url && (!p.variants || p.variants.length === 0 || p.variants.every(v => !v.colorImage))) || 
-                         (p.description?.includes('Showroom stock item'));
+      const isStoreProduct = p.sale_type === 'Store';
       
       const matchesSource = 
         sourceFilter === 'all' ? true :
-        sourceFilter === 'online' ? !isStoreOnly :
-        isStoreOnly;
+        sourceFilter === 'online' ? !isStoreProduct :
+        isStoreProduct;
       return matchesSearch && matchesFilter && matchesCat && matchesSub && matchesSource;
     });
   }, [products, search, activeFilter, categoryFilter, subCategoryFilter, viewMode, sourceFilter]);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Printer, Search, Loader2, Save, User as UserIcon, Phone, MapPin, ChevronDown, UserPlus, Download, X, Package } from 'lucide-react';
+import { Plus, Trash2, Printer, Search, Loader2, Save, User as UserIcon, Phone, MapPin, ChevronDown, UserPlus, Download, X, Package, Clock } from 'lucide-react';
 import { formatPrice, formatDate } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { api } from '../services/api';
@@ -17,12 +17,24 @@ const subCategoryMap: Record<string, string[]> = {
   'Shoes':       ['Sneakers', 'Formal Shoes', 'Sandals', 'Loafers', 'Boots', 'Flip-Flops'],
 };
 
+const categorySizeMap: Record<string, string[]> = {
+  'Shirt':       ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
+  'T-Shirt':     ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
+  'Jeans':       ['28', '30', '32', '34', '36', '38', '40'],
+  'Pant':        ['28', '30', '32', '34', '36', '38', '40'],
+  'Pants':       ['28', '30', '32', '34', '36', '38', '40'],
+  'Footwear':    ['6', '7', '8', '9', '10', '11'],
+  'Shoes':       ['6', '7', '8', '9', '10', '11'],
+  'Accessories': ['Free Size'],
+};
+
 interface BillItem {
   id: string;
   category: string;
   productName: string;
   price: number;
   quantity: number;
+  size?: string;
 }
 
 export const Billing = () => {
@@ -40,6 +52,8 @@ export const Billing = () => {
   const [productName, setProductName] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('1');
+  const [selectedSize, setSelectedSize] = useState('');
+  const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   
   const [items, setItems] = useState<BillItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -147,13 +161,35 @@ export const Billing = () => {
     if (category && productName) {
       const match = allProducts.filter(p => 
         p.category === category && 
-        p.sub_category === productName
+        p.sub_category === productName &&
+        p.sale_type === salesChannel
       );
+      
+      // Priority 1: Sizes from database variants
+      const dbSizes = new Set<string>();
+      match.forEach(p => {
+        (p.variants || []).forEach((v: any) => {
+          (v.sizes || []).forEach((s: any) => {
+            if (s.size) dbSizes.add(s.size);
+          });
+        });
+      });
+
+      // Priority 2: Fallback to category map if no DB sizes found
+      if (dbSizes.size > 0) {
+        setAvailableSizes(Array.from(dbSizes).sort());
+      } else if (category && categorySizeMap[category]) {
+        setAvailableSizes(categorySizeMap[category]);
+      } else {
+        setAvailableSizes([]);
+      }
+
       if (match.length > 0) {
         const totalStock = match.reduce((sum, p) => {
-          // Sum from variants and sizes
           const productStock = (p.variants || []).reduce((vSum: number, v: any) => {
             const sizeSum = (v.sizes || []).reduce((sSum: number, s: any) => {
+              // If size is selected, only count that size
+              if (selectedSize && s.size !== selectedSize) return sSum;
               const val = salesChannel === 'Store' ? (s.store_stock || 0) : (s.online_stock || 0);
               return sSum + Number(val);
             }, 0);
@@ -167,8 +203,10 @@ export const Billing = () => {
       }
     } else {
       setCurrentStock(null);
+      setAvailableSizes([]);
+      setSelectedSize('');
     }
-  }, [category, productName, allProducts, salesChannel]);
+  }, [category, productName, allProducts, salesChannel, selectedSize]);
 
   const handleAddItem = () => {
     if (!category || !productName || !price || !quantity) {
@@ -179,9 +217,10 @@ export const Billing = () => {
     const newItem: BillItem = {
       id: Date.now().toString(),
       category,
-      productName: productName,
+      productName: selectedSize ? `${productName} (Size: ${selectedSize})` : productName,
       price: parseFloat(price),
-      quantity: parseInt(quantity)
+      quantity: parseInt(quantity),
+      size: selectedSize
     };
 
     setItems([...items, newItem]);
@@ -306,7 +345,7 @@ export const Billing = () => {
         doc.setFontSize(7.5);
         doc.setTextColor(180, 200, 240);
         doc.text('Near Ripusudan Petrol Pump Suhela, Baloda Bazar CG', margin + (logoDataUrl ? 28 : 0), 25);
-        doc.text('Ph: +91 9617628157', margin + (logoDataUrl ? 28 : 0), 31);
+        doc.text('Contact us on WhatsApp or call +91 9617628157 within 2 days of receiving your order.', margin + (logoDataUrl ? 28 : 0), 31);
 
         // INVOICE label + date (top-right of band)
         doc.setFont('helvetica', 'bold');
@@ -364,25 +403,40 @@ export const Billing = () => {
 
         // Item rows
         items.forEach((item, idx) => {
+          // Calculate height needed for this row (text wrapping)
+          const productName = item.productName || '';
+          const splitTitle = doc.splitTextToSize(productName, 60); // Wrap within 60mm
+          const rowHeight = Math.max(8, splitTitle.length * 5);
+
           if (idx % 2 === 0) {
             doc.setFillColor(...LIGHT);
-            doc.rect(margin, y - 1, W - margin * 2, 8, 'F');
+            doc.rect(margin, y - 1, W - margin * 2, rowHeight, 'F');
           }
+
           doc.setFont('helvetica', 'bold');
-          doc.setFontSize(9);
+          doc.setFontSize(8.5);
           doc.setTextColor(...BLACK);
-          doc.text(item.productName, col.item, y + 5);
+          doc.text(splitTitle, col.item, y + 4.5);
 
           doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8.5);
           doc.setTextColor(...GRAY);
-          doc.text(item.category,               col.cat,  y + 5);
-          doc.text(String(item.quantity),        col.qty,  y + 5, { align: 'center' });
-          doc.text(`Rs.${item.price.toFixed(2)}`, col.unit, y + 5, { align: 'right' });
+          doc.text(item.category || '', col.cat, y + 4.5);
+          doc.text(String(item.quantity || 0), col.qty, y + 4.5, { align: 'center' });
+          doc.text(`Rs.${(item.price || 0).toFixed(2)}`, col.unit, y + 4.5, { align: 'right' });
 
           doc.setFont('helvetica', 'bold');
           doc.setTextColor(...BLACK);
-          doc.text(`Rs.${(item.price * item.quantity).toFixed(2)}`, col.total, y + 5, { align: 'right' });
-          y += 8;
+          doc.text(`Rs.${((item.price || 0) * (item.quantity || 0)).toFixed(2)}`, col.total, y + 4.5, { align: 'right' });
+          
+          y += rowHeight;
+
+          // Check for page break
+          if (y > 260) {
+            doc.addPage();
+            y = 20;
+            // Redraw header if needed or just continue
+          }
         });
 
         y += 6;
@@ -424,10 +478,10 @@ export const Billing = () => {
         doc.setTextColor(...WHITE);
         doc.text('Thank you for shopping with us!', W / 2, y + 8, { align: 'center' });
 
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
         doc.setTextColor(180, 200, 240);
-        doc.text('No Exchange without Invoice.  |  Powered by Zentrix (zentrix-dv.vercel.app)', W / 2, y + 15, { align: 'center' });
+        doc.text('Exchange within 2 Days with original tags & invoice. | Developed & Powered by Zentrix (zentrix-dv.vercel.app)', W / 2, y + 15, { align: 'center' });
 
         const pdfBlob = doc.output('blob');
 
@@ -488,12 +542,49 @@ export const Billing = () => {
         const allProducts: any[] = prodRes.products || [];
         const deductPromises = items.map(async (item) => {
           const match = allProducts.find(
-            p => p.title?.toLowerCase() === item.productName?.toLowerCase() ||
-                 p.title?.toLowerCase().includes(item.productName?.toLowerCase())
+            p => (p.title?.toLowerCase() === item.productName?.toLowerCase() ||
+                 p.title?.toLowerCase().includes(item.productName?.toLowerCase())) &&
+                 p.sale_type === salesChannel
           );
           if (match) {
             const newStock = Math.max(0, (match.stock || 0) - item.quantity);
-            await api.request('updateProduct', { product_id: match.product_id, stock: newStock });
+            const updateData: any = { product_id: match.product_id, stock: newStock };
+            
+            // Deduct from the specific size
+            if (match.variants && match.variants.length > 0) {
+              const v = [...match.variants];
+              let sizeFound = false;
+              
+              v.forEach((variant: any) => {
+                if (variant.sizes) {
+                  const targetSize = variant.sizes.find((s: any) => s.size === item.size);
+                  if (targetSize) {
+                    if (salesChannel === 'Store') {
+                      targetSize.store_stock = Math.max(0, (targetSize.store_stock || 0) - item.quantity);
+                    } else {
+                      targetSize.online_stock = Math.max(0, (targetSize.online_stock || 0) - item.quantity);
+                    }
+                    targetSize.stock = (targetSize.store_stock || 0) + (targetSize.online_stock || 0);
+                    sizeFound = true;
+                  }
+                }
+              });
+
+              // Fallback if size not found in variants (e.g. old data)
+              if (!sizeFound && v[0].sizes && v[0].sizes.length > 0) {
+                const s = { ...v[0].sizes[0] };
+                if (salesChannel === 'Store') {
+                  s.store_stock = Math.max(0, (s.store_stock || 0) - item.quantity);
+                } else {
+                  s.online_stock = Math.max(0, (s.online_stock || 0) - item.quantity);
+                }
+                s.stock = (s.store_stock || 0) + (s.online_stock || 0);
+                v[0].sizes[0] = s;
+              }
+              updateData.variants = v;
+            }
+            
+            await api.request('updateProduct', updateData);
           }
         });
         await Promise.allSettled(deductPromises);
@@ -706,7 +797,7 @@ export const Billing = () => {
               <div className="rounded-xl overflow-hidden" style={{background:'linear-gradient(135deg,#1e50a0,#2563eb)'}}>
                 <div className="px-5 py-3 text-center">
                   <p className="text-white font-black text-xs">🙏 Thank you for shopping with us!</p>
-                  <p className="text-blue-200 text-[10px] mt-0.5">No Exchange without Invoice · Powered by <span className="text-white font-bold">Zentrix</span></p>
+                  <p className="text-blue-200 text-[10px] mt-0.5">Exchange within 2 days with original tags & invoice. | Powered by <span className="text-white font-bold">Zentrix</span></p>
                 </div>
               </div>
 
@@ -916,6 +1007,28 @@ export const Billing = () => {
                   />
                 )}
               </div>
+
+              {availableSizes.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-black/40 block">Select Size</label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableSizes.map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setSelectedSize(s)}
+                        className={`px-5 py-2.5 rounded-xl border-2 font-black text-sm transition-all duration-200 ${
+                          selectedSize === s 
+                            ? 'bg-black text-white border-black shadow-lg shadow-black/20 scale-105' 
+                            : 'bg-white border-slate-200 text-slate-500 hover:border-black hover:text-black'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {currentStock !== null && (
                 <div className={`p-4 rounded-2xl border flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300 ${currentStock > 10 ? (salesChannel === 'Store' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-blue-50 border-blue-200 text-blue-700') : currentStock > 0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
@@ -1041,6 +1154,19 @@ export const Billing = () => {
             )}
           </div>
 
+          <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 text-blue-700 font-bold mb-2">
+              <Clock className="w-5 h-5" />
+              <h3>Return Window</h3>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              We accept return and exchange requests within <strong className="text-black">2 days</strong> of the delivery date for online orders.
+            </p>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              For in-store purchases, exchange requests must be made within <strong className="text-black">2 days</strong> of purchase with the original receipt.
+            </p>
+          </div>
+
         </div>
 
         {/* Right Column: Bill Summary & Print View */}
@@ -1092,7 +1218,7 @@ export const Billing = () => {
                 <span className="text-black">{formatPrice(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-black/60 uppercase tracking-widest">
-                <span>Tax / GST (18%)</span>
+                <span>Tax / GST ({gstEnabled ? gstPercentage : 0}%)</span>
                 <span className="text-black">{formatPrice(tax)}</span>
               </div>
               <div className="flex justify-between text-2xl font-black pt-4 border-t border-black/5">

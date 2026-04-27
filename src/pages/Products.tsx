@@ -46,7 +46,7 @@ export const Products = () => {
         const freshProducts = allProds.filter((p: any) => {
           const hasMedia = p.image_url || p.video_url || 
                            (p.variants && p.variants.some((v: any) => v.colorImage || (v.images && v.images.length > 0)));
-          return !!hasMedia;
+          return p.sale_type === 'Online' && !!hasMedia;
         });
         
         setProducts(freshProducts);

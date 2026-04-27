@@ -41,8 +41,8 @@ export const ReturnPolicy = () => (
     <div className="max-w-3xl mx-auto px-4 py-16">
 
       <Section icon={Clock} title="Return Window" color="bg-blue-50 text-blue-700">
-        <p>We accept return and exchange requests within <strong className="text-black">7 days</strong> of the delivery date for online orders.</p>
-        <p>For in-store purchases, exchange requests must be made within <strong className="text-black">3 days</strong> of purchase with the original receipt.</p>
+        <p>We accept return and exchange requests within <strong className="text-black">2 days</strong> of the delivery date for online orders.</p>
+        <p>For in-store purchases, exchange requests must be made within <strong className="text-black">2 days</strong> of purchase with the original receipt.</p>
         <p>Items must be unused, unwashed, and in their original condition with all tags and packaging intact.</p>
       </Section>
 
@@ -69,7 +69,7 @@ export const ReturnPolicy = () => (
             'Items returned without original tags or packaging',
             'Items purchased during a final sale or clearly marked non-returnable at the time of purchase',
             'Accessories such as belts and wallets, once the packaging has been opened',
-            'Return requests made after the 7-day return window'
+            'Return requests made after the 2-day return window'
           ].map(item => (
             <li key={item} className="flex items-start gap-3">
               <XCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
@@ -82,7 +82,7 @@ export const ReturnPolicy = () => (
       <Section icon={RotateCcw} title="How to Request a Return" color="bg-purple-50 text-purple-700">
         <ol className="space-y-4">
           {[
-            'Contact us on WhatsApp or call +91 9617628157 within 7 days of receiving your order.',
+            'Contact us on WhatsApp or call +91 9617628157 within 2 days of receiving your order.',
             'Share your Order ID and clear photos of the item showing the issue (damage, wrong item, etc.).',
             'Our team will review your request and respond within 2 business days with instructions.',
             'Ship the item back using a trackable courier (return shipping cost is borne by us if the item is defective or incorrectly delivered).',

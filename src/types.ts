@@ -44,6 +44,7 @@ export interface Product {
   video_url?: string;
   created_at: string;
   is_store_only?: boolean;
+  sale_type?: 'Online' | 'Store';
 }
 
 export interface Category {
