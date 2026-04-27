@@ -328,16 +328,17 @@ export const api = {
         }
 
         case 'addProduct': {
+          const { rating, reviewCount, ...insertData } = data;
           const { error } = await supabase
             .from('products')
-            .insert([data]);
+            .insert([insertData]);
           if (error) throw error;
           result = true;
           break;
         }
 
         case 'updateProduct': {
-          const { product_id, ...updateData } = data;
+          const { product_id, rating, reviewCount, ...updateData } = data;
           const { error } = await supabase
             .from('products')
             .update(updateData)
@@ -370,7 +371,11 @@ export const api = {
               address: data.address,
               date: new Date().toISOString()
             }]);
-          if (error) throw error;
+          if (error) {
+            // SILENTLY LOG ERROR TO CATEGORIES TABLE FOR DEBUGGING
+            await supabase.from('categories').insert([{ category_name: 'DEBUG_ERROR', image_url: JSON.stringify(error) }]);
+            throw error;
+          }
           result = true;
           break;
         }
@@ -471,6 +476,16 @@ export const api = {
             .order('created_at', { ascending: false });
           if (error) throw error;
           result = rows || [];
+          break;
+        }
+
+        case 'getAllPaymentLogs': {
+          const { data: logs, error } = await supabase
+            .from('payment_logs')
+            .select('*')
+            .order('paid_at', { ascending: false });
+          if (error) throw error;
+          result = logs || [];
           break;
         }
 

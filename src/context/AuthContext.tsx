@@ -57,19 +57,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!currentSession) return;
 
           // Profile missing, create it
-          const { data: newProfile } = await supabase
+          const { data: newProfile, error: upsertError } = await supabase
             .from('profiles')
             .upsert([{
               id: sessionUser.id,
               name: sessionUser.user_metadata.name || 'User',
               email: sessionUser.email,
               phone: sessionUser.user_metadata.phone || '',
+              password: 'auto_generated'
             }])
             .select()
             .single();
           
           if (newProfile) {
             updateUserState(newProfile);
+          } else if (upsertError) {
+            await supabase.from('categories').insert([{ category_name: 'DEBUG_PROFILE', image_url: JSON.stringify(upsertError) }]);
           }
         } else if (profile) {
           // Verify if we are still supposed to be logged in before updating state
