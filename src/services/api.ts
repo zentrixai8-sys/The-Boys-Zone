@@ -315,6 +315,39 @@ export const api = {
           break;
         }
 
+        case 'forgotPassword': {
+          const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+            redirectTo: window.location.origin + '/reset-password',
+          });
+          if (error) throw error;
+          result = true;
+          break;
+        }
+
+        case 'verifyRecoveryOtp': {
+          const { data: { session }, error } = await supabase.auth.verifyOtp({
+            email: data.email,
+            token: data.token,
+            type: 'recovery'
+          });
+          if (error) throw error;
+          result = session;
+          break;
+        }
+
+        case 'resetPassword': {
+          const { data: userData, error } = await supabase.auth.updateUser({
+            password: data.password
+          });
+          if (error) throw error;
+          
+          if (userData.user) {
+            await supabase.from('profiles').update({ password: data.password }).eq('id', userData.user.id);
+          }
+          result = true;
+          break;
+        }
+
         case 'verifyOtp': {
           const { data: { session }, error } = await supabase.auth.verifyOtp({
             email: data.email,
