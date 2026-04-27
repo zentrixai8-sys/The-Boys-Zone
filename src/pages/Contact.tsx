@@ -56,7 +56,7 @@ export const Contact = () => {
             transition={{ delay: 0.3 }}
             className="bg-white p-8 rounded-[32px] border-4 border-white image-3d group flex flex-col items-center text-center hover:scale-105 transition-transform duration-500"
           >
-            <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mb-6 shadow-3d-pop group-hover:-translate-y-2 transition-transform duration-300">
+            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-3d-pop group-hover:-translate-y-2 transition-transform duration-300">
               <Mail className="w-8 h-8" />
             </div>
             <h3 className="text-xs font-bold text-black/50 uppercase tracking-widest mb-2">Email</h3>
@@ -73,7 +73,7 @@ export const Contact = () => {
             transition={{ delay: 0.4 }}
             className="bg-white p-8 rounded-[32px] border-4 border-white image-3d group flex flex-col items-center text-center hover:scale-105 transition-transform duration-500"
           >
-            <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mb-6 shadow-3d-pop group-hover:-translate-y-2 transition-transform duration-300">
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-green-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-3d-pop group-hover:-translate-y-2 transition-transform duration-300">
               <Phone className="w-8 h-8" />
             </div>
             <h3 className="text-xs font-bold text-black/50 uppercase tracking-widest mb-2">Contact</h3>
@@ -107,7 +107,7 @@ export const Contact = () => {
             transition={{ delay: 0.6 }}
             className="bg-white p-8 rounded-[32px] border-4 border-white image-3d group flex flex-col items-center text-center hover:scale-105 transition-transform duration-500 md:col-span-2 lg:col-span-1"
           >
-            <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mb-6 shadow-3d-pop group-hover:-translate-y-2 transition-transform duration-300">
+            <div className="w-16 h-16 bg-gradient-to-br from-rose-500 to-red-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-3d-pop group-hover:-translate-y-2 transition-transform duration-300">
               <MapPin className="w-8 h-8" />
             </div>
             <h3 className="text-xs font-bold text-black/50 uppercase tracking-widest mb-2">Address</h3>
