@@ -31,8 +31,31 @@ const saveToCache = (data: any) => {
 
 export const api = {
   async request(action: string, data: any = {}) {
-    // Check Session Cache (Memory Only - super fast)
-    const cacheKey = `${action}_${JSON.stringify(data)}`;
+    // 1. Safe Cache Key Generation (Handles non-serializable objects like Files)
+    let cacheKey = action;
+    try {
+      if (data && typeof data === 'object') {
+        const safeData: any = {};
+        for (const key in data) {
+          if (data[key] instanceof File || data[key] instanceof Blob) {
+            safeData[key] = '[File]';
+          } else {
+            safeData[key] = data[key];
+          }
+        }
+        cacheKey += '_' + JSON.stringify(safeData);
+      }
+    } catch (e) {
+      cacheKey += '_fallback';
+    }
+
+    // 2. Clear cache on mutations to ensure data consistency
+    const mutations = ['addProduct', 'updateProduct', 'deleteProduct', 'addCategory', 'deleteCategory', 'updateCategory', 'createOrder', 'createStoreSale', 'updateOrderStatus', 'updateProfile'];
+    if (mutations.includes(action)) {
+      Object.keys(sessionCache).forEach(key => delete sessionCache[key]);
+    }
+
+    // 3. Check Session Cache (Memory Only - super fast)
     if (sessionCache[cacheKey] && (Date.now() - sessionCache[cacheKey].timestamp < CACHE_TTL)) {
       return sessionCache[cacheKey].data;
     }
@@ -71,9 +94,9 @@ export const api = {
             };
           });
 
-          const result = { products: productsWithRatings || [] };
+          result = { products: productsWithRatings || [] };
           saveToCache({ products: result.products });
-          return result;
+          break;
         }
 
         case 'getProduct': {
@@ -93,11 +116,12 @@ export const api = {
           const totalCount = baseCount + realReviewCount;
           const finalAvg = ((baseAvg * baseCount) + realRatingSum) / totalCount;
 
-          return {
+          result = {
             ...product,
             rating: Number(finalAvg.toFixed(1)),
             reviewCount: totalCount
           };
+          break;
         }
 
         case 'getBestSellers': {
@@ -110,11 +134,10 @@ export const api = {
           
           orders?.forEach(order => {
             try {
-              // Parse if it's a string, or use directly if Supabase already parsed it
               const items = typeof order.products === 'string' ? JSON.parse(order.products) : order.products;
               if (Array.isArray(items)) {
                 items.forEach((item: any) => {
-                  const id = item.product_id || item.id; // Support both naming conventions
+                  const id = item.product_id || item.id;
                   if (id) {
                     productCounts[id] = (productCounts[id] || 0) + (item.quantity || 1);
                   }
@@ -131,9 +154,9 @@ export const api = {
             .map(([id]) => id);
 
           if (sortedProductIds.length === 0) {
-             // Fallback to latest products if no orders yet
              const { data: latestProducts } = await supabase.from('products').select('*').limit(5);
-             return latestProducts || [];
+             result = latestProducts || [];
+             break;
           }
 
           const { data: bestSellerProducts, error: prodErr } = await supabase
@@ -154,8 +177,6 @@ export const api = {
             const productReviews = reviews?.filter(r => r.product_id === product.product_id) || [];
             const realReviewCount = productReviews.length;
             const realRatingSum = productReviews.reduce((sum, r) => sum + r.rating, 0);
-
-            // Simulation: 200-300 base reviews
             const { count: baseCount, avg: baseAvg } = getRatingBase(product.product_id);
             
             const totalCount = baseCount + realReviewCount;
@@ -168,10 +189,10 @@ export const api = {
             };
           });
 
-          // Re-sort to maintain the best-seller order
-          return productsWithRatings.sort((a, b) => 
+          result = productsWithRatings.sort((a, b) => 
             sortedProductIds.indexOf(a.product_id) - sortedProductIds.indexOf(b.product_id)
           );
+          break;
         }
 
         case 'getCategories': {
@@ -180,7 +201,8 @@ export const api = {
             .select('*');
           if (error) throw error;
           saveToCache({ categories });
-          return categories;
+          result = categories;
+          break;
         }
 
         case 'addCategory': {
@@ -188,7 +210,8 @@ export const api = {
             .from('categories')
             .insert([data]);
           if (error) throw error;
-          return true;
+          result = true;
+          break;
         }
 
         case 'deleteCategory': {
@@ -197,7 +220,8 @@ export const api = {
             .delete()
             .eq('category_id', data.category_id);
           if (catDelErr) throw catDelErr;
-          return delCat;
+          result = delCat;
+          break;
         }
 
         case 'updateCategory': {
@@ -211,7 +235,8 @@ export const api = {
             .select()
             .single();
           if (catUpdErr) throw catUpdErr;
-          return updCat;
+          result = updCat;
+          break;
         }
 
         case 'getOffers': {
@@ -220,7 +245,8 @@ export const api = {
             .select('*')
             .order('created_at', { ascending: false });
           if (error) throw error;
-          return offers;
+          result = offers;
+          break;
         }
 
         case 'addOffer': {
@@ -228,7 +254,8 @@ export const api = {
             .from('offers')
             .insert([data]);
           if (error) throw error;
-          return true;
+          result = true;
+          break;
         }
 
         case 'deleteOffer': {
@@ -237,7 +264,8 @@ export const api = {
             .delete()
             .eq('id', data.id);
           if (offerDelErr) throw offerDelErr;
-          return delOffer;
+          result = delOffer;
+          break;
         }
 
         case 'updateOffer': {
@@ -253,7 +281,8 @@ export const api = {
             .select()
             .single();
           if (offerUpdErr) throw offerUpdErr;
-          return updOffer;
+          result = updOffer;
+          break;
         }
 
         case 'login': {
@@ -261,15 +290,12 @@ export const api = {
             email: data.email,
             password: data.password,
           });
-          
           if (error) throw error;
-          if (!user) throw new Error('Login failed');
-          
-          return user;
+          result = user;
+          break;
         }
 
         case 'register': {
-          // 1. Sign up user in Supabase Auth
           const { data: authData, error: authError } = await supabase.auth.signUp({
             email: data.email,
             password: data.password,
@@ -281,15 +307,12 @@ export const api = {
               }
             }
           });
-          
           if (authError) throw authError;
-
-          // Supabase unique email check: If user exists but identities is empty, it means already registered
           if (authData.user && authData.user.identities && authData.user.identities.length === 0) {
              throw new Error('This email is already registered. Please login or reset your password.');
           }
-          
-          return authData.user;
+          result = authData.user;
+          break;
         }
 
         case 'verifyOtp': {
@@ -298,11 +321,10 @@ export const api = {
             token: data.token,
             type: 'signup'
           });
-
           if (error) throw error;
           if (!session) throw new Error('Verification failed');
-          
-          return session.user;
+          result = session.user;
+          break;
         }
 
         case 'addProduct': {
@@ -310,7 +332,8 @@ export const api = {
             .from('products')
             .insert([data]);
           if (error) throw error;
-          return true;
+          result = true;
+          break;
         }
 
         case 'updateProduct': {
@@ -320,7 +343,8 @@ export const api = {
             .update(updateData)
             .eq('product_id', product_id);
           if (error) throw error;
-          return true;
+          result = true;
+          break;
         }
 
         case 'deleteProduct': {
@@ -329,7 +353,8 @@ export const api = {
             .delete()
             .eq('product_id', data.product_id);
           if (error) throw error;
-          return true;
+          result = true;
+          break;
         }
 
         case 'createOrder': {
@@ -346,7 +371,8 @@ export const api = {
               date: new Date().toISOString()
             }]);
           if (error) throw error;
-          return true;
+          result = true;
+          break;
         }
 
         case 'getUserOrders': {
@@ -356,11 +382,11 @@ export const api = {
             .eq('user_id', data.user_id)
             .order('date', { ascending: false });
           if (error) throw error;
-          return orders || [];
+          result = orders || [];
+          break;
         }
 
         case 'createStoreSale': {
-          // Generate a single invoice ID for all items in this sale
           const invoiceId = `INV-${Date.now()}`;
           const itemsData = data.items.map((item: any) => ({
              invoice_id: invoiceId,
@@ -374,27 +400,23 @@ export const api = {
              pdf_url: data.pdf_url || null,
              payment_method: data.payment_method || 'Cash'
           }));
-          
           const { error } = await supabase
             .from('store_sales')
             .insert(itemsData);
-            
           if (error) throw error;
-          return true;
+          result = true;
+          break;
         }
 
         case 'getTodaysSales': {
           const todayStart = new Date();
           todayStart.setHours(0, 0, 0, 0);
-
           const { data: rows, error } = await supabase
             .from('store_sales')
             .select('*')
             .gte('created_at', todayStart.toISOString())
             .order('created_at', { ascending: false });
           if (error) throw error;
-
-          // Group by invoice_id
           const invoiceMap = new Map<string, any>();
           for (const row of (rows || [])) {
             if (!invoiceMap.has(row.invoice_id)) {
@@ -422,7 +444,8 @@ export const api = {
               item_total: row.item_total
             });
           }
-          return Array.from(invoiceMap.values());
+          result = Array.from(invoiceMap.values());
+          break;
         }
 
         case 'createPendingPayment': {
@@ -437,7 +460,8 @@ export const api = {
               status: 'pending',
             }]);
           if (error) throw error;
-          return true;
+          result = true;
+          break;
         }
 
         case 'getPendingPayments': {
@@ -446,68 +470,51 @@ export const api = {
             .select('*')
             .order('created_at', { ascending: false });
           if (error) throw error;
-          return rows || [];
+          result = rows || [];
+          break;
         }
 
         case 'markPendingPaid': {
           const now = new Date().toISOString();
-          const fullUpdate: any = {
-            status: 'paid',
-            paid_at: now,
-            paid_method: data.paid_method || 'Cash',
-          };
-          if (data.amount_received != null) fullUpdate.amount_received = data.amount_received;
-          if (data.proof_url != null) fullUpdate.proof_url = data.proof_url;
-
-          const { error: fullErr } = await supabase
+          const { error } = await supabase
             .from('pending_payments')
-            .update(fullUpdate)
+            .update({ 
+              status: 'paid', 
+              paid_at: now, 
+              paid_method: data.paid_method || 'Cash',
+              amount_received: data.amount_received || null,
+              proof_url: data.proof_url || null
+            })
             .eq('id', data.id);
-
-          if (fullErr) {
-            const { error: basicErr } = await supabase
-              .from('pending_payments')
-              .update({ status: 'paid', paid_at: now, paid_method: data.paid_method || 'Cash' })
-              .eq('id', data.id);
-            if (basicErr) throw basicErr;
-          }
-
-          // Insert payment log
+          if (error) throw error;
           await supabase.from('payment_logs').insert([{
             pending_payment_id: data.id,
             customer_name: data.customer_name || null,
             amount_paid: data.amount_received || data.total_amount,
             payment_method: data.paid_method || 'Cash',
             note: 'Full payment received',
-            proof_url: data.proof_url || null,
             paid_at: now,
           }]);
-
-          return true;
+          result = true;
+          break;
         }
 
         case 'recordPartialPayment': {
-          const updateData: any = { total_amount: data.remaining_amount };
-          if (data.proof_url) updateData.proof_url = data.proof_url;
-
           const { error } = await supabase
             .from('pending_payments')
-            .update(updateData)
+            .update({ total_amount: data.remaining_amount })
             .eq('id', data.id);
           if (error) throw error;
-
-          // Insert payment log for partial payment
           await supabase.from('payment_logs').insert([{
             pending_payment_id: data.id,
             customer_name: data.customer_name || null,
             amount_paid: data.amount_received,
             payment_method: data.paid_method || 'Cash',
             note: `Partial payment. Remaining: ₹${data.remaining_amount}`,
-            proof_url: data.proof_url || null,
             paid_at: new Date().toISOString(),
           }]);
-
-          return true;
+          result = true;
+          break;
         }
 
         case 'createPaymentLog': {
@@ -517,11 +524,11 @@ export const api = {
             amount_paid: data.amount_paid,
             payment_method: data.payment_method || 'Cash',
             note: data.note || null,
-            proof_url: data.proof_url || null,
             paid_at: new Date().toISOString(),
           }]);
           if (error) throw error;
-          return true;
+          result = true;
+          break;
         }
 
         case 'getPaymentLogs': {
@@ -531,26 +538,8 @@ export const api = {
             .eq('pending_payment_id', data.pending_payment_id)
             .order('paid_at', { ascending: false });
           if (error) throw error;
-          return logs || [];
-        }
-
-        case 'getAllPaymentLogs': {
-          const { data: logs, error } = await supabase
-            .from('payment_logs')
-            .select('*')
-            .order('paid_at', { ascending: false });
-          if (error) throw error;
-          return logs || [];
-        }
-
-
-        case 'deletePendingPayment': {
-          const { error } = await supabase
-            .from('pending_payments')
-            .delete()
-            .eq('id', data.id);
-          if (error) throw error;
-          return true;
+          result = logs || [];
+          break;
         }
 
         case 'getOrders': {
@@ -559,9 +548,9 @@ export const api = {
             .select('*, profiles(name, phone)')
             .order('date', { ascending: false });
           if (error) throw error;
-          return orders;
+          result = orders;
+          break;
         }
-
 
         case 'updateOrderStatus': {
           const { error } = await supabase
@@ -569,77 +558,21 @@ export const api = {
             .update({ order_status: data.order_status })
             .eq('order_id', data.order_id);
           if (error) throw error;
-          return true;
+          result = true;
+          break;
         }
 
         case 'updateProfile': {
           const { id, ...updateData } = data;
-          const { error } = await supabase
-            .from('profiles')
-            .update(updateData)
-            .eq('id', id);
+          const { error } = await supabase.from('profiles').update(updateData).eq('id', id);
           if (error) throw error;
-          
-          // Sync DP/name with auth metadata for instant UI hydration on refresh
-          if (updateData.avatar_url !== undefined || updateData.name || updateData.phone) {
+          if (updateData.name || updateData.phone || updateData.avatar_url) {
             await supabase.auth.updateUser({
-              data: {
-                name: updateData.name,
-                phone: updateData.phone,
-                avatar_url: updateData.avatar_url
-              }
+              data: { name: updateData.name, phone: updateData.phone, avatar_url: updateData.avatar_url }
             });
           }
-          
-          // Sync with customers table
-          if (updateData.name || updateData.phone || updateData.address) {
-            const customerData: any = {};
-            if (updateData.name) customerData.name = updateData.name;
-            if (updateData.phone) customerData.mobile = updateData.phone;
-            if (updateData.address !== undefined) customerData.address = updateData.address;
-            customerData.user_id = id;
-
-            const { data: existingCustomer } = await supabase
-              .from('customers')
-              .select('id')
-              .eq('user_id', id)
-              .maybeSingle();
-
-            if (existingCustomer) {
-              await supabase.from('customers').update(customerData).eq('id', existingCustomer.id);
-            } else {
-              await supabase.from('customers').insert([customerData]);
-            }
-          }
-          
-          return true;
-        }
-
-        case 'forgotPassword': {
-          // This triggers the Reset Password email (using {{ .Token }} for OTP)
-          const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-            redirectTo: `${window.location.origin}/forgot-password?step=reset`,
-          });
-          if (error) throw error;
-          return true;
-        }
-
-        case 'verifyRecoveryOtp': {
-          const { data: { session }, error } = await supabase.auth.verifyOtp({
-            email: data.email,
-            token: data.token,
-            type: 'recovery'
-          });
-          if (error) throw error;
-          return session;
-        }
-
-        case 'resetPassword': {
-          const { error } = await supabase.auth.updateUser({
-            password: data.password
-          });
-          if (error) throw error;
-          return true;
+          result = true;
+          break;
         }
 
         case 'uploadFile': {
@@ -647,88 +580,26 @@ export const api = {
           const formData = new FormData();
           formData.append('file', file);
           formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-
-          // Force resource_type in the payload for better reliability
-          const isPdf = (file instanceof File && file.name.toLowerCase().endsWith('.pdf')) || 
-                        (file instanceof Blob && file.type === 'application/pdf');
-          
+          const isPdf = file.name?.toLowerCase().endsWith('.pdf');
           formData.append('resource_type', isPdf ? 'raw' : 'auto');
-
           const response = await axios.post(
             `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`,
             formData
           );
-
-          return response.data.secure_url;
-        }
-
-        case 'getReviews': {
-          const { data: reviews, error } = await supabase
-            .from('reviews')
-            .select('*, profiles(name, avatar_url)')
-            .eq('product_id', data.product_id)
-            .order('date', { ascending: false });
-          if (error) throw error;
-          return reviews;
-        }
-
-        case 'addReview': {
-          const { error } = await supabase
-            .from('reviews')
-            .insert([data]);
-          if (error) throw error;
-          return true;
-        }
-
-        case 'createCustomer': {
-          const { data: newCustomer, error } = await supabase
-            .from('customers')
-            .insert([{
-              name: data.name,
-              mobile: data.mobile,
-              address: data.address
-            }])
-            .select()
-            .single();
-          if (error) throw error;
-          return newCustomer;
+          result = response.data.secure_url;
+          break;
         }
 
         case 'getUsers': {
-          const { data: users, error } = await supabase
-            .from('profiles')
-            .select('*');
+          const { data: users, error } = await supabase.from('profiles').select('*');
           if (error) throw error;
-          return users;
-        }
-
-        case 'getCustomers': {
-          const { data: customers, error } = await supabase
-            .from('customers')
-            .select('*')
-            .order('name', { ascending: true });
-          if (error) throw error;
-          return customers;
-        }
-
-        case 'getStoreSalesRaw': {
-          // Returns individual item rows for category/chart analysis
-          const { data: rows, error } = await supabase
-            .from('store_sales')
-            .select('*')
-            .order('created_at', { ascending: false });
-          if (error) throw error;
-          return rows || [];
+          result = users;
+          break;
         }
 
         case 'getStoreSalesAll': {
-          // Fetch all store sales and group by invoice_id for dashboard stats
-          const { data: rows, error } = await supabase
-            .from('store_sales')
-            .select('*')
-            .order('created_at', { ascending: false });
+          const { data: rows, error } = await supabase.from('store_sales').select('*').order('created_at', { ascending: false });
           if (error) throw error;
-
           const invoiceMap = new Map<string, any>();
           for (const row of (rows || [])) {
             if (!invoiceMap.has(row.invoice_id)) {
@@ -738,24 +609,32 @@ export const api = {
                 mobile: row.customer_mobile || 'N/A',
                 created_at: row.created_at,
                 total: 0,
-                itemsCount: 0,
               });
             }
             const inv = invoiceMap.get(row.invoice_id);
             inv.total += Number(row.item_total) || 0;
-            inv.itemsCount += 1;
           }
-          return Array.from(invoiceMap.values());
+          result = Array.from(invoiceMap.values());
+          break;
+        }
+
+        case 'getStoreSalesRaw': {
+          const { data: rows, error } = await supabase.from('store_sales').select('*').order('created_at', { ascending: false });
+          if (error) throw error;
+          result = rows || [];
+          break;
         }
 
         default:
-          throw new Error(`Action ${action} not implemented for Supabase`);
+          throw new Error(`Action ${action} not implemented`);
       }
-      // Final return with session cache update
+
+      // Final cache and return
       if (result !== undefined) {
         sessionCache[cacheKey] = { data: result, timestamp: Date.now() };
       }
       return result;
+
     } catch (error) {
       console.error(`API Error [${action}]:`, error);
       throw error;

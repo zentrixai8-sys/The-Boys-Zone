@@ -377,8 +377,14 @@ export const AdminProducts = () => {
       delete finalPayload.online_stock;
 
       await api.request(action, finalPayload);
-      toast.success(`Product ${editingProduct?.product_id ? 'updated' : 'added'} successfully`);
+      
+      // Close modal and reset state immediately
       setIsModalOpen(false);
+      setEditingProduct(null);
+      
+      toast.success(`Product ${editingProduct?.product_id ? 'updated' : 'added'} successfully`);
+      
+      // Refresh data in background
       fetchData();
     } catch (error) {
       console.error('Save Product Error:', error);
