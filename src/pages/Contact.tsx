@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, MapPin, Instagram, User, Store } from 'lucide-react';
+import { Phone, MapPin, Instagram, Mail, Store } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const Contact = () => {
@@ -48,7 +48,7 @@ export const Contact = () => {
         {/* Contact Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-6xl mx-auto">
           
-          {/* Director Card */}
+          {/* Email Card */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -57,10 +57,12 @@ export const Contact = () => {
             className="bg-white p-8 rounded-[32px] border-4 border-white image-3d group flex flex-col items-center text-center hover:scale-105 transition-transform duration-500"
           >
             <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mb-6 shadow-3d-pop group-hover:-translate-y-2 transition-transform duration-300">
-              <User className="w-8 h-8" />
+              <Mail className="w-8 h-8" />
             </div>
-            <h3 className="text-xs font-bold text-black/50 uppercase tracking-widest mb-2">Director</h3>
-            <p className="text-2xl font-black text-black">Bhupendra</p>
+            <h3 className="text-xs font-bold text-black/50 uppercase tracking-widest mb-2">Email</h3>
+            <a href="mailto:theboyszone8@gmail.com" className="text-sm md:text-base font-black text-black hover:text-indigo-600 transition-colors break-all">
+              theboyszone8@gmail.com
+            </a>
           </motion.div>
 
           {/* Contact Card */}
@@ -109,8 +111,10 @@ export const Contact = () => {
               <MapPin className="w-8 h-8" />
             </div>
             <h3 className="text-xs font-bold text-black/50 uppercase tracking-widest mb-2">Address</h3>
-            <p className="text-lg font-bold text-black leading-snug">
-              सुहेला, Bharat Petroleum के सामने
+            <p className="text-sm font-bold text-black leading-snug">
+              Suhela, In front of Bharat Petroleum,<br />
+              Main Road Suhela to Hathbandh,<br />
+              Baloda Bazar, Chhattisgarh 493195
             </p>
           </motion.div>
 

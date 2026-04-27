@@ -42,8 +42,8 @@ export const Products = () => {
         const allProds = productsRes.products || [];
         const freshCategories = Array.isArray(categoriesData) ? categoriesData : [];
 
-        // Inclusive filtering: Show everything except 'Store'
-        const onlineProds = allProds.filter((p: any) => p.sale_type !== 'Store');
+        // Strict filtering: Only show products explicitly marked 'Online' or older products with no sale_type
+        const onlineProds = allProds.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online');
 
         setProducts(onlineProds);
         

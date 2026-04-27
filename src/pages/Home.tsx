@@ -19,6 +19,38 @@ const staggerContainer = {
   }
 };
 
+const AnimatedCounter = ({ end, duration = 2000, suffix = "+" }: { end: number, duration?: number, suffix?: string }) => {
+  const [count, setCount] = useState(0);
+  const [isInView, setIsInView] = useState(false);
+  const ref = React.useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setIsInView(true);
+    }, { threshold: 0.1 });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isInView) return;
+    let startTimestamp: number | null = null;
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      // ease out cubic
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(easeProgress * end));
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  }, [isInView, end, duration]);
+
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+};
+
 const charVariants = {
   hidden: { opacity: 0, y: 50 },
   visible: {
@@ -139,7 +171,7 @@ export const Home = () => {
         if (cached) {
           const { products, categories: cachedCats } = JSON.parse(cached);
           if (products) {
-            const onlineProds = products.filter((p: any) => p.sale_type !== 'Store').slice(0, 12);
+            const onlineProds = products.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online').slice(0, 12);
             setProducts(onlineProds);
           }
           if (cachedCats) setCategories(cachedCats);
@@ -152,7 +184,7 @@ export const Home = () => {
         try {
           const res = await api.request('getProducts', { limit: 12 });
           const allProds = res.products || [];
-          const onlineProds = allProds.filter((p: any) => p.sale_type !== 'Store');
+          const onlineProds = allProds.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online');
           setProducts(onlineProds);
         } catch (e) { console.error('Products fetch failed:', e); }
       };
@@ -160,7 +192,7 @@ export const Home = () => {
       const fetchBestSellers = async () => {
         try {
           const res = await api.request('getBestSellers');
-          const onlineBS = (res || []).filter((p: any) => p.sale_type !== 'Store');
+          const onlineBS = (res || []).filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online');
           setBestSellers(onlineBS);
         } catch (e) { console.error('Best Sellers fetch failed:', e); }
       };
@@ -604,6 +636,89 @@ export const Home = () => {
                 <div className="bg-white text-black text-[10px] font-black px-3 py-1 uppercase tracking-widest w-fit mb-3">RESTOCKED</div>
                 <h3 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter">GRAPHIC TEES</h3>
               </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5.5 Why Choose Us & Happy Customers */}
+      <section className="py-20 md:py-32 bg-[#051F20] text-[#DAF1DE] relative z-20 overflow-hidden">
+        <div className="absolute inset-0 bg-[#DAF1DE]/5 mix-blend-overlay"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Why Choose Us */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+            >
+              <h4 className="text-[#8EB69B] tracking-[0.4em] uppercase text-xs font-bold mb-4">The TBZ Difference</h4>
+              <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-8 leading-tight">
+                Why Choose <br /><span className="text-transparent border-text italic">The Boys Zone</span>
+              </h2>
+              
+              <div className="space-y-6">
+                {[
+                  { title: "Premium Quality", desc: "Handpicked fabrics that offer unmatched comfort and durability." },
+                  { title: "Fast Delivery", desc: "Express shipping directly to your doorstep with tracking." },
+                  { title: "Easy Returns", desc: "Hassle-free 7-day return policy on all unworn items." },
+                  { title: "Dedicated Support", desc: "Our team is always here to help you with your fashion needs." }
+                ].map((item, i) => (
+                  <motion.div 
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1, duration: 0.5 }}
+                    className="flex gap-4"
+                  >
+                    <div className="w-12 h-12 bg-[#0B2B26] rounded-xl flex items-center justify-center shrink-0 border border-[#8EB69B]/30">
+                      <Star className="w-6 h-6 text-[#8EB69B]" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold uppercase tracking-wide mb-1">{item.title}</h3>
+                      <p className="text-[#8EB69B] text-sm font-medium leading-relaxed">{item.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Happy Customers Stats */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="bg-[#0B2B26] rounded-[40px] p-10 md:p-16 border border-[#8EB69B]/20 relative overflow-hidden flex flex-col items-center justify-center text-center shadow-2xl"
+            >
+              <div className="absolute -top-32 -right-32 w-64 h-64 bg-[#8EB69B] rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
+              <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-[#DAF1DE] rounded-full blur-[100px] opacity-10 pointer-events-none"></div>
+              
+              <div className="mb-6 flex -space-x-4">
+                {[
+                  "https://i.pravatar.cc/100?img=11",
+                  "https://i.pravatar.cc/100?img=12",
+                  "https://i.pravatar.cc/100?img=15",
+                  "https://i.pravatar.cc/100?img=33"
+                ].map((img, i) => (
+                  <img key={i} src={img} alt="Customer" className="w-16 h-16 rounded-full border-4 border-[#0B2B26] object-cover" />
+                ))}
+                <div className="w-16 h-16 rounded-full border-4 border-[#0B2B26] bg-[#8EB69B] flex items-center justify-center relative z-10 text-[#051F20]">
+                  <Plus className="w-6 h-6" />
+                </div>
+              </div>
+
+              <h3 className="text-6xl md:text-8xl font-black text-[#DAF1DE] tracking-tighter mb-4 tabular-nums">
+                <AnimatedCounter end={10000} duration={2500} />
+              </h3>
+              <p className="text-xl md:text-2xl font-bold text-[#8EB69B] uppercase tracking-[0.2em]">
+                Happy Customers
+              </p>
+              <p className="mt-6 text-sm text-[#DAF1DE]/60 max-w-sm font-medium">
+                Join our community of satisfied fashion enthusiasts who trust us for their daily drip.
+              </p>
             </motion.div>
           </div>
         </div>

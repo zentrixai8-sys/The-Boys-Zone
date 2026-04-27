@@ -5,6 +5,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { Navbar } from './components/Navbar';
+import { Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { Home } from './pages/Home';
 import { Products } from './pages/Products';
 import { ProductDetail } from './pages/ProductDetail';
@@ -208,15 +209,26 @@ const AppContent = () => {
                 <p className="text-white/40 max-w-sm mb-8">
                   Your choice here. Premium menswear located in Suhela, in front of Bharat Petroleum.
                 </p>
-                <div className="space-y-4 text-sm text-white/60">
-                  <p className="flex items-center gap-2">
-                    <span className="font-bold text-white">Address:</span> सुहेला, Bharat Petroleum के सामने
+                <div className="space-y-4 text-sm text-white/60 mt-8">
+                  <p className="flex items-start gap-3 group">
+                    <MapPin className="w-5 h-5 text-white/40 group-hover:text-white transition-colors shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">
+                      Suhela, In front of Bharat Petroleum,<br />
+                      Main Road Suhela to Hathbandh,<br />
+                      Baloda Bazar, Chhattisgarh 493195
+                    </span>
                   </p>
-                  <p className="flex items-center gap-2">
-                    <span className="font-bold text-white">Contact:</span> +91 9617628157
+                  <p className="flex items-center gap-3 group">
+                    <Phone className="w-5 h-5 text-white/40 group-hover:text-white transition-colors shrink-0" />
+                    <a href="tel:+919617628157" className="hover:text-white transition-colors">+91 9617628157</a>
                   </p>
-                  <p className="flex items-center gap-2">
-                    <span className="font-bold text-white">Instagram:</span> @theboyszone_suhela
+                  <p className="flex items-center gap-3 group">
+                    <Mail className="w-5 h-5 text-white/40 group-hover:text-white transition-colors shrink-0" />
+                    <a href="mailto:theboyszone8@gmail.com" className="hover:text-white transition-colors">theboyszone8@gmail.com</a>
+                  </p>
+                  <p className="flex items-center gap-3 group">
+                    <Instagram className="w-5 h-5 text-white/40 group-hover:text-pink-500 transition-colors shrink-0" />
+                    <a href="https://instagram.com/theboyszone_suhela" target="_blank" rel="noopener noreferrer" className="hover:text-pink-400 transition-colors">@theboyszone_suhela</a>
                   </p>
                 </div>
               </div>
