@@ -645,16 +645,30 @@ export const api = {
 
         case 'uploadFile': {
           const { file } = data;
+          const isPdf = file.name?.toLowerCase().endsWith('.pdf');
+          const resourceType = isPdf ? 'raw' : 'auto';
+          const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+          const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
           const formData = new FormData();
           formData.append('file', file);
-          formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-          const isPdf = file.name?.toLowerCase().endsWith('.pdf');
-          formData.append('resource_type', isPdf ? 'raw' : 'auto');
-          const response = await axios.post(
-            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`,
-            formData
-          );
-          result = response.data.secure_url;
+          formData.append('upload_preset', uploadPreset);
+
+          // resource_type must go in the URL path, NOT in FormData
+          const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+
+          const response = await fetch(uploadUrl, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData?.error?.message || `Upload failed: ${response.status}`);
+          }
+
+          const resData = await response.json();
+          result = resData.secure_url;
           break;
         }
 
