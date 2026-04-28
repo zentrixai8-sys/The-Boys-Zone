@@ -20,9 +20,7 @@ const createSupabaseClient = () => createClient(
   }
 );
 
+// ALWAYS cache the client globally to prevent multiple instances from fighting over the navigator lock in production (chunking issues).
 export const supabase = (window as any).__SUPABASE_CLIENT__ || createSupabaseClient();
-
-if (import.meta.env.DEV) {
-  (window as any).__SUPABASE_CLIENT__ = supabase;
-}
+(window as any).__SUPABASE_CLIENT__ = supabase;
 
