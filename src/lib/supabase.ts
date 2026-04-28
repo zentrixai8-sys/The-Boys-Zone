@@ -16,7 +16,11 @@ const createSupabaseClient = () => createClient(
       autoRefreshToken: true,
       detectSessionInUrl: true,
       storageKey: 'the-boys-zone-v1-auth',
-    }
+      lock: (name: string, acquire: () => Promise<any>) => {
+        // Completely bypass the buggy navigator.locks mechanism
+        return acquire();
+      }
+    } as any
   }
 );
 
