@@ -257,53 +257,72 @@ export const Billing = () => {
   const total = subtotal + tax;
 
   const handleSave = async () => {
+    if (isProcessing) return;
     if (items.length === 0) {
       toast.error('Please add items to bill first');
       return;
     }
 
-    // ── Stock check: warn if any item is 0-stock in store inventory ──
-    try {
-      const prodRes = await api.request('getProducts');
-      const allProducts: any[] = prodRes.products || [];
-      const outOfStockWarnings: string[] = [];
-      items.forEach(item => {
-        const match = allProducts.find(
-          p => p.title?.toLowerCase() === item.productName?.toLowerCase() ||
-               p.title?.toLowerCase().includes(item.productName?.toLowerCase())
-        );
-        if (match && (match.stock === 0 || match.stock === null || match.stock === undefined)) {
-          outOfStockWarnings.push(item.productName);
-        }
-      });
-      if (outOfStockWarnings.length > 0) {
-        toast(
-          `⚠️ Low/Zero stock for: ${outOfStockWarnings.join(', ')}. Billing will still proceed.`,
-          { duration: 5000, icon: '⚠️', style: { background: '#7c2d12', color: '#fef3c7', fontWeight: 'bold' } }
-        );
+    if (isCreatingCustomer) {
+      if (!customerName || !mobile || !address) {
+        toast.error('Please fill all customer details (Name, Mobile, Address) to create a new customer');
+        return;
       }
-    } catch (_) { /* non-blocking */ }
+    }
 
     setIsProcessing(true);
-    try {
-      if (isCreatingCustomer) {
-        if (!customerName || !mobile || !address) {
-          toast.error('Please fill all customer details (Name, Mobile, Address) to create a new customer');
-          setIsProcessing(false);
-          return;
+
+    // Make it feel instant by clearing the form immediately
+    toast.success('Sale logged successfully');
+    setItems([]);
+    setCustomerName('');
+    setMobile('');
+    setAddress('');
+    setSelectedCustomerId('');
+    setIsCreatingCustomer(false);
+    setCategory('');
+    setProductName('');
+    setPrice('');
+    setQuantity('1');
+    setCashPart('');
+    setUpiPart('');
+    setShowInvoiceModal(false);
+
+    // Process heavy tasks (PDF generation, stock check, upload) in background
+    (async () => {
+      try {
+        // ── Stock check: warn if any item is 0-stock in store inventory ──
+        try {
+          const prodRes = await api.request('getProducts');
+          const allProducts: any[] = prodRes.products || [];
+          const outOfStockWarnings: string[] = [];
+          items.forEach(item => {
+            const match = allProducts.find(
+              p => p.title?.toLowerCase() === item.productName?.toLowerCase() ||
+                   p.title?.toLowerCase().includes(item.productName?.toLowerCase())
+            );
+            if (match && (match.stock === 0 || match.stock === null || match.stock === undefined)) {
+              outOfStockWarnings.push(item.productName);
+            }
+          });
+          if (outOfStockWarnings.length > 0) {
+            toast(
+              `⚠️ Low/Zero stock for: ${outOfStockWarnings.join(', ')}. Billing will still proceed.`,
+              { duration: 5000, icon: '⚠️', style: { background: '#7c2d12', color: '#fef3c7', fontWeight: 'bold' } }
+            );
+          }
+        } catch (_) { /* non-blocking */ }
+
+        if (isCreatingCustomer) {
+          // Create customer in DB
+          const newCustomer = await api.request('createCustomer', {
+             name: customerName,
+             mobile,
+             address
+          });
+          
+          setCustomers(prev => [...prev, newCustomer]);
         }
-        
-        // Create customer in DB
-        const newCustomer = await api.request('createCustomer', {
-           name: customerName,
-           mobile,
-           address
-        });
-        
-        setCustomers(prev => [...prev, newCustomer]);
-        setSelectedCustomerId(newCustomer.id);
-        setIsCreatingCustomer(false);
-      }
 
       // 1. Generate PDF programmatically (avoids html2canvas oklab CSS parsing errors)
       let pdfUrl = null;
@@ -611,9 +630,8 @@ export const Billing = () => {
       };
       setTodayLogs(prev => [newLog, ...prev]);
 
-      toast.success('Sale logged successfully');
-
-      // 4. Force immediate download if save was successful
+      // 4. Force immediate download if save was successful (DISABLED BY USER REQUEST)
+      /*
       if (pdfUrl) {
          const link = document.createElement('a');
          link.href = pdfUrl;
@@ -622,27 +640,15 @@ export const Billing = () => {
          link.click();
          document.body.removeChild(link);
       }
-      
-      setItems([]);
-      setCustomerName('');
-      setMobile('');
-      setAddress('');
-      setSelectedCustomerId('');
-      setIsCreatingCustomer(false);
-      setCategory('');
-      setProductName('');
-      setPrice('');
-      setQuantity('1');
-      setCashPart('');
-      setUpiPart('');
+      */
 
       setIsProcessing(false);
-      setShowInvoiceModal(false);
     } catch (error) {
       console.error(error);
-      toast.error('Failed to log sale in database.');
+      toast.error('Failed to log sale in database. (Check internet)');
       setIsProcessing(false);
     }
+  })();
   };
 
   const handlePrint = () => {

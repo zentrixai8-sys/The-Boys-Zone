@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { api } from '../services/api';
 import { Order } from '../types';
 import { formatPrice, formatDate } from '../lib/utils';
-import { Loader2, Calendar, TrendingUp, Search, Banknote, Smartphone, Shuffle, Clock, Download, Printer } from 'lucide-react';
+import { Loader2, Calendar, TrendingUp, Search, Banknote, Smartphone, Shuffle, Clock, Download, Printer, Trash2, Edit, X, Save } from 'lucide-react';
 import jsPDF from 'jspdf';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -55,6 +55,39 @@ export const TodayReport = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [storeSales, setStoreSales] = useState<{ id: string, total: number, payment_method: string, pdf_url?: string, customer?: string, mobile?: string, created_at?: string, items?: any[] }[]>([]);
+  
+  const [editingSale, setEditingSale] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ customer: '', mobile: '', payment_method: 'Cash' });
+
+  const handleDeleteSale = async (id: string, type: 'Store' | 'Online') => {
+    if (type !== 'Store') return;
+    if (!confirm('Are you sure you want to delete this bill? This cannot be undone.')) return;
+    try {
+      await api.request('deleteStoreSale', { invoice_id: id });
+      toast.success('Bill deleted successfully');
+      fetchStoreSales();
+    } catch (e) {
+      toast.error('Failed to delete bill');
+    }
+  };
+
+  const handleUpdateSale = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSale) return;
+    try {
+      await api.request('updateStoreSale', {
+        invoice_id: editingSale.id,
+        customer_name: editForm.customer,
+        customer_mobile: editForm.mobile,
+        payment_method: editForm.payment_method
+      });
+      toast.success('Bill updated successfully');
+      setEditingSale(null);
+      fetchStoreSales();
+    } catch (err) {
+      toast.error('Failed to update bill');
+    }
+  };
   
   // Filters
   const [filterType, setFilterType] = useState<'today' | 'month' | 'range'>('today');
@@ -470,7 +503,8 @@ export const TodayReport = () => {
         status: s.payment_method === 'Pending' ? 'Pending' : 'Delivered',
         type: 'Store' as const,
         pdf_url: s.pdf_url,
-        items: s.items
+        items: s.items,
+        payment_method: s.payment_method
       }))
     ];
     return unified.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -803,6 +837,23 @@ export const TodayReport = () => {
                         ) : (
                           <>
                             <button
+                              onClick={() => {
+                                setEditingSale(sale);
+                                setEditForm({ customer: sale.customer, mobile: sale.mobile, payment_method: sale.payment_method || 'Cash' });
+                              }}
+                              className="p-2 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-all"
+                              title="Edit Bill"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSale(sale.id, sale.type)}
+                              className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-all"
+                              title="Delete Bill"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <button
                               onClick={() => generateStoreInvoice(sale, 'view')}
                               className="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-all"
                               title="View Invoice"
@@ -831,6 +882,40 @@ export const TodayReport = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingSale && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
+            <button onClick={() => setEditingSale(null)} className="absolute top-4 right-4 p-2 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-bold mb-6 text-slate-800">Edit Bill Details</h3>
+            <form onSubmit={handleUpdateSale} className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Customer Name</label>
+                <input required type="text" value={editForm.customer} onChange={(e) => setEditForm({...editForm, customer: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-black" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Mobile</label>
+                <input type="text" value={editForm.mobile} onChange={(e) => setEditForm({...editForm, mobile: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-black" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Payment Method</label>
+                <select value={editForm.payment_method} onChange={(e) => setEditForm({...editForm, payment_method: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-black">
+                  <option value="Cash">Cash</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Mixed">Mixed</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+              <button type="submit" className="mt-4 bg-black text-white rounded-xl py-3.5 font-bold hover:bg-black/90 flex justify-center items-center gap-2">
+                <Save className="w-4 h-4" /> Save Changes
+              </button>
+            </form>
           </div>
         </div>
       )}

@@ -121,8 +121,8 @@ export const api = {
     const mutations = [
       'addProduct', 'updateProduct', 'deleteProduct', 
       'addCategory', 'deleteCategory', 'updateCategory', 
-      'createOrder', 'createStoreSale', 'updateOrderStatus', 'updateProfile',
-      'addOffer', 'updateOffer', 'deleteOffer', 'addReview'
+      'createOrder', 'createStoreSale', 'deleteStoreSale', 'updateStoreSale', 'updateOrderStatus', 'updateProfile',
+      'addOffer', 'updateOffer', 'deleteOffer', 'addReview', 'createCustomer'
     ];
     if (mutations.includes(action)) {
       Object.keys(sessionCache).forEach(key => delete sessionCache[key]);
@@ -536,6 +536,27 @@ export const api = {
           break;
         }
 
+        case 'deleteStoreSale': {
+          const { error } = await supabase
+            .from('store_sales')
+            .delete()
+            .eq('invoice_id', data.invoice_id);
+          if (error) throw error;
+          result = true;
+          break;
+        }
+
+        case 'updateStoreSale': {
+          const { invoice_id, customer_name, customer_mobile, payment_method } = data;
+          const { error } = await supabase
+            .from('store_sales')
+            .update({ customer_name, customer_mobile, payment_method })
+            .eq('invoice_id', invoice_id);
+          if (error) throw error;
+          result = true;
+          break;
+        }
+
         case 'getTodaysSales': {
           const todayStart = new Date();
           todayStart.setHours(0, 0, 0, 0);
@@ -714,10 +735,29 @@ export const api = {
         }
 
         case 'uploadFile': {
-          const { file } = data;
+          const { file, bucket, path } = data;
+          
+          if (bucket) {
+             // Upload to Supabase Storage
+             const { data: uploadData, error } = await supabase.storage
+               .from(bucket)
+               .upload(path || `uploads/${Date.now()}_${file.name}`, file, {
+                 cacheControl: '3600',
+                 upsert: false
+               });
+             if (error) throw error;
+             
+             const { data: { publicUrl } } = supabase.storage
+               .from(bucket)
+               .getPublicUrl(uploadData.path);
+               
+             result = publicUrl;
+             break;
+          }
+
           const isPdf = file.name?.toLowerCase().endsWith('.pdf');
           const isVideo = file.type?.startsWith('video/');
-          const resourceType = isPdf ? 'raw' : isVideo ? 'video' : 'auto';
+          const resourceType = isPdf ? 'image' : isVideo ? 'video' : 'auto';
           const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
           const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
@@ -778,6 +818,31 @@ export const api = {
           const { data: rows, error } = await supabase.from('store_sales').select('*').order('created_at', { ascending: false });
           if (error) throw error;
           result = rows || [];
+          break;
+        }
+
+        case 'getCustomers': {
+          const { data: customers, error } = await supabase
+            .from('customers')
+            .select('*')
+            .order('name', { ascending: true });
+          if (error) throw error;
+          result = customers || [];
+          break;
+        }
+
+        case 'createCustomer': {
+          const { data: newCustomer, error } = await supabase
+            .from('customers')
+            .insert([{
+              name: data.name,
+              mobile: data.mobile,
+              address: data.address
+            }])
+            .select()
+            .single();
+          if (error) throw error;
+          result = newCustomer;
           break;
         }
 
