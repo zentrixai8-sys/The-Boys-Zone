@@ -9,7 +9,8 @@ import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Legend
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Legend,
+  BarChart, Bar
 } from 'recharts';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
@@ -287,6 +288,97 @@ export const AdminDashboard = () => {
     const top = Object.values(spending).sort((a, b) => b.total - a.total)[0];
     return top ? { name: top.name, phone: top.mobile, spent: top.total, avatar: null, id: top.mobile } : null;
   }, [filteredStoreSales]);
+
+  // ── New Computations for Size, Top Products, Top Customers ───────
+  const activeSizeRevenueData = useMemo(() => {
+    const sizeMap: Record<string, number> = {};
+    if (channel === 'online') {
+      const pMap = new Map();
+      products.forEach(p => pMap.set(p.product_id, p));
+      filteredOrders.forEach(o => {
+        try {
+          const items = typeof o.products === 'string' ? JSON.parse(o.products) : o.products;
+          if (Array.isArray(items)) {
+            items.forEach((item: any) => {
+              const product = pMap.get(item.product_id);
+              const price = product?.discount_price || product?.price || 0;
+              const size = item.selectedSize || item.size || 'N/A';
+              sizeMap[size] = (sizeMap[size] || 0) + (price * (item.quantity || 1));
+            });
+          }
+        } catch (e) {}
+      });
+    } else {
+      filteredStoreItems.forEach(r => {
+        const size = r.size || 'N/A';
+        sizeMap[size] = (sizeMap[size] || 0) + (Number(r.item_total) || 0);
+      });
+    }
+    const data = Object.entries(sizeMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+    const total = data.reduce((sum, d) => sum + d.value, 0);
+    return data.map(d => ({ ...d, percentage: total > 0 ? ((d.value / total) * 100).toFixed(1) : 0 }));
+  }, [channel, filteredOrders, filteredStoreItems, products]);
+
+  const activeTopProductsData = useMemo(() => {
+    const prodMap: Record<string, { revenue: number, count: number }> = {};
+    if (channel === 'online') {
+      const pMap = new Map();
+      products.forEach(p => pMap.set(p.product_id, p));
+      filteredOrders.forEach(o => {
+        try {
+          const items = typeof o.products === 'string' ? JSON.parse(o.products) : o.products;
+          if (Array.isArray(items)) {
+            items.forEach((item: any) => {
+              const product = pMap.get(item.product_id);
+              const price = product?.discount_price || product?.price || 0;
+              const title = product?.title || 'Unknown Product';
+              if (!prodMap[title]) prodMap[title] = { revenue: 0, count: 0 };
+              prodMap[title].revenue += price * (item.quantity || 1);
+              prodMap[title].count += (item.quantity || 1);
+            });
+          }
+        } catch (e) {}
+      });
+    } else {
+      filteredStoreItems.forEach(r => {
+        const title = r.product_name || 'Unknown Product';
+        if (!prodMap[title]) prodMap[title] = { revenue: 0, count: 0 };
+        prodMap[title].revenue += Number(r.item_total) || 0;
+        prodMap[title].count += Number(r.quantity) || 1;
+      });
+    }
+    return Object.entries(prodMap)
+      .map(([name, stats]) => ({ name: name.substring(0, 15) + (name.length > 15 ? '..' : ''), revenue: stats.revenue, count: stats.count }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+  }, [channel, filteredOrders, filteredStoreItems, products]);
+
+  const activeTopCustomersData = useMemo(() => {
+    const custMap: Record<string, { revenue: number, name: string }> = {};
+    if (channel === 'online') {
+      const uMap = new Map();
+      users.forEach(u => uMap.set(u.id, u));
+      filteredOrders.forEach(o => {
+        const u = uMap.get(o.user_id);
+        const name = u?.name || 'Unknown User';
+        if (!custMap[o.user_id]) custMap[o.user_id] = { revenue: 0, name };
+        custMap[o.user_id].revenue += o.total_amount;
+      });
+    } else {
+      filteredStoreSales.forEach(s => {
+        const key = s.mobile || s.customer || 'walk-in';
+        const name = s.customer || 'Walk-in';
+        if (!custMap[key]) custMap[key] = { revenue: 0, name };
+        custMap[key].revenue += (s.total || 0);
+      });
+    }
+    return Object.values(custMap)
+      .sort((a, b) => b.revenue - a.revenue)
+      .map(c => ({ name: c.name.substring(0, 15), revenue: c.revenue }))
+      .slice(0, 5);
+  }, [channel, filteredOrders, filteredStoreSales, users]);
 
   // ── Active (channel-aware) computed values ─────────────────────────
   const activeRevenue          = channel === 'online' ? totalRevenue          : storeRevenue;
@@ -642,6 +734,135 @@ export const AdminDashboard = () => {
                     </div>
                  </div>
                </div>
+            </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            {/* Size Revenue Pie Chart */}
+            <motion.div 
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: 0.1, duration: 0.6, ease: "easeOut" }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-shadow duration-300 flex flex-col relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-transparent rounded-full -mr-10 -mt-10 pointer-events-none" />
+              <div className="mb-4 relative z-10">
+                <h3 className="text-xl font-black mb-1 text-slate-800">Product Sizes</h3>
+                <p className="text-sm text-slate-400 font-bold tracking-wide">Which sizes drive the most sales</p>
+              </div>
+              <div className="flex-1 flex items-center justify-center min-h-[250px] relative z-10">
+                {activeSizeRevenueData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={activeSizeRevenueData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={85}
+                        paddingAngle={6}
+                        dataKey="value"
+                        stroke="none"
+                        cornerRadius={4}
+                      >
+                        {activeSizeRevenueData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip 
+                        formatter={(value: number) => formatPrice(value)}
+                        contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
+                        itemStyle={{ fontWeight: '900', color: '#1e293b' }}
+                      />
+                      <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '11px', fontWeight: '800', color: '#64748b' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-center text-slate-300 font-bold text-sm w-full">No size data available</div>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Top 5 Products Bar Chart */}
+            <motion.div 
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-shadow duration-300 flex flex-col relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-50 to-transparent rounded-full -mr-10 -mt-10 pointer-events-none" />
+              <div className="mb-6 relative z-10">
+                <h3 className="text-xl font-black mb-1 text-slate-800">Top 5 Products</h3>
+                <p className="text-sm text-slate-400 font-bold tracking-wide">Highest revenue generating items</p>
+              </div>
+              <div className="flex-1 min-h-[250px] w-full relative z-10">
+                {activeTopProductsData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={activeTopProductsData} layout="vertical" margin={{ top: 0, right: 20, left: 40, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 800 }} dx={-10} width={85} />
+                      <RechartsTooltip 
+                        cursor={{ fill: 'rgba(241, 245, 249, 0.5)' }}
+                        contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
+                        formatter={(value: number) => formatPrice(value)}
+                        itemStyle={{ fontWeight: '900', color: '#1e293b' }}
+                      />
+                      <Bar dataKey="revenue" fill="#8b5cf6" radius={[0, 8, 8, 0]} barSize={24}>
+                        {activeTopProductsData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-slate-300 font-bold text-sm">No product data available</div>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Top 5 Customers Bar Chart */}
+            <motion.div 
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-shadow duration-300 flex flex-col relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-50 to-transparent rounded-full -mr-10 -mt-10 pointer-events-none" />
+              <div className="mb-6 relative z-10">
+                <h3 className="text-xl font-black mb-1 text-slate-800">Top 5 Customers</h3>
+                <p className="text-sm text-slate-400 font-bold tracking-wide">Most valuable buyers</p>
+              </div>
+              <div className="flex-1 min-h-[250px] w-full relative z-10">
+                {activeTopCustomersData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={activeTopCustomersData} layout="vertical" margin={{ top: 0, right: 20, left: 40, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 800 }} dx={-10} width={85} />
+                      <RechartsTooltip 
+                        cursor={{ fill: 'rgba(241, 245, 249, 0.5)' }}
+                        contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
+                        formatter={(value: number) => formatPrice(value)}
+                        itemStyle={{ fontWeight: '900', color: '#1e293b' }}
+                      />
+                      <Bar dataKey="revenue" fill="#10b981" radius={[0, 8, 8, 0]} barSize={24}>
+                        {activeTopCustomersData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-slate-300 font-bold text-sm">No customer data available</div>
+                )}
+              </div>
             </motion.div>
           </div>
         </motion.div>

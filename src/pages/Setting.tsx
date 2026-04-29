@@ -2,24 +2,52 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Shield, Bell, Percent, Store, Mail, Lock, CheckCircle2, Save } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { supabase } from '../lib/supabase';
 
 export const Setting = () => {
   const [gstEnabled, setGstEnabled] = useState(false);
   const [gstPercentage, setGstPercentage] = useState(5);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Load settings on mount
   useEffect(() => {
-    const savedGstEnabled = localStorage.getItem('gstEnabled') === 'true';
-    const savedGstPercent = localStorage.getItem('gstPercentage');
-    
-    setGstEnabled(savedGstEnabled);
-    if (savedGstPercent) setGstPercentage(Number(savedGstPercent));
+    const loadSettings = async () => {
+      // 1. Try local storage first for instant load
+      const savedGstEnabled = localStorage.getItem('gstEnabled') === 'true';
+      const savedGstPercent = localStorage.getItem('gstPercentage');
+      
+      setGstEnabled(savedGstEnabled);
+      if (savedGstPercent) setGstPercentage(Number(savedGstPercent));
+
+      // 2. Fetch from Supabase Auth metadata for cross-device sync
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.user_metadata) {
+        if (user.user_metadata.gstEnabled !== undefined) {
+          setGstEnabled(user.user_metadata.gstEnabled);
+          localStorage.setItem('gstEnabled', String(user.user_metadata.gstEnabled));
+        }
+        if (user.user_metadata.gstPercentage !== undefined) {
+          setGstPercentage(user.user_metadata.gstPercentage);
+          localStorage.setItem('gstPercentage', String(user.user_metadata.gstPercentage));
+        }
+      }
+    };
+    loadSettings();
   }, []);
 
-  const handleSaveGst = () => {
+  const handleSaveGst = async () => {
+    setIsSaving(true);
+    // Save locally
     localStorage.setItem('gstEnabled', String(gstEnabled));
     localStorage.setItem('gstPercentage', String(gstPercentage));
-    toast.success('GST Settings Saved Successfully', {
+    
+    // Save to Supabase (Syncs across mobile and laptop)
+    await supabase.auth.updateUser({
+      data: { gstEnabled, gstPercentage }
+    });
+    
+    setIsSaving(false);
+    toast.success('GST Settings Synced Across Devices', {
       icon: '✅',
       style: {
         borderRadius: '16px',
@@ -89,10 +117,11 @@ export const Setting = () => {
               </div>
               <button 
                 onClick={handleSaveGst}
-                className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-sm font-black hover:bg-black transition-all hover:scale-105 active:scale-95 shadow-lg shadow-slate-200"
+                disabled={isSaving}
+                className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-sm font-black hover:bg-black transition-all hover:scale-105 active:scale-95 shadow-lg shadow-slate-200 disabled:opacity-50"
               >
-                <Save className="w-4 h-4" />
-                Save Changes
+                <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
+                {isSaving ? 'Syncing...' : 'Save Changes'}
               </button>
             </div>
             

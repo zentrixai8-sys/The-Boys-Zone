@@ -39,7 +39,9 @@ export const PendingPayments = () => {
   const [paymentLogs, setPaymentLogs] = useState<PaymentLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'paid'>('pending');
-  const [dateRange, setDateRange] = useState<'today' | 'month' | 'all'>('all');
+  const [dateRange, setDateRange] = useState<'today' | 'month' | 'all' | 'custom'>('all');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   
   const [markingId, setMarkingId] = useState<string | null>(null);
@@ -83,6 +85,26 @@ export const PendingPayments = () => {
     }
     if (dateRange === 'month') {
       return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    }
+    if (dateRange === 'custom') {
+      if (!customStartDate && !customEndDate) return true;
+      const d = date.getTime();
+      
+      let start = 0;
+      if (customStartDate) {
+        const s = new Date(customStartDate);
+        s.setHours(0, 0, 0, 0);
+        start = s.getTime();
+      }
+      
+      let end = Infinity;
+      if (customEndDate) {
+        const e = new Date(customEndDate);
+        e.setHours(23, 59, 59, 999);
+        end = e.getTime();
+      }
+      
+      return d >= start && d <= end;
     }
     return true;
   };
@@ -314,21 +336,41 @@ export const PendingPayments = () => {
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
-          <Calendar className="w-5 h-5 text-black/40 mr-1" />
-          <div className="flex gap-1.5 p-1.5 bg-black/[0.04] rounded-xl border-2 border-black/[0.03]">
-            {(['today', 'month', 'all'] as const).map(r => (
-              <button
-                key={r}
-                onClick={() => setDateRange(r)}
-                className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                  dateRange === r ? 'bg-black text-white shadow-lg' : 'text-black/40 hover:text-black'
-                }`}
-              >
-                {r}
-              </button>
-            ))}
+        <div className="flex flex-col items-end gap-3">
+          <div className="flex items-center gap-3">
+            <Calendar className="w-5 h-5 text-black/40 mr-1" />
+            <div className="flex gap-1.5 p-1.5 bg-black/[0.04] rounded-xl border-2 border-black/[0.03]">
+              {(['today', 'month', 'all', 'custom'] as const).map(r => (
+                <button
+                  key={r}
+                  onClick={() => setDateRange(r)}
+                  className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                    dateRange === r ? 'bg-black text-white shadow-lg' : 'text-black/40 hover:text-black'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
           </div>
+          
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-2 p-2 bg-black/5 rounded-xl border-2 border-black/5 animate-in fade-in slide-in-from-top-2">
+              <input 
+                type="date" 
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="px-3 py-1.5 bg-white rounded-lg text-[10px] font-black text-slate-700 outline-none border border-black/5"
+              />
+              <span className="text-black/30 font-black text-[10px]">-</span>
+              <input 
+                type="date" 
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="px-3 py-1.5 bg-white rounded-lg text-[10px] font-black text-slate-700 outline-none border border-black/5"
+              />
+            </div>
+          )}
         </div>
       </div>
 

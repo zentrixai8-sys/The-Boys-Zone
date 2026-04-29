@@ -246,10 +246,32 @@ export const Billing = () => {
   const [gstPercentage, setGstPercentage] = useState(5);
 
   useEffect(() => {
-    const enabled = localStorage.getItem('gstEnabled') === 'true';
-    const percent = localStorage.getItem('gstPercentage');
-    setGstEnabled(enabled);
-    if (percent) setGstPercentage(Number(percent));
+    const loadGstSettings = async () => {
+      // 1. Try local storage first for instant load
+      const enabled = localStorage.getItem('gstEnabled') === 'true';
+      const percent = localStorage.getItem('gstPercentage');
+      setGstEnabled(enabled);
+      if (percent) setGstPercentage(Number(percent));
+
+      // 2. Fetch from Supabase Auth metadata for cross-device sync
+      try {
+        const { supabase } = await import('../lib/supabase');
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.user_metadata) {
+          if (user.user_metadata.gstEnabled !== undefined) {
+            setGstEnabled(user.user_metadata.gstEnabled);
+            localStorage.setItem('gstEnabled', String(user.user_metadata.gstEnabled));
+          }
+          if (user.user_metadata.gstPercentage !== undefined) {
+            setGstPercentage(user.user_metadata.gstPercentage);
+            localStorage.setItem('gstPercentage', String(user.user_metadata.gstPercentage));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to sync GST settings from cloud', err);
+      }
+    };
+    loadGstSettings();
   }, []);
 
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
