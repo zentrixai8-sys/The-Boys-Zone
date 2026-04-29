@@ -4,8 +4,13 @@ import { Category } from '../types';
 
 export function useCategories() {
   const fetcher = async () => {
-    const res = await api.request('getCategories');
-    return Array.isArray(res) ? res as Category[] : (res.categories || []) as Category[];
+    try {
+      const res = await api.request('getCategories');
+      return Array.isArray(res) ? res as Category[] : (res.categories || []) as Category[];
+    } catch (e) {
+      console.error('SWR fetch error in getCategories:', e);
+      throw e;
+    }
   };
 
   const { data, error, isLoading, mutate } = useSWR('categories', fetcher, {

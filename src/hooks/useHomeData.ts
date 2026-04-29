@@ -4,28 +4,33 @@ import { Product, Category, Offer } from '../types';
 
 export function useHomeData() {
   const fetcher = async () => {
-    const [productsRes, bestSellersRes, categoriesRes, offersRes] = await Promise.allSettled([
-      api.request('getProducts', { limit: 12 }),
-      api.request('getBestSellers'),
-      api.request('getCategories'),
-      api.request('getOffers')
-    ]);
+    try {
+      const [productsRes, bestSellersRes, categoriesRes, offersRes] = await Promise.allSettled([
+        api.request('getProducts', { limit: 12 }),
+        api.request('getBestSellers'),
+        api.request('getCategories'),
+        api.request('getOffers')
+      ]);
 
-    const allProds = productsRes.status === 'fulfilled' && productsRes.value.products 
-      ? productsRes.value.products 
-      : [];
-    const products = allProds.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online').slice(0, 12);
+      const allProds = productsRes.status === 'fulfilled' && productsRes.value.products 
+        ? productsRes.value.products 
+        : [];
+      const products = allProds.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online').slice(0, 12);
 
-    const allBS = bestSellersRes.status === 'fulfilled' ? (bestSellersRes.value || []) : [];
-    const bestSellers = allBS.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online');
+      const allBS = bestSellersRes.status === 'fulfilled' ? (bestSellersRes.value || []) : [];
+      const bestSellers = allBS.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online');
 
-    const categories = categoriesRes.status === 'fulfilled' 
-      ? (Array.isArray(categoriesRes.value) ? categoriesRes.value : (categoriesRes.value.categories || [])) 
-      : [];
+      const categories = categoriesRes.status === 'fulfilled' 
+        ? (Array.isArray(categoriesRes.value) ? categoriesRes.value : (categoriesRes.value.categories || [])) 
+        : [];
 
-    const offers = offersRes.status === 'fulfilled' ? (offersRes.value || []) : [];
+      const offers = offersRes.status === 'fulfilled' ? (offersRes.value || []) : [];
 
-    return { products, bestSellers, categories, offers };
+      return { products, bestSellers, categories, offers };
+    } catch (e) {
+      console.error('SWR fetch error in getHomeData:', e);
+      throw e;
+    }
   };
 
   const { data, error, isLoading, mutate } = useSWR('home_data', fetcher, {

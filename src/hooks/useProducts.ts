@@ -6,8 +6,13 @@ import { Product } from '../types';
 
 export function useProducts() {
   const fetcher = async () => {
-    const res = await api.request('getProducts');
-    return res.products as Product[];
+    try {
+      const res = await api.request('getProducts');
+      return res.products as Product[];
+    } catch (e) {
+      console.error('SWR fetch error in getProducts:', e);
+      throw e;
+    }
   };
 
   const { data, error, isLoading, mutate } = useSWR('products', fetcher, {
