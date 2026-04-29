@@ -57,9 +57,53 @@ export const ProductDetail = () => {
     : (product?.stock || 0);
   const selectedColorImage = currentVariant?.colorImage;
 
-  // Collect all unique variant images and main images for the gallery
-  const variantImages = (product?.variants?.map(v => v.colorImage) || []).filter(Boolean) as string[];
-  const allGalleryImages = [...new Set([...(product?.images || []), ...variantImages])].filter(Boolean);
+  // Collect parsed main images
+  const parsedImages = useMemo(() => {
+    let imgs: string[] = [];
+    if (product?.images) {
+      if (typeof product.images === 'string') {
+        try {
+          imgs = JSON.parse(product.images);
+        } catch (e) {
+          imgs = [product.images];
+        }
+      } else if (Array.isArray(product.images)) {
+        imgs = product.images;
+      }
+    }
+    return imgs;
+  }, [product?.images]);
+
+  const galleryImages = useMemo(() => {
+    let images: string[] = [];
+    // Prioritize current variant images first
+    if (currentVariant) {
+      if (currentVariant.colorImage) images.push(currentVariant.colorImage);
+      if (currentVariant.images && Array.isArray(currentVariant.images)) {
+        images.push(...currentVariant.images);
+      }
+    }
+    
+    // Append main product images to the gallery
+    if (product?.image_url) images.push(product.image_url);
+    if (parsedImages.length > 0) images.push(...parsedImages);
+    
+    // Fallback to all variant images if nothing else exists
+    if (images.length === 0) {
+      product?.variants?.forEach(v => {
+        if (v.colorImage) images.push(v.colorImage);
+        if (v.images && Array.isArray(v.images)) images.push(...v.images);
+      });
+    }
+    
+    const uniqueImages = [...new Set(images)].filter(Boolean) as string[];
+    return uniqueImages.length > 0 ? uniqueImages : (product?.image_url ? [product.image_url] : []);
+  }, [currentVariant, product?.image_url, parsedImages, product?.variants]);
+
+  // Reset image index when color changes
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [selectedColor]);
 
   const fetchReviews = async (productId: string) => {
     setReviewsLoading(true);
@@ -120,8 +164,6 @@ export const ProductDetail = () => {
   }
 
   if (!product) return null;
-
-  const galleryImages = allGalleryImages.length > 0 ? allGalleryImages : [product.image_url];
   const averageRating = product.rating || 'New';
   const totalReviewCount = product.reviewCount || 0;
 
@@ -180,7 +222,7 @@ export const ProductDetail = () => {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      src={selectedColorImage || galleryImages[currentImageIndex]} 
+                      src={galleryImages[currentImageIndex] || selectedColorImage || product.image_url} 
                       alt={product.title}
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
