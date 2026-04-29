@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useHomeData } from '../hooks/useHomeData';
 import { api } from '../services/api';
 import { Product, Category, Offer } from '../types';
 import { ProductCard } from '../components/ProductCard';
@@ -123,11 +124,7 @@ const AutoSlidingImage = ({ product, className }: { product: Product, className?
 };
 
 export const Home = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [bestSellers, setBestSellers] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { products, bestSellers, categories, offers, isLoading: loading } = useHomeData();
   const [heroSlide, setHeroSlide] = useState(0);
   const [heroDir, setHeroDir] = useState(1);
 
@@ -163,63 +160,7 @@ export const Home = () => {
   const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
   const heroScale = useTransform(scrollY, [0, 500], [1, 1.1]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      // 1. Immediate Hydration from Cache (Super Fast)
-      try {
-        const cached = localStorage.getItem('tbz_shop_cache');
-        if (cached) {
-          const { products, categories: cachedCats } = JSON.parse(cached);
-          if (products) {
-            const onlineProds = products.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online').slice(0, 12);
-            setProducts(onlineProds);
-          }
-          if (cachedCats) setCategories(cachedCats);
-          setLoading(false); // Stop showing main loader if we have some data
-        }
-      } catch (e) { console.warn('Home cache hydration failed'); }
 
-      // 2. Parallel Background Fetch (Non-blocking)
-      const fetchProducts = async () => {
-        try {
-          const res = await api.request('getProducts', { limit: 12 });
-          const allProds = res.products || [];
-          const onlineProds = allProds.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online');
-          setProducts(onlineProds);
-        } catch (e) { console.error('Products fetch failed:', e); }
-      };
-
-      const fetchBestSellers = async () => {
-        try {
-          const res = await api.request('getBestSellers');
-          const onlineBS = (res || []).filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online');
-          setBestSellers(onlineBS);
-        } catch (e) { console.error('Best Sellers fetch failed:', e); }
-      };
-
-      const fetchCategories = async () => {
-        try {
-          const res = await api.request('getCategories');
-          setCategories(res.categories || res || []);
-        } catch (e) { console.error('Categories fetch failed:', e); }
-      };
-
-      const fetchOffers = async () => {
-        try {
-          const res = await api.request('getOffers');
-          console.log('Offers fetched:', res);
-          setOffers(res || []);
-        } catch (e) { 
-          console.error('Offers fetch failed:', e);
-          setOffers([]); 
-        }
-      };
-
-      await Promise.allSettled([fetchProducts(), fetchBestSellers(), fetchCategories(), fetchOffers()]);
-      setLoading(false);
-    };
-    fetchData();
-  }, []);
 
   const { scrollYProgress } = useScroll();
   const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1]);

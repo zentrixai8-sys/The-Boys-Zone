@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useProducts } from '../hooks/useProducts';
+import { useCategories } from '../hooks/useCategories';
 import { api } from '../services/api';
 import { Product, Category } from '../types';
 import { formatPrice } from '../lib/utils';
@@ -76,9 +78,10 @@ const categorySizes: Record<string, string[]> = {
 };
 
 export const AdminProducts = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { products, isLoading: productsLoading, mutate: mutateProducts } = useProducts();
+  const { categories, isLoading: categoriesLoading } = useCategories();
+  const loading = productsLoading || categoriesLoading;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
@@ -88,37 +91,6 @@ export const AdminProducts = () => {
   const [activeVariantIdx, setActiveVariantIdx] = useState<number | null>(null);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [stockProduct, setStockProduct] = useState<Product | null>(null);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    // 1. Instant Hydration
-    try {
-      const cached = localStorage.getItem('tbz_shop_cache');
-      if (cached) {
-        const { products: cProds, categories: cCats } = JSON.parse(cached);
-        if (cProds) setProducts(cProds);
-        if (cCats) setCategories(cCats);
-        setLoading(false);
-      }
-    } catch (e) {}
-
-    // 2. Background Revalidation
-    try {
-      const [productsRes, categoriesData] = await Promise.all([
-        api.request('getProducts'),
-        api.request('getCategories')
-      ]);
-      setProducts(productsRes.products || []);
-      setCategories(Array.isArray(categoriesData) ? categoriesData : (categoriesData as any)?.categories || []);
-    } catch (error) {
-      console.error("Failed to fetch admin data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -384,8 +356,8 @@ export const AdminProducts = () => {
       
       toast.success(`Product ${editingProduct?.product_id ? 'updated' : 'added'} successfully`);
       
-      // Refresh data in background
-      fetchData();
+      // Refresh data using SWR mutation for immediate UI update
+      mutateProducts();
     } catch (error) {
       console.error('Save Product Error:', error);
       toast.error('Failed to save product');
@@ -397,7 +369,7 @@ export const AdminProducts = () => {
     try {
       await api.request('deleteProduct', { product_id: id });
       toast.success('Product deleted');
-      fetchData();
+      mutateProducts();
     } catch (error) {
       toast.error('Failed to delete product');
     }

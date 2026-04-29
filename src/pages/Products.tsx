@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useProducts } from '../hooks/useProducts';
+import { useCategories } from '../hooks/useCategories';
 import { api } from '../services/api';
 import { Product, Category } from '../types';
 import { ProductCard } from '../components/ProductCard';
@@ -7,9 +9,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useSearchParams } from 'react-router-dom';
 
 export const Products = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { products: allProducts, isLoading: productsLoading } = useProducts();
+  const { categories: fetchedCategories, isLoading: categoriesLoading } = useCategories();
+  const loading = productsLoading || categoriesLoading;
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
@@ -19,59 +22,19 @@ export const Products = () => {
   const currentCategory = searchParams.get('category') || 'All';
   const searchQuery = searchParams.get('q') || '';
 
-  useEffect(() => {
-    const fetchData = async () => {
-      // 1. Instant Hydration (Cache-First)
-      try {
-        const cached = localStorage.getItem('tbz_shop_cache');
-        if (cached) {
-          const { products: cProducts, categories: cCategories } = JSON.parse(cached);
-          if (cProducts) setProducts(cProducts);
-          if (cCategories && cCategories.length > 0) setCategories(cCategories);
-          if (cProducts || cCategories) setLoading(false);
-        }
-      } catch (e) { console.error('Cache hydration failed', e); }
+  const products = useMemo(() => {
+    return allProducts.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online');
+  }, [allProducts]);
 
-      // 2. Background Revalidation
-      try {
-        const [productsRes, categoriesData] = await Promise.all([
-          api.request('getProducts'),
-          api.request('getCategories')
-        ]);
-        
-        const allProds = productsRes.products || [];
-        const freshCategories = Array.isArray(categoriesData) ? categoriesData : [];
-
-        // Strict filtering: Only show products explicitly marked 'Online' or older products with no sale_type
-        const onlineProds = allProds.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online');
-
-        setProducts(onlineProds);
-        
-        // Update categories
-        if (freshCategories.length > 0) {
-          setCategories(freshCategories);
-        }
-        
-        // Final fallback if absolutely no categories in DB or cache
-        if (freshCategories.length === 0 && categories.length === 0) {
-          const fallbacks = [
-            { category_id: '1', category_name: 'T-Shirts' },
-            { category_id: '2', category_name: 'Jeans' },
-            { category_id: '3', category_name: 'Hoodies' },
-            { category_id: '4', category_name: 'Accessories' }
-          ];
-          setCategories(fallbacks);
-        } else if (freshCategories.length > 0) {
-          setCategories(freshCategories);
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const categories = useMemo(() => {
+    if (fetchedCategories && fetchedCategories.length > 0) return fetchedCategories;
+    return [
+      { category_id: '1', category_name: 'T-Shirts' },
+      { category_id: '2', category_name: 'Jeans' },
+      { category_id: '3', category_name: 'Hoodies' },
+      { category_id: '4', category_name: 'Accessories' }
+    ] as Category[];
+  }, [fetchedCategories]);
 
   const { brands, sizes, maxProductPrice } = useMemo(() => {
     const brandsSet = new Set<string>();

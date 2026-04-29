@@ -12,29 +12,7 @@ const getRatingBase = (productId: string) => {
   return { count, avg: baseAvg };
 };
 
-const SHOP_CACHE_KEY = 'tbz_shop_cache';
-const sessionCache: Record<string, { data: any, timestamp: number }> = {};
-const CACHE_TTL = 300000; // 5 minutes
 
-const getCachedData = () => {
-  try {
-    const cached = localStorage.getItem(SHOP_CACHE_KEY);
-    if (!cached) return null;
-    const parsed = JSON.parse(cached);
-    // Invalidate localStorage cache after 5 minutes (same as sessionCache TTL)
-    if (parsed.timestamp && Date.now() - parsed.timestamp > CACHE_TTL) {
-      localStorage.removeItem(SHOP_CACHE_KEY);
-      return null;
-    }
-    return parsed;
-  } catch { return null; }
-};
-const saveToCache = (data: any) => {
-  try {
-    const current = getCachedData() || {};
-    localStorage.setItem(SHOP_CACHE_KEY, JSON.stringify({ ...current, ...data, timestamp: Date.now() }));
-  } catch (e) { console.error('Cache save failed', e); }
-};
 
 /**
  * Compresses an image File using Canvas API.
@@ -99,41 +77,7 @@ const compressImage = (file: File, maxDimension = 1280): Promise<File> => {
 
 export const api = {
   async request(action: string, data: any = {}) {
-    // 1. Safe Cache Key Generation (Handles non-serializable objects like Files)
-    let cacheKey = action;
-    try {
-      if (data && typeof data === 'object') {
-        const safeData: any = {};
-        for (const key in data) {
-          if (data[key] instanceof File || data[key] instanceof Blob) {
-            safeData[key] = '[File]';
-          } else {
-            safeData[key] = data[key];
-          }
-        }
-        cacheKey += '_' + JSON.stringify(safeData);
-      }
-    } catch (e) {
-      cacheKey += '_fallback';
-    }
 
-    // 2. Clear cache on mutations to ensure data consistency
-    const mutations = [
-      'addProduct', 'updateProduct', 'deleteProduct', 
-      'addCategory', 'deleteCategory', 'updateCategory', 
-      'createOrder', 'createStoreSale', 'deleteStoreSale', 'updateStoreSale', 'updateOrderStatus', 'updateProfile',
-      'addOffer', 'updateOffer', 'deleteOffer', 'addReview', 'createCustomer'
-    ];
-    if (mutations.includes(action)) {
-      Object.keys(sessionCache).forEach(key => delete sessionCache[key]);
-      // Also clear localStorage so mobile browsers don't serve stale data on reload
-      try { localStorage.removeItem(SHOP_CACHE_KEY); } catch (e) {}
-    }
-
-    // 3. Check Session Cache (Memory Only - super fast)
-    if (sessionCache[cacheKey] && (Date.now() - sessionCache[cacheKey].timestamp < CACHE_TTL)) {
-      return sessionCache[cacheKey].data;
-    }
 
     try {
       let result: any;
@@ -170,7 +114,6 @@ export const api = {
           });
 
           result = { products: productsWithRatings || [] };
-          saveToCache({ products: result.products });
           break;
         }
 
@@ -275,7 +218,6 @@ export const api = {
             .from('categories')
             .select('*');
           if (error) throw error;
-          saveToCache({ categories });
           result = categories;
           break;
         }
@@ -850,10 +792,7 @@ export const api = {
           throw new Error(`Action ${action} not implemented`);
       }
 
-      // Final cache and return
-      if (result !== undefined) {
-        sessionCache[cacheKey] = { data: result, timestamp: Date.now() };
-      }
+
       return result;
 
     } catch (error) {

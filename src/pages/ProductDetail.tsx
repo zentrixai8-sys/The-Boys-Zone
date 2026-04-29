@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
@@ -11,83 +11,44 @@ import {
   Loader2, ChevronLeft, Heart, Share2, ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { useProducts } from '../hooks/useProducts';
 import toast from 'react-hot-toast';
 import { ProductCard } from '../components/ProductCard';
 
 export const ProductDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const [product, setProduct] = useState<Product | null>(null);
+  const { products: allProducts, isLoading: productsLoading } = useProducts();
+  const product = useMemo(() => allProducts.find(p => p.product_id === id) || null, [allProducts, id]);
+
   const [reviews, setReviews] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
   const { addToCart } = useCart();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      // 1. Immediate Hydration from Cache (Super Fast)
-      try {
-        const cached = localStorage.getItem('tbz_shop_cache');
-        if (cached) {
-          const { products } = JSON.parse(cached);
-          if (products) {
-            setAllProducts(products);
-            const found = products.find((p: Product) => p.product_id === id);
-            if (found) {
-              setProduct(found);
-              setLoading(false);
-              // Set initial color/size from cached data too
-              if (found.variants && found.variants.length > 0) {
-                setSelectedColor(found.variants[0].color);
-                if (found.variants[0].sizes.length > 0) setSelectedSize(found.variants[0].sizes[0].size);
-              }
-            }
-          }
+    if (product) {
+      if (product.variants && product.variants.length > 0) {
+        if (!selectedColor) setSelectedColor(product.variants[0].color);
+        if (!selectedSize && product.variants[0].sizes.length > 0) {
+          setSelectedSize(product.variants[0].sizes[0].size);
         }
-      } catch (e) { console.warn('Cache hydration failed'); }
-
-      // 2. Targeted Fetch for specific product (Fast row-level fetch)
-      try {
-        const found = await api.request('getProduct', { id });
-        if (found) {
-          setProduct(found);
-          if (found.variants && found.variants.length > 0) {
-            setSelectedColor(found.variants[0].color);
-            if (found.variants[0].sizes.length > 0) {
-              setSelectedSize(found.variants[0].sizes[0].size);
-            }
-          } else if (found.sizes && found.sizes.length > 0) {
-            setSelectedSize(found.sizes[0]);
-          } else if (found.size) {
-            setSelectedSize(found.size);
-          }
-          fetchReviews(found.product_id);
-        } else {
-          navigate('/products');
-        }
-
-        // 3. Background fetch for Related Products (Non-blocking)
-        api.request('getProducts').then(res => {
-          if (res.products) setAllProducts(res.products);
-        });
-
-      } catch (error) {
-        console.error('Error fetching product:', error);
-      } finally {
-        setLoading(false);
+      } else if (product.sizes && product.sizes.length > 0) {
+        if (!selectedSize) setSelectedSize(product.sizes[0]);
+      } else if (product.size) {
+        if (!selectedSize) setSelectedSize(product.size);
       }
-    };
-    fetchProduct();
-  }, [id, navigate]);
+      fetchReviews(product.product_id);
+    }
+  }, [product, selectedColor, selectedSize]);
+
+
 
   const currentVariant = product?.variants?.find(v => v.color === selectedColor);
   const availableSizes = currentVariant ? currentVariant.sizes : (product?.sizes?.map(s => ({ size: s, stock: product.stock })) || []);
@@ -142,7 +103,7 @@ export const ProductDetail = () => {
     }
   };
 
-  if (loading) {
+  if (productsLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 animate-pulse">
