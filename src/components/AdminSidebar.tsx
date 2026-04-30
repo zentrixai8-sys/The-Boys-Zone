@@ -226,15 +226,23 @@ export const AdminSidebar = () => {
 
   return (
     <>
-      {/* Mobile Top App Header (Matching White Theme) */}
+      {/* Mobile Top App Header (Optimized with Menu) */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-[150] bg-white/80 backdrop-blur-2xl border-b border-slate-100 px-4 py-3 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-             <Store className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter leading-none mb-0.5">THE BOYS ZONE</span>
-            <span className="text-[7px] font-black text-indigo-500 uppercase tracking-widest leading-none">ADMIN PORTAL</span>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsOpen(true)}
+            className="p-2 -ml-2 text-slate-900 hover:bg-slate-100 rounded-xl transition-colors active:scale-90"
+          >
+            <Menu className="w-6 h-6 stroke-[2.5px]" />
+          </button>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+               <Store className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter leading-none mb-0.5">THE BOYS ZONE</span>
+              <span className="text-[7px] font-black text-indigo-500 uppercase tracking-widest leading-none">ADMIN PORTAL</span>
+            </div>
           </div>
         </div>
 
@@ -262,8 +270,41 @@ export const AdminSidebar = () => {
         </div>
       </div>
 
+      {/* Premium Mobile Bottom Navigation Bar (Primary Links Only) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-[150] bg-white/80 backdrop-blur-2xl border-t border-slate-200 px-6 py-3 flex items-center justify-between shadow-[0_-15px_40px_rgba(0,0,0,0.08)] rounded-t-[2.5rem]">
+        {[menuItems[0], menuItems[1], menuItems[5], menuItems[3]].map((item) => {
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={item.name}
+              to={item.path}
+              className={`flex-1 flex flex-col items-center gap-1.5 transition-all relative ${
+                active ? 'text-indigo-600' : 'text-slate-400'
+              }`}
+            >
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                className={`relative p-2 rounded-2xl transition-colors ${active ? 'bg-indigo-50' : 'bg-transparent'}`}
+              >
+                <item.icon className={`w-5 h-5 ${active ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+                {active && (
+                  <motion.div
+                    layoutId="activePill"
+                    className="absolute inset-0 bg-indigo-600/5 rounded-2xl border border-indigo-100 shadow-sm"
+                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+              </motion.div>
+              <span className={`text-[9px] font-bold uppercase tracking-widest transition-all ${active ? 'text-indigo-700' : 'text-slate-500'}`}>
+                {item.name === 'Today Report' ? 'Today' : item.name}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+
       {/* Static Notification Panel */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {isNotificationsOpen && (
           <>
             <motion.div
@@ -306,66 +347,29 @@ export const AdminSidebar = () => {
         )}
       </AnimatePresence>
 
-      {/* Premium Mobile Bottom Navigation Bar (Naukri style) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-[150] bg-white/80 backdrop-blur-2xl border-t border-slate-200 px-6 py-3 flex items-center justify-between shadow-[0_-15px_40px_rgba(0,0,0,0.08)] rounded-t-[2.5rem]">
-        {[menuItems[0], menuItems[1], menuItems[5], menuItems[3]].map((item) => {
-          const active = isActive(item.path);
-          return (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={`flex flex-col items-center gap-1.5 transition-all relative ${
-                active ? 'text-indigo-600' : 'text-slate-400'
-              }`}
+      {/* Mobile Sidebar Overlay (Menu) - Now Slides from Left */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="md:hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[200]"
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="md:hidden fixed top-0 left-0 bottom-0 w-[280px] z-[210]"
             >
-              <motion.div
-                whileTap={{ scale: 0.9 }}
-                className={`relative p-2 rounded-2xl transition-colors ${active ? 'bg-indigo-50' : 'bg-transparent'}`}
-              >
-                <item.icon className={`w-5 h-5 ${active ? 'stroke-[2.5px]' : 'stroke-2'}`} />
-                {active && (
-                  <motion.div
-                    layoutId="activePill"
-                    className="absolute inset-0 bg-indigo-600/5 rounded-2xl border border-indigo-100 shadow-sm"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-              </motion.div>
-              <span className={`text-[9px] font-bold uppercase tracking-widest transition-all ${active ? 'text-indigo-700' : 'text-slate-500'}`}>
-                {item.name === 'Today Report' ? 'Today' : item.name}
-              </span>
-            </Link>
-          );
-        })}
-        
-        {/* More Button */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={`flex flex-col items-center gap-1.5 transition-all ${
-            isOpen ? 'text-indigo-600' : 'text-slate-400'
-          }`}
-        >
-          <motion.div
-            whileTap={{ scale: 0.9 }}
-            className={`relative p-2 rounded-2xl transition-colors ${isOpen ? 'bg-indigo-50' : 'bg-transparent'}`}
-          >
-            <div className="relative">
-              {isOpen ? <X className="w-5 h-5 stroke-[2.5px]" /> : <Menu className="w-5 h-5 stroke-2" />}
-              {!isOpen && <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white shadow-sm" />}
-            </div>
-            {isOpen && (
-              <motion.div
-                layoutId="activePill"
-                className="absolute inset-0 bg-indigo-600/5 rounded-2xl border border-indigo-100 shadow-sm"
-                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-          </motion.div>
-          <span className={`text-[9px] font-bold uppercase tracking-widest transition-all ${isOpen ? 'text-indigo-700' : 'text-slate-500'}`}>
-            {isOpen ? 'Close' : 'More'}
-          </span>
-        </button>
-      </div>
+              <SidebarContent mobile={true} />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Desktop Sidebar */}
       <motion.aside

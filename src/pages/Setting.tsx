@@ -78,20 +78,22 @@ export const Setting = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Header */}
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+      {/* Header - Mobile Responsive */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="mb-10"
+        className="mb-8 md:mb-10"
       >
-        <div className="flex items-center gap-4 mb-2">
-           <div className="p-3 bg-black text-white rounded-2xl shadow-lg">
-             <Settings className="w-6 h-6" />
-           </div>
-           <div>
-             <h1 className="text-4xl font-black tracking-tight text-slate-900">Settings</h1>
-             <p className="text-slate-500 font-medium">Manage your luxury store configuration and preferences</p>
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+           <div className="flex items-center gap-4">
+             <div className="p-3 bg-black text-white rounded-2xl shadow-lg">
+               <Settings className="w-6 h-6" />
+             </div>
+             <div>
+               <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 leading-none">Settings</h1>
+               <p className="text-[11px] md:text-sm font-medium text-slate-500 mt-1 uppercase tracking-widest">Global Shop Configuration</p>
+             </div>
            </div>
         </div>
       </motion.div>
@@ -100,52 +102,52 @@ export const Setting = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 gap-8"
+        className="grid grid-cols-1 gap-6 md:gap-8"
       >
-        {/* GST Configuration */}
+        {/* GST Configuration - Mobile Stacked */}
         <motion.div variants={itemVariants} className="bg-white rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-100 overflow-hidden">
-          <div className="p-8">
-            <div className="flex items-center justify-between mb-8">
+          <div className="p-5 md:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
               <div className="flex items-center gap-4">
-                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 shrink-0">
                   <Percent className="w-6 h-6 text-emerald-600" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-slate-800 tracking-tight">GST Configuration</h2>
-                  <p className="text-sm font-medium text-slate-400">Set your tax rules for automated billing</p>
+                  <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-none mb-1">GST Configuration</h2>
+                  <p className="text-[10px] md:text-sm font-medium text-slate-400 uppercase tracking-wider">Tax Management</p>
                 </div>
               </div>
               <button 
                 onClick={handleSaveGst}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-sm font-black hover:bg-black transition-all hover:scale-105 active:scale-95 shadow-lg shadow-slate-200 disabled:opacity-50"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95 shadow-lg shadow-slate-200 disabled:opacity-50"
               >
                 <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
-                {isSaving ? 'Syncing...' : 'Save Changes'}
+                {isSaving ? 'Syncing...' : 'Save Settings'}
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 bg-slate-50 rounded-[1.5rem] border border-slate-200">
-              <div className="flex items-center justify-between">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-slate-50 rounded-[1.5rem] border border-slate-200">
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="font-black text-slate-700">Enable GST Calculation</p>
-                  <p className="text-xs font-bold text-slate-400">Automatically add tax to invoices</p>
+                  <p className="text-sm font-black text-slate-700">Enable GST</p>
+                  <p className="text-[10px] font-bold text-slate-400">Automated tax billing</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer group">
+                <label className="relative inline-flex items-center cursor-pointer group shrink-0">
                   <input 
                     type="checkbox" 
                     checked={gstEnabled}
                     onChange={(e) => setGstEnabled(e.target.checked)}
                     className="sr-only peer" 
                   />
-                  <div className="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-[21px] after:w-[21px] after:transition-all peer-checked:bg-emerald-500 border-2 border-transparent peer-hover:border-emerald-200"></div>
+                  <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-[16px] after:w-[16px] after:transition-all peer-checked:bg-emerald-500 border-2 border-transparent"></div>
                 </label>
               </div>
               
-              <div className="flex items-center gap-6 md:border-l border-slate-200 md:pl-8">
+              <div className="flex items-center justify-between md:justify-start gap-6 md:border-l border-slate-200 md:pl-8 pt-6 md:pt-0 border-t md:border-t-0">
                 <div className="flex-1">
-                  <p className="font-black text-slate-700">GST Percentage (%)</p>
-                  <p className="text-xs font-bold text-slate-400">Current active tax rate</p>
+                  <p className="text-sm font-black text-slate-700">Rate (%)</p>
+                  <p className="text-[10px] font-bold text-slate-400">Current tax percentage</p>
                 </div>
                 <div className="relative">
                   <input 
@@ -153,7 +155,7 @@ export const Setting = () => {
                     value={gstPercentage}
                     onChange={(e) => setGstPercentage(Number(e.target.value))}
                     disabled={!gstEnabled}
-                    className="w-24 px-4 py-3 bg-white rounded-xl border border-slate-300 focus:ring-2 focus:ring-black text-base font-black text-center disabled:opacity-40 disabled:bg-slate-100 transition-all shadow-sm" 
+                    className="w-20 px-3 py-2.5 bg-white rounded-xl border border-slate-300 focus:ring-2 focus:ring-black text-sm font-black text-center disabled:opacity-40 transition-all shadow-sm" 
                   />
                 </div>
               </div>
@@ -161,95 +163,95 @@ export const Setting = () => {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {/* General Settings */}
-          <motion.div variants={itemVariants} className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-100 flex flex-col h-full">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+          <motion.div variants={itemVariants} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-100 flex flex-col">
+            <div className="flex items-center gap-4 mb-6 md:mb-8">
+              <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 shrink-0">
                 <Store className="w-6 h-6 text-indigo-600" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Store Info</h2>
-                <p className="text-sm font-medium text-slate-400">Public identity of your shop</p>
+                <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-none mb-1">Store Info</h2>
+                <p className="text-[10px] md:text-sm font-medium text-slate-400 uppercase tracking-wider">Identity</p>
               </div>
             </div>
             
-            <div className="space-y-6 flex-1">
-              <div className="group">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Official Store Name</label>
+            <div className="space-y-5">
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Store Name</label>
                 <div className="relative">
-                  <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                  <input type="text" defaultValue="The Boys Zone" className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white text-sm font-black text-slate-800 transition-all outline-none" />
+                  <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                  <input type="text" defaultValue="The Boys Zone" className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-black text-slate-800 outline-none" />
                 </div>
               </div>
-              <div className="group">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Support Email</label>
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Support Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                  <input type="email" defaultValue="support@theboyszone.com" className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white text-sm font-black text-slate-800 transition-all outline-none" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                  <input type="email" defaultValue="support@theboyszone.com" className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-black text-slate-800 outline-none" />
                 </div>
               </div>
             </div>
           </motion.div>
 
           {/* Security */}
-          <motion.div variants={itemVariants} className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-100 flex flex-col">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-4 bg-violet-50 rounded-2xl border border-violet-100">
+          <motion.div variants={itemVariants} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-100 flex flex-col">
+            <div className="flex items-center gap-4 mb-6 md:mb-8">
+              <div className="p-4 bg-violet-50 rounded-2xl border border-violet-100 shrink-0">
                 <Shield className="w-6 h-6 text-violet-600" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Security</h2>
-                <p className="text-sm font-medium text-slate-400">Account protection & access</p>
+                <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-none mb-1">Security</h2>
+                <p className="text-[10px] md:text-sm font-medium text-slate-400 uppercase tracking-wider">Access</p>
               </div>
             </div>
             
-            <div className="space-y-6 flex-1">
-              <div className="p-6 bg-slate-50 rounded-[1.5rem] border border-slate-200 group hover:border-violet-200 transition-all">
-                <div className="flex items-start justify-between mb-4">
+            <div className="space-y-5">
+              <div className="p-5 bg-slate-50 rounded-[1.5rem] border border-slate-200">
+                <div className="flex items-start justify-between mb-3">
                   <div className="p-2 bg-white rounded-lg border border-slate-200">
-                    <Lock className="w-5 h-5 text-slate-400" />
+                    <Lock className="w-4 h-4 text-slate-400" />
                   </div>
-                  <span className="px-3 py-1 bg-slate-200 text-[10px] font-black rounded-full uppercase text-slate-600">Inactive</span>
+                  <span className="px-2.5 py-1 bg-slate-200 text-[8px] font-black rounded-full uppercase text-slate-600">Off</span>
                 </div>
-                <h3 className="font-black text-slate-800 mb-1">Two-Factor Authentication</h3>
-                <p className="text-xs font-bold text-slate-400 mb-4">Add a layer of security to every login attempt.</p>
-                <button className="w-full py-3 bg-white border border-slate-300 rounded-xl text-xs font-black hover:bg-slate-50 transition-all shadow-sm">Setup 2FA</button>
+                <h3 className="text-sm font-black text-slate-800 mb-1">Two-Factor Auth</h3>
+                <p className="text-[10px] font-bold text-slate-400 mb-4">Secure your admin account.</p>
+                <button className="w-full py-3 bg-white border border-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest active:bg-slate-50">Setup</button>
               </div>
             </div>
           </motion.div>
         </div>
 
         {/* Notifications */}
-        <motion.div variants={itemVariants} className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-100 mb-10">
+        <motion.div variants={itemVariants} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-100 mb-20">
           <div className="flex items-center gap-4 mb-8">
-            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">
+            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 shrink-0">
               <Bell className="w-6 h-6 text-amber-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-800 tracking-tight">Notification Center</h2>
-              <p className="text-sm font-medium text-slate-400">Stay updated on your business activity</p>
+              <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-none mb-1">Notifications</h2>
+              <p className="text-[10px] md:text-sm font-medium text-slate-400 uppercase tracking-wider">Alerts</p>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { id: 'orders', title: 'Real-time Order Alerts', desc: 'Instant desktop popups for new billings', icon: CheckCircle2 },
-              { id: 'stock', title: 'Low Stock Warnings', desc: 'Critical alert when stock falls below 10 units', icon: Bell }
+              { id: 'orders', title: 'Order Alerts', desc: 'Real-time billing popups', icon: CheckCircle2 },
+              { id: 'stock', title: 'Stock Warnings', desc: 'Low inventory alerts', icon: Bell }
             ].map((noti) => (
-              <label key={noti.id} className="relative flex items-center p-6 bg-slate-50 rounded-[1.5rem] border border-slate-200 cursor-pointer hover:border-amber-200 hover:bg-white transition-all group">
+              <label key={noti.id} className="relative flex items-center p-5 bg-slate-50 rounded-[1.5rem] border border-slate-200 cursor-pointer active:bg-white transition-all group">
                 <input type="checkbox" defaultChecked className="sr-only peer" />
                 <div className="flex items-center gap-4 flex-1">
-                  <div className="p-2 bg-white rounded-xl border border-slate-200 group-hover:border-amber-200">
-                    <noti.icon className="w-5 h-5 text-amber-600" />
+                  <div className="p-2 bg-white rounded-xl border border-slate-200">
+                    <noti.icon className="w-4 h-4 text-amber-600" />
                   </div>
                   <div>
-                    <p className="font-black text-slate-800 text-sm">{noti.title}</p>
-                    <p className="text-[11px] font-bold text-slate-400">{noti.desc}</p>
+                    <p className="font-black text-slate-800 text-xs">{noti.title}</p>
+                    <p className="text-[10px] font-bold text-slate-400">{noti.desc}</p>
                   </div>
                 </div>
-                <div className="w-6 h-6 rounded-lg border-2 border-slate-300 flex items-center justify-center peer-checked:bg-amber-500 peer-checked:border-amber-500 transition-all">
-                  <CheckCircle2 className="w-4 h-4 text-white scale-0 peer-checked:scale-100 transition-transform" />
+                <div className="w-5 h-5 rounded-lg border-2 border-slate-300 flex items-center justify-center peer-checked:bg-amber-500 peer-checked:border-amber-500 transition-all">
+                  <CheckCircle2 className="w-3 h-3 text-white scale-0 peer-checked:scale-100 transition-transform" />
                 </div>
               </label>
             ))}
