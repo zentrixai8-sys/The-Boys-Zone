@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { api } from '../services/api';
 import { Order } from '../types';
 import { formatPrice, formatDate } from '../lib/utils';
-import { Loader2, Calendar, TrendingUp, Search, Banknote, Smartphone, Shuffle, Clock, Download, Printer, Trash2, Edit, X, Save } from 'lucide-react';
+import { Loader2, Calendar, TrendingUp, Search, Banknote, Smartphone, Shuffle, Clock, Download, Printer, Trash2, Edit, X, Save, Eye, Users } from 'lucide-react';
 import jsPDF from 'jspdf';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -772,117 +772,184 @@ export const TodayReport = () => {
           <Loader2 className="w-10 h-10 animate-spin text-black/20" />
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden w-full">
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse min-w-[700px]">
-              <thead>
-                <tr className="bg-black/5 text-xs font-bold uppercase tracking-widest text-black/40">
-                  <th className="px-6 py-4">Order ID</th>
-                  <th className="px-6 py-4">Date & Time</th>
-                   <th className="px-6 py-4">Customer</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-center">Actions</th>
-                </tr>
-              </thead>
-               <tbody className="divide-y divide-black/5">
-                {filteredSales.length > 0 ? filteredSales.map((sale) => (
-                  <tr key={sale.id} className="hover:bg-black/2 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="font-mono text-xs font-bold text-slate-900">#{sale.id.substring(0,8)}</span>
-                        <span className={`w-fit mt-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${sale.type === 'Online' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
-                          {sale.type}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                      {formatDate(sale.date)} <br/>
-                      <span className="text-slate-300 font-normal">{new Date(sale.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-black text-sm text-slate-900 leading-none mb-1">{sale.customer}</p>
-                      <p className="text-[10px] font-bold text-slate-400 tracking-wider">{sale.mobile}</p>
-                    </td>
-                    <td className="px-6 py-4 font-black text-slate-900">{formatPrice(sale.amount)}</td>
-                    <td className="px-6 py-4">
-                       <span className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg border
-                        ${sale.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 
-                          sale.status === 'Cancelled' ? 'bg-red-50 text-red-600 border-red-200' : 
-                          sale.status === 'Shipped' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                          'bg-amber-50 text-amber-600 border-amber-200'}
-                       `}>
+        <div className="space-y-4 pb-20">
+          {/* Desktop Table View */}
+          <div className="hidden lg:block bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                  <tr className="bg-black/5 text-xs font-bold uppercase tracking-widest text-black/40">
+                    <th className="px-6 py-4">Order ID</th>
+                    <th className="px-6 py-4">Date & Time</th>
+                    <th className="px-6 py-4">Customer</th>
+                    <th className="px-6 py-4">Amount</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {filteredSales.map((sale) => (
+                    <tr key={sale.id} className="hover:bg-black/2 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-mono text-xs font-bold text-slate-900">#{sale.id.substring(0,8)}</span>
+                          <span className={`w-fit mt-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${sale.type === 'Online' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                            {sale.type}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        {formatDate(sale.date)} <br/>
+                        <span className="text-[9px] opacity-60">{new Date(sale.date).toLocaleTimeString()}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-black text-slate-900 leading-none mb-1">{sale.customer}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{sale.mobile}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-black text-slate-900 tracking-tighter">{formatPrice(sale.amount)}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm ${
+                          sale.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
+                          sale.status === 'Cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 
+                          'bg-amber-50 text-amber-600 border border-amber-100'
+                        }`}>
                           {sale.status}
-                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        {sale.type === 'Online' ? (
-                          <>
-                            <button
-                              onClick={() => generateInvoice(sale.raw, 'view')}
-                              className="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-all"
-                              title="View Invoice"
-                            >
-                              <Printer className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => generateInvoice(sale.raw, 'download')}
-                              className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-all"
-                              title="Download Invoice"
-                            >
-                              <Download className="w-4 h-4" />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => {
-                                setEditingSale(sale);
-                                setEditForm({ customer: sale.customer, mobile: sale.mobile, payment_method: sale.payment_method || 'Cash' });
-                              }}
-                              className="p-2 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-all"
-                              title="Edit Bill"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteSale(sale.id, sale.type)}
-                              className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-all"
-                              title="Delete Bill"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => generateStoreInvoice(sale, 'view')}
-                              className="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-all"
-                              title="View Invoice"
-                            >
-                              <Printer className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => generateStoreInvoice(sale, 'download')}
-                              className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-all"
-                              title="Download Invoice"
-                            >
-                              <Download className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-                      <Search className="w-10 h-10 mx-auto mb-4 opacity-20" />
-                      No sales records found for this period
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button 
+                            onClick={() => sale.type === 'Online' ? generateInvoice(sale.raw, 'view') : generateStoreInvoice(sale, 'view')}
+                            className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-100 shadow-sm"
+                            title="View Invoice"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => sale.type === 'Online' ? generateInvoice(sale.raw, 'download') : generateStoreInvoice(sale, 'download')}
+                            className="p-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-colors border border-emerald-100 shadow-sm"
+                            title="Download PDF"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                          {sale.type === 'Store' && (
+                            <>
+                              <button 
+                                onClick={() => {
+                                  setEditingSale(sale);
+                                  setEditForm({ customer: sale.customer, mobile: sale.mobile, payment_method: sale.payment_method || 'Cash' });
+                                }}
+                                className="p-2 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100 transition-colors border border-amber-100 shadow-sm"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteSale(sale.id, sale.type)}
+                                className="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors border border-rose-100 shadow-sm"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          {/* Mobile Card View */}
+          <div className="lg:hidden space-y-4">
+            {filteredSales.map((sale) => (
+              <div 
+                key={sale.id}
+                className="bg-white p-5 rounded-[2rem] border-2 border-slate-200 border-b-[6px] md:border-b-[8px] border-b-slate-300 shadow-sm overflow-hidden"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex flex-col">
+                    <span className="font-mono text-[10px] font-black text-slate-400 uppercase tracking-widest">#{sale.id.substring(0,8)}</span>
+                    <span className={`w-fit mt-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${sale.type === 'Online' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600'}`}>
+                      {sale.type}
+                    </span>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm ${
+                    sale.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600' : 
+                    sale.status === 'Cancelled' ? 'bg-rose-50 text-rose-600' : 
+                    'bg-amber-50 text-amber-600'
+                  }`}>
+                    {sale.status}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center shrink-0 border border-slate-200">
+                    <Users className="w-6 h-6 text-slate-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-black text-slate-900 truncate leading-none mb-1">{sale.customer}</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">{sale.mobile}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total</p>
+                    <p className="text-lg font-black text-slate-900 tracking-tighter leading-none">{formatPrice(sale.amount)}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <Clock className="w-3 h-3 inline-block mr-1 mb-0.5" />
+                    {new Date(sale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => sale.type === 'Online' ? generateInvoice(sale.raw, 'view') : generateStoreInvoice(sale, 'view')}
+                      className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 active:scale-95 transition-transform"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => sale.type === 'Online' ? generateInvoice(sale.raw, 'download') : generateStoreInvoice(sale, 'download')}
+                      className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 active:scale-95 transition-transform"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                    {sale.type === 'Store' && (
+                      <button 
+                        onClick={() => {
+                          setEditingSale(sale);
+                          setEditForm({ customer: sale.customer, mobile: sale.mobile, payment_method: sale.payment_method || 'Cash' });
+                        }}
+                        className="p-2.5 bg-amber-50 text-amber-600 rounded-xl border border-amber-100 active:scale-95 transition-transform"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
+                    {sale.type === 'Store' && (
+                      <button 
+                        onClick={() => handleDeleteSale(sale.id, sale.type)}
+                        className="p-2.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-100 active:scale-95 transition-transform"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {filteredSales.length === 0 && (
+            <div className="text-center py-20 bg-white rounded-3xl border border-black/5 shadow-sm">
+              <Search className="w-16 h-16 text-black/5 mx-auto mb-4" />
+              <p className="text-black/40 font-black uppercase tracking-widest text-sm">No sales found for this period</p>
+            </div>
+          )}
         </div>
       )}
 

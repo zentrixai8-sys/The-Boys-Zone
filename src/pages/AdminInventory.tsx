@@ -240,243 +240,277 @@ export const AdminInventory = () => {
           transition={{ duration: 0.4, delay: 0.3 }}
           className="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden"
         >
-          {/* Toolbar */}
-          <div className="p-6 flex flex-col gap-4 border-b border-slate-200 bg-slate-50/30">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          {/* Toolbar - Mobile Optimized */}
+          <div className="p-4 md:p-6 flex flex-col gap-5 border-b border-slate-200 bg-slate-50/30">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-black text-black">Stock Levels</h2>
-                <p className="text-[11px] text-black/40 mt-0.5">{filtered.length} products • Enter quantity to ADD (not replace)</p>
+                <h2 className="text-xl font-black text-slate-900 leading-tight">Stock Levels</h2>
+                <p className="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-wider">{filtered.length} products • Additive Entry Mode</p>
               </div>
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <div className="relative flex-1 sm:flex-none">
-                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-black/40" />
+              <div className="flex items-center gap-3 w-full lg:w-auto">
+                <div className="relative flex-1 lg:flex-none">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text" value={search} onChange={e => setSearch(e.target.value)}
-                    placeholder="Search products..."
-                    className="pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-black w-full sm:w-60 text-sm font-bold shadow-sm"
+                    placeholder="Search inventory..."
+                    className="pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 w-full lg:w-64 text-sm font-bold shadow-sm outline-none transition-all"
                   />
                 </div>
-                <button onClick={fetchData} className="p-2.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl transition-colors flex-shrink-0 shadow-sm">
-                  <RefreshCw className="w-4 h-4 text-black/60" />
+                <button onClick={fetchData} className="p-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-2xl transition-all flex-shrink-0 shadow-sm active:scale-95">
+                  <RefreshCw className="w-4 h-4 text-slate-600" />
                 </button>
               </div>
             </div>
 
-            {/* Category & Sub-category filters */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+            {/* Advanced Filters */}
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              {/* Product Type Tabs */}
+              <div className="overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+                <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 w-fit shrink-0">
                   <button
                     onClick={() => setSourceFilter('all')}
-                    className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${sourceFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${sourceFilter === 'all' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400'}`}
                   >
-                    All Products
+                    All
                   </button>
                   <button
                     onClick={() => setSourceFilter('online')}
-                    className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${sourceFilter === 'online' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${sourceFilter === 'online' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400'}`}
                   >
-                    Online Only
+                    Online
                   </button>
                   <button
                     onClick={() => setSourceFilter('store')}
-                    className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${sourceFilter === 'store' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${sourceFilter === 'store' ? 'bg-white text-emerald-600 shadow-md' : 'text-slate-400'}`}
                   >
-                    Store Only
+                    Store
                   </button>
                 </div>
+              </div>
 
-                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-black text-slate-400 px-3 flex items-center uppercase tracking-widest">Category</span>
-                  <select 
+              {/* Dynamic Selects */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full md:w-auto">
+                <div className="flex flex-col gap-1.5">
+                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 pl-1">Category</span>
+                   <select 
                     value={categoryFilter}
                     onChange={e => { setCategoryFilter(e.target.value); setSubCategoryFilter('All'); }}
-                    className="bg-transparent text-[10px] font-black text-slate-800 outline-none pr-4 uppercase tracking-widest"
+                    className="w-full md:w-48 px-4 py-2.5 bg-slate-100/50 text-[11px] font-black text-slate-700 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 uppercase tracking-widest appearance-none"
                   >
                     {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
+
+                <div className="flex flex-col gap-1.5">
+                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 pl-1">Sub-Category</span>
+                   <select
+                    value={subCategoryFilter}
+                    onChange={e => setSubCategoryFilter(e.target.value)}
+                    className="w-full md:w-48 px-4 py-2.5 bg-slate-100/50 text-[11px] font-black text-slate-700 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 uppercase tracking-widest appearance-none"
+                  >
+                    {allSubCategories.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Sub-category</span>
-                <select
-                  value={subCategoryFilter}
-                  onChange={e => setSubCategoryFilter(e.target.value)}
-                  className="text-xs font-bold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-black/20 focus:outline-none px-3 py-2 cursor-pointer shadow-sm"
-                >
-                  {allSubCategories.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-
-              {/* Active filter chips */}
-              <div className="flex flex-wrap gap-2">
-                {categoryFilter !== 'All' && (
-                  <button
-                    onClick={() => { setCategoryFilter('All'); setSubCategoryFilter('All'); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white text-[11px] font-black rounded-xl hover:bg-black transition-colors"
-                  >
-                    {categoryFilter} <X className="w-3 h-3" />
-                  </button>
-                )}
-                {subCategoryFilter !== 'All' && (
-                  <button
-                    onClick={() => setSubCategoryFilter('All')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-[11px] font-black rounded-xl hover:bg-indigo-700 transition-colors"
-                  >
-                    {subCategoryFilter} <X className="w-3 h-3" />
-                  </button>
-                )}
-                {(categoryFilter !== 'All' || subCategoryFilter !== 'All' || activeFilter !== 'all') && (
-                  <button
+              {/* Reset Controls */}
+              <AnimatePresence>
+                {(categoryFilter !== 'All' || subCategoryFilter !== 'All' || activeFilter !== 'all' || search !== '') && (
+                  <motion.button
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
                     onClick={() => { setCategoryFilter('All'); setSubCategoryFilter('All'); setActiveFilter('all'); setSearch(''); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-black/8 text-black/50 text-[11px] font-black rounded-xl hover:bg-black/15 transition-colors"
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-rose-50 text-rose-600 border border-rose-100 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-rose-100 transition-all active:scale-95 whitespace-nowrap"
                   >
-                    Clear all
-                  </button>
+                    <X className="w-3.5 h-3.5" /> Reset Filters
+                  </motion.button>
                 )}
-              </div>
+              </AnimatePresence>
             </div>
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-              <thead>
-                <tr className="bg-slate-100 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 border-b border-slate-200">
-                  <th className="px-6 py-4">Product</th>
-                  <th className="px-6 py-4">Category</th>
-                  <th className="px-6 py-4">Current Stock</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Add Stock (+)</th>
-                  <th className="px-6 py-4">History</th>
-                </tr>
-              </thead>
-              <tbody>
-                <AnimatePresence>
-                  {filtered.map((product, idx) => {
-                    const status = getStatus(product.stock);
-                    const barWidth = Math.min(100, (product.stock / 100) * 100);
-                    return (
-                      <motion.tr
-                        key={product.product_id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        transition={{ delay: idx * 0.03, duration: 0.25 }}
-                        className="border-t border-slate-100 hover:bg-slate-50/50 transition-colors"
-                      >
-                        {/* Product */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 ring-1 ring-slate-200">
-                              <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+          <div className="w-full">
+            <div className="hidden md:block overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="bg-slate-100 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 border-b border-slate-200">
+                    <th className="px-6 py-4">Product</th>
+                    <th className="px-6 py-4">Category</th>
+                    <th className="px-6 py-4">Current Stock</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Add Stock (+)</th>
+                    <th className="px-6 py-4">History</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <AnimatePresence>
+                    {filtered.map((product, idx) => {
+                      const status = getStatus(product.stock);
+                      const barWidth = Math.min(100, (product.stock / 100) * 100);
+                      return (
+                        <motion.tr
+                          key={product.product_id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          transition={{ delay: idx * 0.03, duration: 0.25 }}
+                          className="border-t border-slate-100 hover:bg-slate-50/50 transition-colors"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 ring-1 ring-slate-200">
+                                <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-sm text-slate-800 leading-tight max-w-[160px] truncate">{product.title}</p>
+                                <p className="text-[10px] font-mono text-slate-400 mt-0.5">#{product.product_id.substring(0, 8)}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-bold text-sm text-slate-800 leading-tight max-w-[160px] truncate">{product.title}</p>
-                              <p className="text-[10px] font-mono text-slate-400 mt-0.5">#{product.product_id.substring(0, 8)}</p>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Category */}
-                        <td className="px-6 py-4">
-                          <span className="text-[11px] font-bold bg-slate-100 px-2.5 py-1 rounded-lg text-slate-600 border border-slate-200">
-                            {product.category || '—'}
-                          </span>
-                        </td>
-
-                        {/* Current Stock with bar */}
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col gap-1.5 min-w-[80px]">
-                            <span className={`text-lg font-black ${product.stock === 0 ? 'text-red-500' : product.stock <= 30 ? 'text-amber-500' : 'text-black'}`}>
-                              {product.stock}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-[11px] font-bold bg-slate-100 px-2.5 py-1 rounded-lg text-slate-600 border border-slate-200">
+                              {product.category || '—'}
                             </span>
-                            <div className="h-1.5 w-20 bg-black/8 rounded-full overflow-hidden">
-                              <motion.div
-                                className={`h-full rounded-full ${status.bar}`}
-                                initial={{ width: 0 }}
-                                animate={{ width: `${barWidth}%` }}
-                                transition={{ duration: 0.6, delay: idx * 0.03 + 0.2 }}
-                              />
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col gap-1.5 min-w-[80px]">
+                              <span className={`text-lg font-black ${product.stock === 0 ? 'text-red-500' : product.stock <= 30 ? 'text-amber-500' : 'text-black'}`}>
+                                {product.stock}
+                              </span>
+                              <div className="h-1.5 w-20 bg-black/8 rounded-full overflow-hidden">
+                                <motion.div
+                                  className={`h-full rounded-full ${status.bar}`}
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${barWidth}%` }}
+                                  transition={{ duration: 0.6, delay: idx * 0.03 + 0.2 }}
+                                />
+                              </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg border ${status.bg} ${status.color}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${status.dot} animate-pulse`} />
+                              {status.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="flex flex-col gap-1.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[11px] text-slate-400 font-bold">{product.stock} +</span>
+                                  <input
+                                    type="number" min="1"
+                                    value={addQtyMap[product.product_id] || ''}
+                                    onChange={e => setAddQtyMap(prev => ({ ...prev, [product.product_id]: e.target.value }))}
+                                    placeholder="qty"
+                                    className="w-16 px-2 py-1.5 bg-white rounded-lg border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-black/20 focus:outline-none text-center shadow-sm"
+                                  />
+                                  {addQtyMap[product.product_id] && parseInt(addQtyMap[product.product_id]) > 0 && (
+                                    <span className="text-[11px] text-emerald-600 font-black">
+                                      = {product.stock + (parseInt(addQtyMap[product.product_id]) || 0)}
+                                    </span>
+                                  )}
+                                </div>
+                                <input
+                                  type="text"
+                                  value={noteMap[product.product_id] || ''}
+                                  onChange={e => setNoteMap(prev => ({ ...prev, [product.product_id]: e.target.value }))}
+                                  placeholder="Note (optional)"
+                                  className="w-48 px-2 py-1 bg-white rounded-lg border border-slate-200 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-black/20"
+                                />
+                              </div>
+                              <button
+                                onClick={() => handleAddStock(product)}
+                                disabled={updatingId === product.product_id || !addQtyMap[product.product_id]}
+                                className="px-3 py-2 bg-slate-900 text-white rounded-xl text-[11px] font-black hover:bg-black transition-colors disabled:opacity-40 flex items-center gap-1 whitespace-nowrap"
+                              >
+                                {updatingId === product.product_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                                {updatingId === product.product_id ? 'Saving…' : 'Add'}
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => openHistory(product)}
+                              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[11px] font-black hover:bg-indigo-100 transition-colors border border-indigo-100"
+                            >
+                              <History className="w-3.5 h-3.5" />
+                              History
+                            </button>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+            </div>
 
-                        {/* Status Badge */}
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg border ${status.bg} ${status.color}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${status.dot} animate-pulse`} />
+            <div className="md:hidden divide-y divide-slate-100 px-4 pb-20">
+              {filtered.map((product) => {
+                const status = getStatus(product.stock);
+                return (
+                  <div key={product.product_id} className="py-6 space-y-4">
+                    <div className="flex gap-4">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
+                        <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${status.bg} ${status.color}`}>
                             {status.label}
                           </span>
-                        </td>
-
-                        {/* Add Stock (additive) */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="flex flex-col gap-1.5">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] text-slate-400 font-bold">{product.stock} +</span>
-                                <input
-                                  type="number" min="1"
-                                  value={addQtyMap[product.product_id] || ''}
-                                  onChange={e => setAddQtyMap(prev => ({ ...prev, [product.product_id]: e.target.value }))}
-                                  placeholder="qty"
-                                  className="w-16 px-2 py-1.5 bg-white rounded-lg border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-black/20 focus:outline-none text-center shadow-sm"
-                                />
-                                {addQtyMap[product.product_id] && parseInt(addQtyMap[product.product_id]) > 0 && (
-                                  <span className="text-[11px] text-emerald-600 font-black">
-                                    = {product.stock + (parseInt(addQtyMap[product.product_id]) || 0)}
-                                  </span>
-                                )}
-                              </div>
-                              <input
-                                type="text"
-                                value={noteMap[product.product_id] || ''}
-                                onChange={e => setNoteMap(prev => ({ ...prev, [product.product_id]: e.target.value }))}
-                                placeholder="Note (optional)"
-                                className="w-48 px-2 py-1 bg-white rounded-lg border border-slate-200 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-black/20"
-                              />
-                            </div>
-                            <button
-                              onClick={() => handleAddStock(product)}
-                              disabled={updatingId === product.product_id || !addQtyMap[product.product_id]}
-                              className="px-3 py-2 bg-slate-900 text-white rounded-xl text-[11px] font-black hover:bg-black transition-colors disabled:opacity-40 flex items-center gap-1 whitespace-nowrap"
-                            >
-                              {updatingId === product.product_id
-                                ? <Loader2 className="w-3 h-3 animate-spin" />
-                                : <Plus className="w-3 h-3" />
-                              }
-                              {updatingId === product.product_id ? 'Saving…' : 'Add'}
-                            </button>
-                          </div>
-                        </td>
-
-                        {/* History */}
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => openHistory(product)}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[11px] font-black hover:bg-indigo-100 transition-colors border border-indigo-100"
-                          >
-                            <History className="w-3.5 h-3.5" />
-                            History
+                          <button onClick={() => openHistory(product)} className="text-indigo-500 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1">
+                             <History className="w-3 h-3" /> History
                           </button>
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </AnimatePresence>
-
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-20 text-center">
-                      <Package className="w-10 h-10 mx-auto mb-3 text-black/15" />
-                      <p className="text-sm font-bold text-black/30">No products found</p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                        </div>
+                        <h3 className="font-black text-slate-800 text-sm truncate">{product.title}</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{product.category}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                       <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Stock</p>
+                          <p className={`text-xl font-black ${product.stock === 0 ? 'text-red-500' : product.stock <= 30 ? 'text-amber-500' : 'text-slate-900'}`}>{product.stock}</p>
+                       </div>
+                       <div className="bg-indigo-50/30 p-3 rounded-2xl border border-indigo-100/50">
+                          <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Update Status</p>
+                          <p className="text-xs font-bold text-indigo-600">Additive Entry</p>
+                       </div>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-[1.5rem] border border-slate-200 space-y-3">
+                       <div className="flex items-center gap-3">
+                          <div className="flex-1">
+                             <input 
+                                type="number" min="1"
+                                value={addQtyMap[product.product_id] || ''}
+                                onChange={e => setAddQtyMap(prev => ({ ...prev, [product.product_id]: e.target.value }))}
+                                placeholder="Enter Qty to ADD..."
+                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-black outline-none shadow-sm"
+                             />
+                          </div>
+                          <button
+                            onClick={() => handleAddStock(product)}
+                            disabled={updatingId === product.product_id || !addQtyMap[product.product_id]}
+                            className="bg-slate-900 text-white p-3 rounded-xl disabled:opacity-40"
+                          >
+                             {updatingId === product.product_id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                          </button>
+                       </div>
+                       <input
+                          type="text"
+                          value={noteMap[product.product_id] || ''}
+                          onChange={e => setNoteMap(prev => ({ ...prev, [product.product_id]: e.target.value }))}
+                          placeholder="Internal note (optional)"
+                          className="w-full px-3 py-2 bg-transparent border-b border-slate-200 text-xs font-medium focus:border-black outline-none transition-colors"
+                       />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </motion.div>
       )}

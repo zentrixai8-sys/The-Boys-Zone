@@ -489,8 +489,8 @@ export const AdminProducts = () => {
           <Loader2 className="w-10 h-10 animate-spin text-black/20" />
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden w-full">
-          <div className="overflow-x-auto w-full">
+        <div className="bg-white md:rounded-3xl md:border md:border-slate-200 md:shadow-md overflow-hidden w-full">
+          <div className="hidden md:block overflow-x-auto w-full">
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
                 <tr className="bg-slate-100 text-xs font-black uppercase tracking-widest text-slate-500 border-b border-slate-200">
@@ -572,6 +572,79 @@ export const AdminProducts = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4 px-4 pb-20">
+            {filteredProducts.map((product) => (
+              <div 
+                key={product.product_id}
+                className="bg-white p-4 rounded-[2.5rem] border border-slate-200 shadow-sm active:scale-[0.98] transition-all relative overflow-hidden"
+                onClick={() => {
+                  setStockProduct(product);
+                  setIsStockModalOpen(true);
+                }}
+              >
+                <div className="flex gap-4">
+                  <div className="w-24 h-24 rounded-3xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
+                    <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 mb-2 inline-block">
+                        {product.category}
+                      </span>
+                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => {
+                            const isStoreOnly = product.sale_type === 'Store' || (!product.image_url && (!product.variants || product.variants.length === 0 || product.variants.every(v => !v.colorImage)));
+                            setEditingProduct({ ...product, is_store_only: isStoreOnly } as any);
+                            setIsModalOpen(true);
+                          }}
+                          className="p-2.5 bg-slate-50 rounded-2xl border border-slate-100"
+                        >
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product.product_id)}
+                          className="p-2.5 bg-red-50 rounded-2xl border border-red-100"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400" />
+                        </button>
+                      </div>
+                    </div>
+                    <h3 className="font-black text-slate-800 truncate text-lg">{product.title}</h3>
+                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">{product.brand}</p>
+                    
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Price</span>
+                        <span className="font-black text-slate-900 text-base">{formatPrice(product.discount_price || product.price)}</span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Stock Status</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-black ${product.stock <= 30 && product.stock > 0 ? 'text-orange-500' : product.stock === 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                            {product.stock} Units
+                          </span>
+                          <div className="p-1 bg-slate-100 rounded-lg">
+                            <ChevronRight className="w-4 h-4 text-slate-400" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {filteredProducts.length === 0 && (
+              <div className="py-20 text-center">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                  <Package className="w-10 h-10 text-slate-200" />
+                </div>
+                <p className="font-black text-slate-400 uppercase tracking-widest text-xs">No products found</p>
+              </div>
+            )}
           </div>
         </div>
       )}

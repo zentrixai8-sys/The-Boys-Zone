@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronUp, History, Calendar, Search
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PaymentLog {
   id: string;
@@ -375,7 +376,7 @@ export const PendingPayments = () => {
       </div>
 
 
-      {/* Main List */}
+      {/* Main List - Responsive Table/Cards */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-32 gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-black/10" />
@@ -388,191 +389,300 @@ export const PendingPayments = () => {
           <p className="text-black/10 text-xs font-bold mt-2 uppercase tracking-wider">Try adjusting filters or searching</p>
         </div>
       ) : (
-        <div className="bg-white rounded-[3rem] border-2 border-black/[0.08] shadow-2xl shadow-black/5 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-black/[0.02] border-b-2 border-black/[0.08]">
-                <th className="text-left px-10 py-6 text-[11px] font-black uppercase tracking-[0.25em] text-black/40">Customer</th>
-                <th className="text-left px-10 py-6 text-[11px] font-black uppercase tracking-[0.25em] text-black/40">Date</th>
-                <th className="text-right px-10 py-6 text-[11px] font-black uppercase tracking-[0.25em] text-black/40">Amount</th>
-                <th className="text-center px-10 py-6 text-[11px] font-black uppercase tracking-[0.25em] text-black/40">Details</th>
-                <th className="text-right px-10 py-6 text-[11px] font-black uppercase tracking-[0.25em] text-black/40">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y-2 divide-black/[0.05]">
-
-              {filter === 'paid' ? (
-                filteredLogs.map(log => (
-                  <tr key={log.id} className="group hover:bg-black/[0.01] transition-colors">
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center font-black text-base">
-                          {(log.customer_name || 'C')[0].toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-black text-slate-900 text-base leading-none mb-1">{log.customer_name}</p>
-                          <p className="text-[9px] text-slate-400 font-black uppercase tracking-wider">{log.note || 'Payment Received'}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 text-xs font-bold text-slate-600">
-                      {formatDate(log.paid_at)}
-                      <p className="text-[9px] text-slate-300 font-black uppercase mt-0.5">
-                        {new Date(log.paid_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      <p className="text-xl font-black text-emerald-600 tracking-tight">{formatPrice(log.amount_paid)}</p>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex justify-center">
-                        <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] shadow-sm ${
-                          log.payment_method === 'Cash' ? 'bg-emerald-50 text-emerald-600 shadow-emerald-100' :
-                          log.payment_method === 'UPI' ? 'bg-blue-50 text-blue-600 shadow-blue-100' : 'bg-indigo-50 text-indigo-600 shadow-indigo-100'
-                        }`}>
-                          {log.payment_method === 'Cash' ? '💵' : log.payment_method === 'UPI' ? '📱' : '💳'} {log.payment_method}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      {log.proof_url && (
-                        <a href={log.proof_url} target="_blank" rel="noopener noreferrer" className="inline-flex p-2.5 bg-black/5 text-black/30 rounded-xl hover:bg-black/10 transition-all">
-                          <Upload className="w-4 h-4" />
-                        </a>
-                      )}
-                    </td>
-
-                  </tr>
-                ))
-              ) : (
-                filteredRecords.map(record => (
-                  <React.Fragment key={record.id}>
-                    <tr className={`group hover:bg-black/[0.01] transition-colors ${record.status === 'paid' ? 'opacity-60' : ''}`}>
+        <div className="space-y-6">
+          {/* Desktop Table */}
+          <div className="hidden md:block bg-white rounded-[3rem] border-2 border-black/[0.08] shadow-2xl shadow-black/5 overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-black/[0.02] border-b-2 border-black/[0.08]">
+                  <th className="text-left px-10 py-6 text-[11px] font-black uppercase tracking-[0.25em] text-black/40">Customer</th>
+                  <th className="text-left px-10 py-6 text-[11px] font-black uppercase tracking-[0.25em] text-black/40">Date</th>
+                  <th className="text-right px-10 py-6 text-[11px] font-black uppercase tracking-[0.25em] text-black/40">Amount</th>
+                  <th className="text-center px-10 py-6 text-[11px] font-black uppercase tracking-[0.25em] text-black/40">Details</th>
+                  <th className="text-right px-10 py-6 text-[11px] font-black uppercase tracking-[0.25em] text-black/40">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y-2 divide-black/[0.05]">
+                {filter === 'paid' ? (
+                  filteredLogs.map(log => (
+                    <tr key={log.id} className="group hover:bg-black/[0.01] transition-colors">
                       <td className="px-8 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-base ${
-                          record.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
-                        }`}>
-                          {(record.customer_name || 'C')[0].toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-black text-slate-900 text-base leading-none mb-1.5">{record.customer_name}</p>
-                          <div className="flex items-center gap-2.5">
-                            {record.customer_mobile !== 'N/A' && (
-                              <a href={`tel:${record.customer_mobile}`} className="flex items-center gap-1 text-black/30 text-[9px] font-black hover:text-black transition-colors uppercase tracking-widest">
-                                <Phone className="w-2 h-2" /> {record.customer_mobile}
-                              </a>
-                            )}
-                            <span className="text-[9px] text-black/20 font-black uppercase tracking-widest truncate max-w-[120px]">{record.items_summary}</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center font-black text-base">
+                            {(log.customer_name || 'C')[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-black text-slate-900 text-base leading-none mb-1">{log.customer_name}</p>
+                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-wider">{log.note || 'Payment Received'}</p>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 text-xs font-bold text-slate-600">
-                      {formatDate(record.created_at)}
-                      {record.status === 'pending' && (
-                        <p className="text-[9px] text-amber-500 font-black uppercase tracking-wider mt-0.5">
-                          {Math.floor((Date.now() - new Date(record.created_at).getTime()) / 86400000)} Days Overdue
+                      </td>
+                      <td className="px-8 py-5 text-xs font-bold text-slate-600">
+                        {formatDate(log.paid_at)}
+                        <p className="text-[9px] text-slate-300 font-black uppercase mt-0.5">
+                          {new Date(log.paid_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                         </p>
-                      )}
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      <p className={`text-xl font-black tracking-tight ${record.status === 'pending' ? 'text-amber-600' : 'text-emerald-600'}`}>
-                        {formatPrice(record.total_amount)}
-                      </p>
-                      {record.amount_received ? (
-                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Collected: {formatPrice(record.amount_received)}</p>
-                      ) : null}
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex justify-center">
-                        {record.status === 'pending' ? (
-                          <span className="px-3 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] shadow-sm shadow-amber-100 flex items-center gap-1.5">
-                            <span className="w-1 h-1 bg-amber-500 rounded-full animate-pulse" />
-                            Pending
+                      </td>
+                      <td className="px-8 py-5 text-right">
+                        <p className="text-xl font-black text-emerald-600 tracking-tight">{formatPrice(log.amount_paid)}</p>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="flex justify-center">
+                          <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] shadow-sm ${
+                            log.payment_method === 'Cash' ? 'bg-emerald-50 text-emerald-600 shadow-emerald-100' :
+                            log.payment_method === 'UPI' ? 'bg-blue-50 text-blue-600 shadow-blue-100' : 'bg-indigo-50 text-indigo-600 shadow-indigo-100'
+                          }`}>
+                            {log.payment_method === 'Cash' ? '💵' : log.payment_method === 'UPI' ? '📱' : '💳'} {log.payment_method}
                           </span>
-                        ) : (
-                          <span className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] shadow-sm shadow-emerald-100">
-                            ✅ Paid
-                          </span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-5 text-right">
+                        {log.proof_url && (
+                          <a href={log.proof_url} target="_blank" rel="noopener noreferrer" className="inline-flex p-2.5 bg-black/5 text-black/30 rounded-xl hover:bg-black/10 transition-all">
+                            <Upload className="w-4 h-4" />
+                          </a>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center justify-end gap-2">
-                        {record.status === 'pending' && (
-                          <button
-                            onClick={() => openModal(record)}
-                            className="px-4 py-2 bg-black text-white rounded-xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-black/80 active:scale-95 transition-all shadow-xl shadow-black/10"
-                          >
-                            Collect
-                          </button>
-                        )}
-                        <button
-                          onClick={() => setExpandedLogId(expandedLogId === record.id ? null : record.id)}
-                          className={`p-2.5 rounded-xl transition-all ${expandedLogId === record.id ? 'bg-black text-white' : 'bg-black/5 text-black/20 hover:bg-black/10 hover:text-black'}`}
-                        >
-                          <History className="w-4 h-4" />
-                        </button>
-                        <div className="relative">
-                          {confirmDeleteId === record.id ? (
-                            <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-white border border-red-100 p-1 rounded-xl shadow-2xl z-10 whitespace-nowrap">
-                              <span className="text-[9px] font-black uppercase text-red-500 ml-1.5">Delete?</span>
-                              <button onClick={() => handleDelete(record.id)} className="px-2.5 py-1 bg-red-500 text-white text-[9px] font-black rounded-lg">Yes</button>
-                              <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-slate-100 text-slate-500 text-[9px] font-black rounded-lg">No</button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  filteredRecords.map(record => (
+                    <React.Fragment key={record.id}>
+                      <tr className={`group hover:bg-black/[0.01] transition-colors ${record.status === 'paid' ? 'opacity-60' : ''}`}>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-base ${
+                              record.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                            }`}>
+                              {(record.customer_name || 'C')[0].toUpperCase()}
                             </div>
-                          ) : (
-                            <button onClick={() => setConfirmDeleteId(record.id)} className="p-2.5 bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-all active:scale-95">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div>
+                              <p className="font-black text-slate-900 text-base leading-none mb-1.5">{record.customer_name}</p>
+                              <div className="flex items-center gap-2.5">
+                                {record.customer_mobile !== 'N/A' && (
+                                  <a href={`tel:${record.customer_mobile}`} className="flex items-center gap-1 text-black/30 text-[9px] font-black hover:text-black transition-colors uppercase tracking-widest">
+                                    <Phone className="w-2 h-2" /> {record.customer_mobile}
+                                  </a>
+                                )}
+                                <span className="text-[9px] text-black/20 font-black uppercase tracking-widest truncate max-w-[120px]">{record.items_summary}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 text-xs font-bold text-slate-600">
+                          {formatDate(record.created_at)}
+                          {record.status === 'pending' && (
+                            <p className="text-[9px] text-amber-500 font-black uppercase tracking-wider mt-0.5">
+                              {Math.floor((Date.now() - new Date(record.created_at).getTime()) / 86400000)} Days Overdue
+                            </p>
                           )}
+                        </td>
+                        <td className="px-8 py-5 text-right">
+                          <p className={`text-xl font-black tracking-tight ${record.status === 'pending' ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            {formatPrice(record.total_amount)}
+                          </p>
+                          {record.amount_received ? (
+                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Collected: {formatPrice(record.amount_received)}</p>
+                          ) : null}
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex justify-center">
+                            {record.status === 'pending' ? (
+                              <span className="px-3 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] shadow-sm shadow-amber-100 flex items-center gap-1.5">
+                                <span className="w-1 h-1 bg-amber-500 rounded-full animate-pulse" />
+                                Pending
+                              </span>
+                            ) : (
+                              <span className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] shadow-sm shadow-emerald-100">
+                                ✅ Paid
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center justify-end gap-2">
+                            {record.status === 'pending' && (
+                              <button onClick={() => openModal(record)} className="px-4 py-2 bg-black text-white rounded-xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-black/80 active:scale-95 transition-all shadow-xl shadow-black/10">Collect</button>
+                            )}
+                            <button onClick={() => setExpandedLogId(expandedLogId === record.id ? null : record.id)} className={`p-2.5 rounded-xl transition-all ${expandedLogId === record.id ? 'bg-black text-white' : 'bg-black/5 text-black/20 hover:bg-black/10 hover:text-black'}`}>
+                              <History className="w-4 h-4" />
+                            </button>
+                            <div className="relative">
+                              {confirmDeleteId === record.id ? (
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-white border border-red-100 p-1 rounded-xl shadow-2xl z-10 whitespace-nowrap">
+                                  <span className="text-[9px] font-black uppercase text-red-500 ml-1.5">Delete?</span>
+                                  <button onClick={() => handleDelete(record.id)} className="px-2.5 py-1 bg-red-500 text-white text-[9px] font-black rounded-lg">Yes</button>
+                                  <button onClick={() => setConfirmDeleteId(null)} className="px-2.5 py-1 bg-slate-100 text-slate-500 text-[9px] font-black rounded-lg">No</button>
+                                </div>
+                              ) : (
+                                <button onClick={() => setConfirmDeleteId(record.id)} className="p-2.5 bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-all active:scale-95">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                      {expandedLogId === record.id && (
+                        <tr className="bg-black/[0.01]">
+                          <td colSpan={5} className="px-10 py-6">
+                            <div className="bg-white border border-black/5 rounded-[2rem] p-6 space-y-4">
+                              <h5 className="text-[11px] font-black uppercase tracking-[0.2em] text-black/30 mb-2 px-2 flex items-center gap-2">
+                                <History className="w-4 h-4" /> Transaction History
+                              </h5>
+                              {paymentLogs.filter(l => l.pending_payment_id === record.id).length === 0 ? (
+                                <p className="text-center py-6 text-[10px] text-black/20 font-black uppercase tracking-widest italic">No payments recorded yet</p>
+                              ) : (
+                                paymentLogs.filter(l => l.pending_payment_id === record.id).map(log => (
+                                  <div key={log.id} className="flex items-center justify-between p-4 bg-black/[0.01] rounded-3xl border border-black/[0.02]">
+                                    <div className="flex items-center gap-4">
+                                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm shadow-inner ${
+                                        log.payment_method === 'Cash' ? 'bg-emerald-50 text-emerald-700' :
+                                        log.payment_method === 'UPI' ? 'bg-blue-50 text-blue-700' : 'bg-indigo-50 text-indigo-700'
+                                      }`}>
+                                        {log.payment_method === 'Cash' ? '💵' : log.payment_method === 'UPI' ? '📱' : '💳'}
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-black text-slate-900">{formatPrice(log.amount_paid)}</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{log.payment_method} · {formatDate(log.paid_at)}</p>
+                                      </div>
+                                    </div>
+                                    {log.proof_url && (
+                                      <a href={log.proof_url} target="_blank" rel="noopener noreferrer" className="p-3 text-black/20 hover:text-black transition-colors">
+                                        <Upload className="w-4 h-4" />
+                                      </a>
+                                    )}
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card-based List */}
+          <div className="md:hidden space-y-4 px-2 pb-24">
+            {(filter === 'paid' ? filteredLogs : filteredRecords).map((item: any) => {
+              const isLog = filter === 'paid';
+              const status = isLog ? null : (item.status === 'pending' ? { label: 'Pending', color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-500' } : { label: 'Paid', color: 'text-emerald-600', bg: 'bg-emerald-50', dot: 'bg-emerald-500' });
+              
+              return (
+                <div key={item.id} className="bg-white rounded-[2rem] border border-black/5 shadow-lg overflow-hidden transition-all active:scale-[0.98]">
+                  <div className="p-5">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${isLog ? 'bg-emerald-100 text-emerald-700' : (item.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700')}`}>
+                          {(item.customer_name || 'C')[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <h3 className="font-black text-slate-900 text-base leading-tight mb-1 truncate max-w-[140px]">{item.customer_name}</h3>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            {formatDate(isLog ? item.paid_at : item.created_at)}
+                          </p>
                         </div>
                       </div>
-                    </td>
+                      <div className="text-right">
+                        <p className={`text-xl font-black tracking-tighter ${isLog ? 'text-emerald-600' : (item.status === 'pending' ? 'text-amber-600' : 'text-emerald-600')}`}>
+                          {formatPrice(isLog ? item.amount_paid : item.total_amount)}
+                        </p>
+                        {!isLog && item.status === 'pending' && (
+                           <span className="text-[9px] font-black text-rose-500 uppercase tracking-tighter">
+                             {Math.floor((Date.now() - new Date(item.created_at).getTime()) / 86400000)}d Overdue
+                           </span>
+                        )}
+                      </div>
+                    </div>
 
-                    </tr>
-                    {/* History Sub-Table */}
-                    {expandedLogId === record.id && (
-                      <tr className="bg-black/[0.01]">
-                        <td colSpan={5} className="px-10 py-6">
-                          <div className="bg-white border border-black/5 rounded-[2rem] p-6 space-y-4">
-                            <h5 className="text-[11px] font-black uppercase tracking-[0.2em] text-black/30 mb-2 px-2 flex items-center gap-2">
-                              <History className="w-4 h-4" /> Transaction History
-                            </h5>
-                            {paymentLogs.filter(l => l.pending_payment_id === record.id).length === 0 ? (
-                              <p className="text-center py-6 text-[10px] text-black/20 font-black uppercase tracking-widest italic">No payments recorded yet</p>
+                    <div className="bg-slate-50/50 rounded-2xl p-3 border border-slate-100 mb-4">
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Details</p>
+                       <p className="text-xs font-bold text-slate-700 leading-relaxed truncate">
+                         {isLog ? (item.note || 'Regular payment received') : (item.items_summary || 'Manual entry')}
+                       </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                       {!isLog && item.status === 'pending' ? (
+                         <>
+                           <button onClick={() => openModal(item)} className="flex-1 bg-slate-900 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-black/10 active:bg-black">
+                             Collect
+                           </button>
+                           {item.customer_mobile !== 'N/A' && (
+                             <a href={`tel:${item.customer_mobile}`} className="p-3.5 bg-emerald-100 text-emerald-600 rounded-xl active:bg-emerald-200">
+                               <Phone className="w-4 h-4" />
+                             </a>
+                           )}
+                         </>
+                       ) : (
+                         <div className="flex-1 py-3 bg-emerald-50 rounded-xl text-center">
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                              {isLog ? `💰 ${item.payment_method}` : '✅ Fully Paid'}
+                            </span>
+                         </div>
+                       )}
+                       
+                       <button 
+                         onClick={() => setExpandedLogId(expandedLogId === item.id ? null : item.id)}
+                         className={`p-3.5 rounded-xl border transition-all ${expandedLogId === item.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-200'}`}
+                       >
+                         <History className="w-4 h-4" />
+                       </button>
+
+                       {!isLog && (
+                          <button onClick={() => setConfirmDeleteId(item.id)} className="p-3.5 bg-rose-50 text-rose-500 rounded-xl border border-rose-100">
+                             <Trash2 className="w-4 h-4" />
+                          </button>
+                       )}
+                    </div>
+
+                    {/* Mobile History Expanded */}
+                    <AnimatePresence>
+                      {expandedLogId === item.id && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Payment Logs</p>
+                            {paymentLogs.filter(l => l.pending_payment_id === item.id).length === 0 ? (
+                              <p className="text-[10px] font-bold text-slate-300 py-2 italic">No history found</p>
                             ) : (
-                              paymentLogs.filter(l => l.pending_payment_id === record.id).map(log => (
-                                <div key={log.id} className="flex items-center justify-between p-4 bg-black/[0.01] rounded-3xl border border-black/[0.02]">
-                                  <div className="flex items-center gap-4">
-                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm shadow-inner ${
-                                      log.payment_method === 'Cash' ? 'bg-emerald-50 text-emerald-700' :
-                                      log.payment_method === 'UPI' ? 'bg-blue-50 text-blue-700' : 'bg-indigo-50 text-indigo-700'
-                                    }`}>
-                                      {log.payment_method === 'Cash' ? '💵' : log.payment_method === 'UPI' ? '📱' : '💳'}
-                                    </div>
-                                    <div>
-                                      <p className="text-sm font-black text-slate-900">{formatPrice(log.amount_paid)}</p>
-                                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{log.payment_method} · {formatDate(log.paid_at)}</p>
-                                    </div>
+                              paymentLogs.filter(l => l.pending_payment_id === item.id).map(log => (
+                                <div key={log.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                  <div>
+                                    <p className="text-xs font-black text-slate-800">{formatPrice(log.amount_paid)}</p>
+                                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{log.payment_method} · {formatDate(log.paid_at)}</p>
                                   </div>
-                                  {log.proof_url && (
-                                    <a href={log.proof_url} target="_blank" rel="noopener noreferrer" className="p-3 text-black/20 hover:text-black transition-colors">
-                                      <Upload className="w-4 h-4" />
-                                    </a>
-                                  )}
+                                  {log.proof_url && <Upload className="w-3 h-3 text-slate-300" />}
                                 </div>
                               ))
                             )}
                           </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))
-              )}
-            </tbody>
-          </table>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {confirmDeleteId === item.id && (
+                    <div className="bg-rose-600 p-4 flex items-center justify-between">
+                       <span className="text-white text-[10px] font-black uppercase tracking-widest">Confirm permanent delete?</span>
+                       <div className="flex gap-2">
+                          <button onClick={() => handleDelete(item.id)} className="px-4 py-1.5 bg-white text-rose-600 rounded-lg text-[10px] font-black uppercase">Yes</button>
+                          <button onClick={() => setConfirmDeleteId(null)} className="px-4 py-1.5 bg-black/20 text-white rounded-lg text-[10px] font-black uppercase">No</button>
+                       </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

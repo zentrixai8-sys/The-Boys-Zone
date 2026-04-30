@@ -705,22 +705,13 @@ export const Billing = () => {
           <h1 className="text-4xl font-bold tracking-tight text-black mb-2">Store Billing</h1>
           <p className="text-black/40">Point of sale for walk-in customers</p>
         </div>
-        <div className="flex gap-4">
-          <button onClick={handleClear} disabled={isProcessing} className="px-6 py-3 rounded-2xl font-bold border-2 border-black/10 hover:bg-black/5 transition-all text-sm disabled:opacity-50">
+        <div className="grid grid-cols-2 sm:flex gap-3 sm:gap-4 w-full sm:w-auto">
+          <button onClick={handleClear} disabled={isProcessing} className="px-4 sm:px-6 py-3 rounded-2xl font-bold border-2 border-black/10 hover:bg-black/5 transition-all text-sm disabled:opacity-50">
             Clear Bill
           </button>
-          <button onClick={handleSave} disabled={isProcessing || items.length === 0} className="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-emerald-700 transition-all flex items-center gap-2 text-sm disabled:opacity-50">
+          <button onClick={handleSave} disabled={isProcessing || items.length === 0} className="bg-emerald-600 text-white px-4 sm:px-6 py-3 rounded-2xl font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50">
             {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
             {isProcessing ? 'Saving...' : 'Save Bill'}
-          </button>
-          <button onClick={() => {
-            if (items.length === 0) {
-              toast.error('Please add items to bill first');
-              return;
-            }
-            setShowInvoiceModal(true);
-          }} disabled={isProcessing || items.length === 0} className="bg-black text-white px-6 py-3 rounded-2xl font-bold hover:bg-black/90 transition-all flex items-center gap-2 text-sm disabled:opacity-50">
-            <Printer className="w-5 h-5" /> Preview Invoice
           </button>
         </div>
       </div>
@@ -1211,41 +1202,68 @@ export const Billing = () => {
           <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm flex flex-col h-fit">
             <h2 className="text-xl font-bold mb-6 print:hidden">Current Bill Items</h2>
             
-            <div className="overflow-x-auto">
+            <div className="w-full">
               {items.length === 0 ? (
                 <div className="py-12 flex flex-col items-center justify-center text-black/40 print:hidden">
                   <Search className="w-12 h-12 mb-4 opacity-20" />
-                  <p className="font-bold">No items added to bill yet.</p>
+                  <p className="font-bold text-center">No items added to bill yet.</p>
                 </div>
               ) : (
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b-2 border-black/10 text-xs font-bold uppercase tracking-widest text-black/40">
-                      <th className="py-4">Item</th>
-                      <th className="py-4">Category</th>
-                      <th className="py-4 text-center">Qty</th>
-                      <th className="py-4 text-right">Price</th>
-                      <th className="py-4 text-right">Total</th>
-                      <th className="py-4 text-center print:hidden">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/5">
+                <>
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b-2 border-black/10 text-xs font-bold uppercase tracking-widest text-black/40">
+                          <th className="py-4">Item</th>
+                          <th className="py-4">Category</th>
+                          <th className="py-4 text-center">Qty</th>
+                          <th className="py-4 text-right">Price</th>
+                          <th className="py-4 text-right">Total</th>
+                          <th className="py-4 text-center print:hidden">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-black/5">
+                        {items.map(item => (
+                          <tr key={item.id}>
+                            <td className="py-4 font-bold">{item.productName}</td>
+                            <td className="py-4 text-sm text-black/60">{item.category}</td>
+                            <td className="py-4 text-center font-bold">{item.quantity}</td>
+                            <td className="py-4 text-right">{formatPrice(item.price)}</td>
+                            <td className="py-4 text-right font-bold">{formatPrice(item.price * item.quantity)}</td>
+                            <td className="py-4 text-center print:hidden">
+                              <button onClick={() => removeItem(item.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors inline-block">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="md:hidden space-y-4 pt-2">
                     {items.map(item => (
-                      <tr key={item.id}>
-                        <td className="py-4 font-bold">{item.productName}</td>
-                        <td className="py-4 text-sm text-black/60">{item.category}</td>
-                        <td className="py-4 text-center font-bold">{item.quantity}</td>
-                        <td className="py-4 text-right">{formatPrice(item.price)}</td>
-                        <td className="py-4 text-right font-bold">{formatPrice(item.price * item.quantity)}</td>
-                        <td className="py-4 text-center print:hidden">
-                          <button onClick={() => removeItem(item.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors inline-block">
+                      <div key={item.id} className="bg-slate-50 p-4 rounded-2xl border border-black/5 space-y-3">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="flex-1">
+                            <p className="font-bold text-slate-800 text-sm leading-tight mb-1">{item.productName}</p>
+                            <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest">{item.category}</p>
+                          </div>
+                          <button onClick={() => removeItem(item.id)} className="p-2 text-red-500 bg-red-50 rounded-xl">
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        </td>
-                      </tr>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-black/5 pt-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black bg-white px-2 py-1 rounded-lg border border-black/5">QTY: {item.quantity}</span>
+                            <span className="text-xs font-medium text-slate-400">@ {formatPrice(item.price)}</span>
+                          </div>
+                          <span className="font-black text-slate-900">{formatPrice(item.price * item.quantity)}</span>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                </>
               )}
             </div>
 
@@ -1275,83 +1293,92 @@ export const Billing = () => {
         {todayLogs.length === 0 ? (
           <div className="text-center py-8 text-black/40 font-bold">No bills generated today yet.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b-2 border-black/10 text-xs font-bold uppercase tracking-widest text-black/40">
-                  <th className="py-4 px-4">Time</th>
-                  <th className="py-4 px-4">Customer</th>
-                  <th className="py-4 px-4 text-center">Payment</th>
-                  <th className="py-4 px-4 text-center">Items</th>
-                  <th className="py-4 px-4 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/5">
-                {todayLogs.map(log => (
-                  <tr key={log.id} className="hover:bg-black/5 transition-colors">
-                    <td className="py-4 px-4 font-bold text-sm tracking-widest">{log.time}</td>
-                    <td className="py-4 px-4">
-                      <div className="font-bold">{log.customer}</div>
-                      {log.mobile !== 'N/A' && <div className="text-xs text-black/60 font-medium">{log.mobile}</div>}
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      {(() => {
-                        const m = log.payment_method || 'Cash';
-                        const badge: Record<string, string> = {
-                          Cash: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-                          UPI: 'bg-blue-50 text-blue-700 border border-blue-200',
-                          Mixed: 'bg-violet-50 text-violet-700 border border-violet-200',
-                          Pending: 'bg-amber-50 text-amber-700 border border-amber-200',
-                        };
-                        const icon: Record<string, string> = { Cash: '💵', UPI: '📱', Mixed: '🔀', Pending: '⏳' };
-                        return (
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold ${badge[m] || badge['Cash']}`}>
-                            {icon[m]} {m}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td className="py-4 px-4 text-center font-bold bg-black/5 rounded-xl">{log.itemsCount}</td>
-                    <td className="py-4 px-4 min-w-[150px]">
-                      <div className="flex flex-col items-end gap-2">
-                        <div className="font-black text-emerald-600 text-base">{formatPrice(log.total)}</div>
-                        {log.pdf_url && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <button
-                              onClick={() => window.open(log.pdf_url!, '_blank')}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors"
-                            >
-                              <Printer className="w-3 h-3" /> View
-                            </button>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  const response = await fetch(log.pdf_url!);
-                                  const blob = await response.blob();
-                                  const url = window.URL.createObjectURL(blob);
-                                  const link = document.createElement('a');
-                                  link.href = url;
-                                  link.download = `Invoice_${log.customer.replace(/\s+/g, '_')}_${log.id}.pdf`;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                  window.URL.revokeObjectURL(url);
-                                } catch (err) {
-                                  window.open(log.pdf_url!, '_blank');
-                                }
-                              }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors"
-                            >
-                              <Download className="w-3 h-3" /> Download
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </td>
+          <div className="w-full">
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-black/10 text-xs font-bold uppercase tracking-widest text-black/40">
+                    <th className="py-4 px-4">Time</th>
+                    <th className="py-4 px-4">Customer</th>
+                    <th className="py-4 px-4 text-center">Payment</th>
+                    <th className="py-4 px-4 text-center">Items</th>
+                    <th className="py-4 px-4 text-right">Total</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {todayLogs.map(log => (
+                    <tr key={log.id} className="hover:bg-black/5 transition-colors">
+                      <td className="py-4 px-4 font-bold text-sm tracking-widest">{log.time}</td>
+                      <td className="py-4 px-4">
+                        <div className="font-bold">{log.customer}</div>
+                        {log.mobile !== 'N/A' && <div className="text-xs text-black/60 font-medium">{log.mobile}</div>}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        {(() => {
+                          const m = log.payment_method || 'Cash';
+                          const badge: Record<string, string> = {
+                            Cash: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                            UPI: 'bg-blue-50 text-blue-700 border border-blue-200',
+                            Mixed: 'bg-violet-50 text-violet-700 border border-violet-200',
+                            Pending: 'bg-amber-50 text-amber-700 border border-amber-200',
+                          };
+                          const icon: Record<string, string> = { Cash: '💵', UPI: '📱', Mixed: '🔀', Pending: '⏳' };
+                          return (
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold ${badge[m] || badge['Cash']}`}>
+                              {icon[m]} {m}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td className="py-4 px-4 text-center font-bold bg-black/5 rounded-xl">{log.itemsCount}</td>
+                      <td className="py-4 px-4 min-w-[150px]">
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="font-black text-emerald-600 text-base">{formatPrice(log.total)}</div>
+
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="md:hidden space-y-4">
+              {todayLogs.map(log => (
+                <div key={log.id} className="bg-black/5 p-4 rounded-2xl space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-black text-slate-800 text-sm">{log.customer}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest">{log.time}</span>
+                        {log.mobile !== 'N/A' && <span className="text-[10px] font-medium text-black/30">· {log.mobile}</span>}
+                      </div>
+                    </div>
+                    <div className="font-black text-emerald-600 text-base">{formatPrice(log.total)}</div>
+                  </div>
+                  <div className="flex justify-between items-center border-t border-black/5 pt-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black bg-white px-2 py-1 rounded-lg border border-black/5">Items: {log.itemsCount}</span>
+                    </div>
+                    {(() => {
+                      const m = log.payment_method || 'Cash';
+                      const badge: Record<string, string> = {
+                        Cash: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                        UPI: 'bg-blue-50 text-blue-700 border border-blue-200',
+                        Mixed: 'bg-violet-50 text-violet-700 border border-violet-200',
+                        Pending: 'bg-amber-50 text-amber-700 border border-amber-200',
+                      };
+                      const icon: Record<string, string> = { Cash: '💵', UPI: '📱', Mixed: '🔀', Pending: '⏳' };
+                      return (
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold ${badge[m] || badge['Cash']}`}>
+                          {icon[m]} {m}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

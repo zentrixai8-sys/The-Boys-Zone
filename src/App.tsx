@@ -112,7 +112,7 @@ const AppContent = () => {
         </>
       )}
       {isAdminPath && <AdminSidebar />}
-      <main className={isAdminPath ? 'md:pl-[260px] transition-all duration-300' : ''}>
+      <main className={isAdminPath ? 'md:pl-[260px] pt-16 md:pt-0 pb-20 md:pb-0 transition-all duration-300' : ''}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />

@@ -285,8 +285,8 @@ export const AdminOrders = () => {
 
       
       {/* Premium Split Filter Section */}
-      <div className="flex flex-wrap items-center gap-4 mb-12">
-        <div className="flex-1 min-w-[280px]">
+      <div className="flex flex-wrap items-center gap-3 mb-8 md:mb-12">
+        <div className="flex-1 min-w-full md:min-w-[280px]">
           <div className="relative group">
             <div className="absolute inset-0 bg-indigo-500/5 rounded-[2rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
             <div className="relative flex items-center">
@@ -302,7 +302,7 @@ export const AdminOrders = () => {
           </div>
         </div>
 
-        <div className="w-full lg:w-[240px]">
+        <div className="w-full md:w-[200px]">
           <div className="relative group">
             <Filter className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-slate-900 transition-colors pointer-events-none" />
             <select 
@@ -317,29 +317,26 @@ export const AdminOrders = () => {
               <option value="Delivered">DELIVERED</option>
               <option value="Cancelled">CANCELLED</option>
             </select>
-            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-slate-600 transition-colors">
-              <Clock className="w-3.5 h-3.5" />
-            </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-3 bg-slate-100 p-2 rounded-[1.5rem] border-2 border-slate-300 shadow-inner">
-          <div className="flex items-center gap-2 px-3">
-             <Calendar className="w-3.5 h-3.5 text-slate-500" />
+        <div className="flex flex-1 md:flex-none items-center gap-2 bg-slate-100 p-1.5 rounded-[1.5rem] border-2 border-slate-300 shadow-inner overflow-hidden min-w-full md:min-w-0">
+          <div className="flex-1 flex items-center gap-2 px-3">
+             <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
              <input 
                type="date"
                value={dateFrom}
                onChange={(e) => setDateFrom(e.target.value)}
-               className="bg-transparent border-none p-0 text-[10px] font-black uppercase tracking-widest focus:ring-0 outline-none text-slate-800 font-bold"
+               className="bg-transparent border-none p-0 text-[10px] font-black uppercase tracking-widest focus:ring-0 outline-none text-slate-800 w-full"
              />
           </div>
-          <div className="w-px h-4 bg-slate-400" />
-          <div className="flex items-center gap-2 px-3">
+          <div className="w-px h-4 bg-slate-300 shrink-0" />
+          <div className="flex-1 flex items-center gap-2 px-3">
              <input 
                type="date"
                value={dateTo}
                onChange={(e) => setDateTo(e.target.value)}
-               className="bg-transparent border-none p-0 text-[10px] font-black uppercase tracking-widest focus:ring-0 outline-none text-slate-800 font-bold"
+               className="bg-transparent border-none p-0 text-[10px] font-black uppercase tracking-widest focus:ring-0 outline-none text-slate-800 w-full"
              />
           </div>
         </div>
@@ -352,43 +349,39 @@ export const AdminOrders = () => {
               setDateFrom('');
               setDateTo('');
             }}
-            className="w-12 h-12 bg-rose-500 text-white rounded-[1.2rem] font-black hover:bg-rose-600 transition-all active:scale-90 shadow-xl shadow-rose-500/20 flex items-center justify-center group/btn"
+            className="w-full md:w-12 h-12 bg-rose-500 text-white rounded-[1.2rem] font-black hover:bg-rose-600 transition-all active:scale-95 shadow-xl shadow-rose-500/20 flex items-center justify-center group/btn"
           >
-            <X className="w-5 h-5 group-hover/btn:rotate-90 transition-transform duration-300" />
+            <X className="w-5 h-5 md:group-hover/btn:rotate-90 transition-transform duration-300 mr-2 md:mr-0" />
+            <span className="md:hidden uppercase tracking-widest text-[10px] font-black">Clear Filters</span>
           </button>
         )}
       </div>
-
-
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-black/20" />
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-black/5 shadow-sm text-center">
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-black/5 shadow-sm text-center px-6">
           <Package className="w-16 h-16 text-black/10 mb-4" />
           <h3 className="text-xl font-black text-black">No Orders Found</h3>
           <p className="text-black/40 font-medium">Try adjusting your filters or date range.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 pb-20">
           {filteredOrders.map((order) => (
             <div 
               key={order.order_id} 
               onClick={() => setSelectedOrder(order)}
-              className="group relative bg-white p-6 rounded-[2.5rem] border-2 border-slate-200 border-b-[8px] border-b-slate-300 shadow-[0_20px_40px_rgba(0,0,0,0.03)] hover:shadow-[0_30px_60px_rgba(0,0,0,0.1)] hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden"
+              className="group relative bg-white p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border-2 border-slate-200 border-b-[6px] md:border-b-[8px] border-b-slate-300 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="flex flex-col xl:flex-row items-center gap-6">
+              <div className="flex flex-col md:flex-row md:items-center gap-5">
                 
-                {/* 1. Customer Info (Left) */}
-                <div className="w-full xl:w-[280px] flex items-center gap-4 shrink-0">
+                <div className="w-full md:w-[280px] flex items-center gap-4 shrink-0">
                   <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center shrink-0 border-2 border-slate-200">
                     <Package className="w-6 h-6 text-slate-500" />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.2em] rounded-full shadow-sm ${getStatusColor(order.order_status)}`}>
                         {order.order_status}
@@ -397,21 +390,19 @@ export const AdminOrders = () => {
                     </div>
                     <p className="text-sm font-black text-slate-900 leading-none truncate mb-1">{order.profiles?.name || 'Customer'}</p>
                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-wider">📞 {order.profiles?.phone || 'No Phone'}</p>
-                    <p className="text-[8px] text-slate-600 font-bold uppercase tracking-tighter mt-1 truncate max-w-[180px]">📍 {order.address}</p>
                   </div>
                 </div>
 
-                {/* 2. Items (Center) - Compact Horizontal Scroll or Small List */}
-                <div className="flex-1 w-full bg-slate-50 rounded-2xl p-3 border-2 border-slate-200 flex items-center gap-3 overflow-hidden">
+                <div className="flex-1 w-full bg-slate-50/50 rounded-2xl p-3 border border-slate-200 flex items-center gap-3 overflow-hidden">
                   <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
                     {(() => {
                       try {
                         const items = JSON.parse(order.products);
                         return items.map((item: any, idx: number) => (
-                          <div key={`${order.order_id}-${idx}`} className="flex items-center gap-3 bg-white pl-2 pr-3 py-1.5 rounded-xl shadow-sm border-2 border-slate-200 shrink-0">
+                          <div key={`${order.order_id}-${idx}`} className="flex items-center gap-3 bg-white pl-1.5 pr-3 py-1.5 rounded-xl shadow-xs border border-slate-200 shrink-0">
                              <div 
-                               onClick={() => setPreviewImage(item.product?.image_url || item.product?.images?.[0])}
-                               className="w-10 h-10 rounded-lg overflow-hidden bg-black/[0.02] shrink-0 border-2 border-slate-200 cursor-zoom-in hover:scale-105 transition-transform"
+                               onClick={(e) => { e.stopPropagation(); setPreviewImage(item.product?.image_url || item.product?.images?.[0]); }}
+                               className="w-10 h-10 rounded-lg overflow-hidden bg-black/[0.02] shrink-0 border border-slate-200"
                              >
                                <img 
                                  src={item.product?.image_url || item.product?.images?.[0] || 'https://via.placeholder.com/150'} 
@@ -421,43 +412,40 @@ export const AdminOrders = () => {
                              </div>
                              <div className="min-w-0">
                                <p className="font-black text-[9px] text-black uppercase tracking-tighter truncate w-24 leading-none mb-1">{item.product?.title}</p>
-                               <p className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md uppercase tracking-tighter leading-none w-fit">Qty: {item.quantity}</p>
+                               <p className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded uppercase tracking-tighter leading-none w-fit">Qty: {item.quantity}</p>
                              </div>
                           </div>
-
                         ));
-                      } catch (e) {
-                         return <p className="text-[8px] font-black text-red-500">Error</p>;
-                      }
+                      } catch (e) { return null; }
                     })()}
                   </div>
                 </div>
 
-                {/* 3. Total & Status (Right) */}
-                <div className="w-full xl:w-auto flex items-center gap-6 shrink-0 border-t xl:border-t-0 xl:border-l border-slate-200 pt-4 xl:pt-0 xl:pl-6">
-                  <div className="text-left xl:text-right">
-                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mb-0.5">Total</p>
+                <div className="w-full md:w-auto flex items-center justify-between md:justify-end gap-4 md:gap-6 shrink-0 pt-4 md:pt-0 md:pl-6 border-t md:border-t-0 md:border-l border-slate-200">
+                  <div className="text-left md:text-right">
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mb-0.5">Grand Total</p>
                     <p className="text-xl font-black text-slate-900 tracking-tighter leading-none">{formatPrice(order.total_amount)}</p>
+                    <div className="md:hidden mt-2 flex items-center gap-1.5 text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                       <Clock className="w-3 h-3" /> {formatDate(order.created_at || order.date)}
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-col items-end gap-2" onClick={(e) => e.stopPropagation()}>
                     <div className="relative">
                       <select
                         value={order.order_status}
                         onChange={(e) => handleUpdateOrderStatus(order.order_id, e.target.value)}
-                        className="w-full bg-white border-2 border-black/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] pl-4 pr-10 py-3.5 shadow-md appearance-none cursor-pointer hover:bg-black/5 transition-all focus:ring-2 focus:ring-black/5"
+                        className="bg-white border-2 border-black/5 rounded-xl text-[10px] font-black uppercase tracking-widest pl-4 pr-8 py-3 shadow-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
                       >
-                        <option value="Pending">⏳ Pending</option>
-                        <option value="Processing">⚙️ Processing</option>
-                        <option value="Shipped">🚚 Shipped</option>
-                        <option value="Delivered">✅ Delivered</option>
-                        <option value="Cancelled">❌ Cancelled</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
                       </select>
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-20 text-[8px]">
-                        ▼
-                      </div>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[8px] opacity-30">▼</div>
                     </div>
-                    <div className="flex items-center gap-2 text-[9px] font-black text-slate-600 uppercase tracking-widest bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm">
+                    <div className="hidden md:flex items-center gap-2 text-[9px] font-black text-slate-600 uppercase tracking-widest bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl shadow-xs">
                        <Calendar className="w-3 h-3 text-slate-500" />
                        {formatDate(order.created_at || order.date)}
                        <span className="text-slate-300">|</span>
@@ -466,7 +454,6 @@ export const AdminOrders = () => {
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           ))}
@@ -581,28 +568,30 @@ export const AdminOrders = () => {
                 </div>
               </div>
 
-              {/* Modal Footer */}
-              <div className="p-4 bg-slate-50 flex justify-between items-center border-t border-black/5 rounded-b-[2.5rem]">
-                <div className="flex gap-3">
+              {/* Modal Footer - Optimized for Mobile & Desktop */}
+              <div className="p-4 md:p-6 bg-slate-50 border-t border-black/5 rounded-b-[2.5rem]">
+                <div className="flex flex-col md:flex-row gap-3 md:justify-between items-stretch md:items-center">
+                  <div className="flex flex-row gap-3">
+                    <button 
+                      onClick={() => generateInvoice(selectedOrder, 'download')}
+                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-3.5 md:py-3 bg-emerald-600 text-white rounded-2xl md:rounded-xl font-black text-[10px] uppercase tracking-[0.15em] hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
+                    >
+                      <Download className="w-4 h-4" /> <span className="hidden xs:inline">Download</span> Invoice
+                    </button>
+                    <button 
+                      onClick={() => generateInvoice(selectedOrder, 'view')}
+                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-3.5 md:py-3 bg-indigo-600 text-white rounded-2xl md:rounded-xl font-black text-[10px] uppercase tracking-[0.15em] hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-600/20"
+                    >
+                      <Printer className="w-4 h-4" /> Print
+                    </button>
+                  </div>
                   <button 
-                    onClick={() => generateInvoice(selectedOrder, 'download')}
-                    className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
+                    onClick={() => setSelectedOrder(null)}
+                    className="w-full md:w-auto px-8 py-3.5 md:py-3 bg-slate-900 text-white rounded-2xl md:rounded-xl font-black text-[10px] uppercase tracking-[0.15em] hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/20"
                   >
-                    <Download className="w-4 h-4" /> Download Invoice
-                  </button>
-                  <button 
-                    onClick={() => generateInvoice(selectedOrder, 'view')}
-                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-600/20"
-                  >
-                    <Printer className="w-4 h-4" /> Print
+                    Close
                   </button>
                 </div>
-                <button 
-                  onClick={() => setSelectedOrder(null)}
-                  className="px-8 py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/20"
-                >
-                  Close
-                </button>
               </div>
             </motion.div>
           </div>
