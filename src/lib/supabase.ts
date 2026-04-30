@@ -15,7 +15,8 @@ const createSupabaseClient = () => createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      storageKey: 'the-boys-zone-v1-auth'
+      storageKey: 'the-boys-zone-v1-auth',
+      storage: window.sessionStorage
     }
   }
 );
