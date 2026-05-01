@@ -664,11 +664,11 @@ export const AdminProducts = () => {
               initial={{ opacity: 0, scale: 0.95, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 30 }}
-              className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-110 md:w-[600px] max-h-[92vh] bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex flex-col border border-white overflow-hidden"
+              className="fixed top-[72px] bottom-4 inset-x-2 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-[1000] md:w-[600px] max-h-[calc(100vh-88px)] md:max-h-[94vh] bg-white/95 backdrop-blur-xl rounded-[2rem] md:rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex flex-col border border-white overflow-hidden"
             >
-              <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-white/50">
+              <div className="pt-6 pb-5 px-5 md:p-8 border-b border-slate-100 flex justify-between items-start md:items-center bg-white/50">
                 <div>
-                  <h2 className="text-2xl font-black tracking-tight text-slate-900">{editingProduct?.product_id ? 'Edit Product' : 'Add New Product'}</h2>
+                  <h2 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 leading-tight">{editingProduct?.product_id ? 'Edit Product' : 'Add New Product'}</h2>
                   <div className="flex items-center gap-3 mt-2">
                     <button
                       type="button"
@@ -694,10 +694,10 @@ export const AdminProducts = () => {
                 </button>
               </div>
 
-              <form onSubmit={handleSaveProduct} className="p-8 overflow-y-auto space-y-8 custom-scrollbar">
-                <div className="grid grid-cols-2 gap-6">
+              <form onSubmit={handleSaveProduct} className="p-6 md:p-8 pb-16 md:pb-8 overflow-y-auto space-y-6 md:space-y-8 custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 md:gap-y-6">
                   {!editingProduct?.is_store_only && (
-                    <div className="space-y-2.5 col-span-2">
+                    <div className="space-y-2.5 col-span-1 md:col-span-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Product Title</label>
                       <input
                         type="text"
@@ -767,7 +767,7 @@ export const AdminProducts = () => {
                     />
                   </div>
                   {!editingProduct?.is_store_only && (
-                    <div className="space-y-2.5 col-span-2">
+                    <div className="space-y-2.5 col-span-1 md:col-span-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Description</label>
                       <textarea
                         placeholder="Write product description..."
@@ -806,7 +806,7 @@ export const AdminProducts = () => {
                            <Trash2 className="w-4 h-4" />
                          </button>
 
-                         <div className="grid grid-cols-2 gap-6 pr-12">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 md:gap-y-6 pr-0 md:pr-12">
                             {!editingProduct?.is_store_only && (
                               <div className="space-y-2.5">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Color Theme</label>
@@ -819,7 +819,7 @@ export const AdminProducts = () => {
                                 />
                               </div>
                             )}
-                            <div className="space-y-2 col-span-2">
+                            <div className="space-y-2 col-span-1 md:col-span-2">
                               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Inventory Entry {categorySizes[editingProduct?.category || ''] ? '(Store / Online Stock)' : '(Direct Stock)'}</label>
                               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4 bg-white rounded-[1.5rem] border border-slate-300 shadow-inner">
                                 {categorySizes[editingProduct?.category || ''] ? (
@@ -901,7 +901,7 @@ export const AdminProducts = () => {
                             </div>
 
                             {!editingProduct?.is_store_only && (
-                              <div className="space-y-2 col-span-2 border-t border-slate-300 pt-4">
+                              <div className="space-y-2 col-span-1 md:col-span-2 border-t border-slate-300 pt-4">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Variant Photos (Max 3)</label>
                                 <div className="flex flex-wrap gap-3">
                                   {variant.images?.map((img, imgIdx) => (
@@ -924,9 +924,9 @@ export const AdminProducts = () => {
                                   ))}
                                   
                                   {(variant.images?.length || 0) < 3 && (
-                                    <label className="w-16 h-16 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-all cursor-pointer group">
-                                      <Plus className="w-4 h-4 text-slate-300 group-hover:text-slate-600" />
-                                      <span className="text-[8px] font-black text-slate-300 group-hover:text-slate-600 uppercase mt-1">Add</span>
+                                    <label className="w-16 h-16 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 md:border-slate-200 bg-slate-50 md:bg-transparent rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-all cursor-pointer group">
+                                      <Plus className="w-4 h-4 text-slate-500 md:text-slate-300 group-hover:text-slate-600" />
+                                      <span className="text-[8px] font-black text-slate-500 md:text-slate-300 group-hover:text-slate-600 uppercase mt-1">Add</span>
                                       <input 
                                         type="file" 
                                         className="hidden" 

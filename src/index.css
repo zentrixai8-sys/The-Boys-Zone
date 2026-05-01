@@ -6,17 +6,38 @@
 }
 
 @layer base {
-  html, body {
-    @apply antialiased overflow-x-hidden max-w-full;
+  html {
+    @apply antialiased;
+    -webkit-text-size-adjust: 100%;
+    /* Global Rem Scaling for Mobile */
+    font-size: 16px;
+  }
+  
+  @media (max-width: 640px) {
+    html {
+      font-size: 14px; /* Proportionally scales down the entire UI on small screens */
+    }
+  }
+
+  body {
+    overflow-x: hidden;
     width: 100%;
+    max-width: 100%;
     margin: 0;
     padding: 0;
+    position: relative;
     touch-action: manipulation;
   }
   
+  /* Prevent iOS auto-zoom on input focus */
+  @media screen and (max-width: 768px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+  }
+
   img {
-    max-width: 100%;
-    height: auto;
+    @apply max-w-full h-auto;
   }
 }
 

@@ -590,8 +590,8 @@ export const TodayReport = () => {
         transition={{ duration: 0.4 }}
         className="mb-10"
       >
-        <h1 className="text-4xl font-bold tracking-tight text-black mb-2">Reports</h1>
-        <p className="text-black/40">Analyze sales and monitor daily performance</p>
+        <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-black mb-2">Reports</h1>
+        <p className="text-xs md:text-base text-black/40">Analyze sales and monitor daily performance</p>
       </motion.div>
 
       <motion.div
@@ -673,7 +673,7 @@ export const TodayReport = () => {
               textColor: 'text-white',
               subtextColor: 'text-teal-300',
               iconBg: 'from-teal-400/30 to-cyan-500/20',
-              x: -60,
+              x: 0,
             },
             {
               label: 'Online Orders Today',
@@ -685,7 +685,7 @@ export const TodayReport = () => {
               textColor: 'text-white',
               subtextColor: 'text-indigo-300',
               iconBg: 'from-indigo-400/30 to-violet-500/20',
-              x: 60,
+              x: 0,
             },
           ].map((card) => (
             <motion.div

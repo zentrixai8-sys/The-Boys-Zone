@@ -278,8 +278,8 @@ export const AdminOrders = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 leading-none mb-1">Order Management</h1>
-          <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Track and fulfill customer orders</p>
+          <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 leading-none mb-1">Order Management</h1>
+          <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em]">Track and fulfill customer orders</p>
         </div>
       </div>
 
@@ -296,7 +296,7 @@ export const AdminOrders = () => {
                 placeholder="Search Customer..."
                 value={searchName}
                 onChange={(e) => setSearchName(e.target.value)}
-                className="w-full pl-12 pr-5 py-4 bg-white border-2 border-slate-300 rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.15em] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/40 shadow-[0_4px_12px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:text-slate-400 text-slate-800"
+                className="w-full pl-10 md:pl-12 pr-5 py-3 md:py-4 bg-white border-2 border-slate-200 md:border-slate-300 rounded-2xl md:rounded-[1.5rem] text-[10px] md:text-[11px] font-black uppercase tracking-[0.15em] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/40 shadow-[0_4px_12px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:text-slate-400 text-slate-800"
               />
             </div>
           </div>
@@ -308,7 +308,7 @@ export const AdminOrders = () => {
             <select 
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full pl-12 pr-10 py-4 bg-white border-2 border-slate-300 rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.15em] focus:ring-4 focus:ring-slate-500/10 focus:border-slate-400 shadow-[0_4px_12px_rgba(0,0,0,0.02)] appearance-none cursor-pointer outline-none transition-all text-slate-800"
+              className="w-full pl-10 md:pl-12 pr-10 py-3 md:py-4 bg-white border-2 border-slate-200 md:border-slate-300 rounded-2xl md:rounded-[1.5rem] text-[10px] md:text-[11px] font-black uppercase tracking-[0.15em] focus:ring-4 focus:ring-slate-500/10 focus:border-slate-400 shadow-[0_4px_12px_rgba(0,0,0,0.02)] appearance-none cursor-pointer outline-none transition-all text-slate-800"
             >
               <option value="All">ALL ORDERS</option>
               <option value="Pending">PENDING</option>
@@ -320,7 +320,7 @@ export const AdminOrders = () => {
           </div>
         </div>
         
-        <div className="flex flex-1 md:flex-none items-center gap-2 bg-slate-100 p-1.5 rounded-[1.5rem] border-2 border-slate-300 shadow-inner overflow-hidden min-w-full md:min-w-0">
+        <div className="flex flex-1 md:flex-none items-center gap-2 bg-slate-100 p-1 md:p-1.5 rounded-2xl md:rounded-[1.5rem] border-2 border-slate-200 md:border-slate-300 shadow-inner overflow-hidden min-w-full md:min-w-0">
           <div className="flex-1 flex items-center gap-2 px-3">
              <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
              <input 
