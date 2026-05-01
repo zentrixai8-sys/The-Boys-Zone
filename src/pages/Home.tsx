@@ -403,9 +403,9 @@ export const Home = () => {
         </div>
       </section>
 
-      {/* 4. Trending Products */}
-      <section className="py-24 bg-[#050505] relative z-20 overflow-hidden border-t-4 border-black">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-red-900/10 via-[#050505] to-[#050505] pointer-events-none" />
+      {/* 4. Luxury Best Sellers */}
+      <section className="py-24 bg-[#080808] relative z-20 overflow-hidden border-t-4 border-black">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_35%,_rgba(220,38,38,0.08)_0%,_transparent_50%),_radial-gradient(circle_at_75%_65%,_rgba(67,56,202,0.08)_0%,_transparent_50%)] pointer-events-none" />
         
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div 
@@ -424,48 +424,59 @@ export const Home = () => {
               </h2>
             </div>
             <Link to="/products" className="group hidden md:flex items-center gap-3 text-white text-sm font-bold uppercase tracking-widest hover:text-red-500 transition-colors">
-              Shop All Best Sellers <ArrowRight className="w-4 h-4 transform group-hover:translate-x-2 transition-transform" />
+              Explore All <ArrowRight className="w-4 h-4 transform group-hover:translate-x-2 transition-transform" />
             </Link>
           </motion.div>
 
-          {/* Horizontal scrollable container for products */}
-          <div className="flex overflow-x-auto pb-12 -mx-4 px-4 sm:mx-0 sm:px-0 gap-6 snap-x hide-scrollbar">
-            {bestSellers.map((product, index) => (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-10">
+            {bestSellers.slice(0, 4).map((product, index) => (
               <motion.div
                 key={product.product_id || (product as any).id}
-                initial={{ opacity: 0, x: 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.8, delay: index * 0.1 }}
                 onClick={() => window.location.href = `/product/${product.product_id || (product as any).id}`}
-                className="min-w-[280px] sm:min-w-[320px] pb-4 flex flex-col group snap-start cursor-pointer relative"
+                className="group relative cursor-pointer"
               >
-                <div className="relative aspect-[3/4] bg-zinc-900 mb-5 overflow-hidden group/card border border-white/10 hover:border-red-600/50 transition-all duration-500 rounded-sm">
-                  <AutoSlidingImage
-                    product={product}
-                    className="w-full h-full object-cover object-center opacity-90 group-hover/card:opacity-100 transition-opacity"
-                  />
-                  
-                  {/* Clean Premium Tag */}
-                  <div className="absolute top-4 left-4 z-10 bg-red-600 text-white px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] shadow-[0_4px_10px_rgba(220,38,38,0.3)]">
-                    Most Wanted
-                  </div>
-
-                  {/* Gradient Overlay on Hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-                  {product.sizes && product.sizes.length > 0 && (
-                    <div className="absolute bottom-4 left-4 right-4 flex justify-center gap-2 opacity-0 transform translate-y-4 group-hover/card:opacity-100 group-hover/card:translate-y-0 transition-all duration-500 ease-out">
-                      {product.sizes.slice(0, 4).map(size => (
-                        <span key={size} className="w-8 h-8 flex items-center justify-center bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase hover:bg-red-600 hover:border-red-600 transition-colors rounded-sm">{size}</span>
-                      ))}
-                    </div>
-                  )}
+                {/* Floating Rank */}
+                <div className="absolute -top-6 -left-4 z-0 text-[100px] md:text-[140px] font-black text-white/[0.02] leading-none pointer-events-none italic">
+                  {String(index + 1).padStart(2, '0')}
                 </div>
 
-                <div className="flex flex-col gap-1.5 px-1">
-                   <h3 className="text-base md:text-lg font-black text-white uppercase tracking-tight group-hover:text-red-500 transition-colors line-clamp-1">{product.title}</h3>
-                   <span className="text-sm md:text-base font-bold text-white/50 tracking-widest">₹{product.price.toLocaleString()}</span>
+                <div className="relative aspect-[3/4.5] rounded-[2rem] md:rounded-[2.5rem] overflow-hidden bg-zinc-900 border border-white/5 group-hover:border-red-600/30 transition-all duration-700 shadow-2xl">
+                  <AutoSlidingImage
+                    product={product}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2.5s] ease-out"
+                  />
+                  
+                  {/* Badge */}
+                  <div className="absolute top-6 left-6 z-10">
+                    <div className="bg-black/60 backdrop-blur-md text-white px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.2em] rounded-full border border-white/10 overflow-hidden">
+                       <span className="relative z-10">Most Wanted</span>
+                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-[25deg] animate-[shimmer_3s_infinite]" />
+                    </div>
+                  </div>
+
+                  {/* Info Panel */}
+                  <div className="absolute inset-x-0 bottom-0 p-3 md:p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-700">
+                    <div className="bg-white/5 backdrop-blur-2xl rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 border border-white/10 shadow-2xl">
+                       <div className="flex flex-col gap-1">
+                          <span className="text-[8px] md:text-[9px] font-black tracking-[0.4em] text-red-500 uppercase mb-1">
+                            Elite Choice
+                          </span>
+                          <h3 className="text-[11px] md:text-base font-black text-white uppercase tracking-tight line-clamp-1">
+                            {product.title}
+                          </h3>
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
+                             <span className="text-xs md:text-lg font-bold text-white tracking-tighter">₹{product.price.toLocaleString()}</span>
+                             <div className="bg-white text-black h-7 w-7 md:h-10 md:w-10 rounded-full flex items-center justify-center transform scale-0 group-hover:scale-100 transition-all duration-500">
+                                <ArrowRight className="w-3 h-3 md:w-5 md:h-5" />
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -473,8 +484,8 @@ export const Home = () => {
         </div>
       </section>
 
-      {/* 4. New Arrivals */}
-      <section className="py-20 md:py-32 bg-white relative z-20 border-b-4 border-black">
+      {/* 4. New Arrivals (Curated 4 Grid) */}
+      <section className="py-24 bg-white relative z-20 border-b-4 border-black">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
@@ -491,9 +502,9 @@ export const Home = () => {
               VIEW ALL <ArrowRight className="w-4 h-4 transform group-hover:translate-x-2 transition-transform" />
             </Link>
           </motion.div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-            {products.slice(6, 10).map((product, index) => (
+ 
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-10">
+            {products.slice(0, 4).map((product, index) => (
               <motion.div
                 key={product.product_id || (product as any).id}
                 initial={{ opacity: 0, y: 30 }}
@@ -503,20 +514,22 @@ export const Home = () => {
                 onClick={() => window.location.href = `/product/${product.product_id || (product as any).id}`}
                 className="flex flex-col group cursor-pointer"
               >
-                <div className="relative aspect-[3/4] bg-gray-100 mb-4 overflow-hidden border-2 border-transparent hover:border-black transition-colors duration-300">
+                <div className="relative aspect-[3/4.5] bg-gray-50 mb-6 overflow-hidden border-[3px] border-transparent hover:border-black transition-all duration-500 rounded-[1.5rem] md:rounded-[2.2rem] shadow-sm hover:shadow-xl">
                   <AutoSlidingImage
                     product={product}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s] ease-out"
                   />
                   
-                  <div className="absolute top-3 left-3 z-10 bg-black text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-md">
-                    NEW
+                  <div className="absolute top-4 left-4 z-10 bg-black text-white px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] shadow-2xl">
+                    NEW DROP
                   </div>
-                </div>
 
-                <div className="flex flex-col gap-1 px-1">
-                   <h3 className="text-sm md:text-base font-black text-black uppercase tracking-tight group-hover:text-red-600 transition-colors line-clamp-1">{product.title}</h3>
-                   <span className="text-sm md:text-base font-bold text-black/60 tracking-tight">₹{product.price.toLocaleString()}</span>
+                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                </div>
+ 
+                <div className="flex flex-col gap-1.5 px-2">
+                   <h3 className="text-[12px] md:text-base font-black text-black uppercase tracking-tight group-hover:text-red-600 transition-colors line-clamp-1">{product.title}</h3>
+                   <span className="text-[11px] md:text-base font-bold text-black/40 tracking-tight">₹{product.price.toLocaleString()}</span>
                 </div>
               </motion.div>
             ))}
