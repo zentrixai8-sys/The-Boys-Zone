@@ -6,8 +6,17 @@
 }
 
 @layer base {
-  body {
-    @apply antialiased;
+  html, body {
+    @apply antialiased overflow-x-hidden max-w-full;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    touch-action: manipulation;
+  }
+  
+  img {
+    max-width: 100%;
+    height: auto;
   }
 }
 
