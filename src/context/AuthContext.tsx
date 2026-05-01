@@ -91,6 +91,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        // Double-check: Ensure this session actually belongs to this tab
+        // Supabase internal sync might sometimes trigger events even with different storage keys
+        const currentKey = `tbz-auth-v1-${window.name}`;
+        const hasLocalData = sessionStorage.getItem(currentKey);
+        if (!hasLocalData && event !== 'INITIAL_SESSION') return;
+
         // 1. Instant Hydration from metadata (So the name appears immediately)
         const initialUser: User = {
           id: session.user.id,
@@ -136,11 +142,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setLoginTime(null);
       
-      // 2. Wipe ALL related storage keys
+      // 2. Wipe Profile Cache
       sessionStorage.removeItem('tbz_user_profile');
-      sessionStorage.removeItem('the-boys-zone-v1-auth'); // Explicitly clear the auth key
       
-      // 3. Trigger Supabase SignOut
+      // 3. Trigger Supabase SignOut (This handles dynamic storage key automatically)
       await supabase.auth.signOut();
       
       toast.success('Logged out successfully');

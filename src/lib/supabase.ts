@@ -7,6 +7,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Supabase credentials missing! Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment variables.');
 }
 
+const getTabId = () => {
+  if (typeof window === 'undefined') return 'server';
+  
+  // window.name is unique per tab and survives refresh.
+  // It is generally NOT copied when opening a new tab from a link.
+  if (!window.name || !window.name.startsWith('tbz_tab_')) {
+    window.name = `tbz_tab_${Math.random().toString(36).substring(7)}`;
+  }
+  return window.name;
+};
+
 const createSupabaseClient = () => createClient(
   supabaseUrl, 
   supabaseAnonKey,
@@ -15,7 +26,7 @@ const createSupabaseClient = () => createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      storageKey: 'the-boys-zone-v1-auth',
+      storageKey: `tbz-auth-v1-${getTabId()}`,
       storage: window.sessionStorage
     }
   }
