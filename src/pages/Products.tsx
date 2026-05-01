@@ -273,31 +273,33 @@ export const Products = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsFilterOpen(false)}
-              className="fixed inset-0 z-60 bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-md"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              className="fixed right-0 top-0 bottom-0 z-70 w-80 bg-white p-6 shadow-2xl overflow-y-auto"
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-[132px] bottom-0 z-[100] w-[85%] sm:w-80 bg-white p-8 shadow-2xl overflow-y-auto rounded-l-[2.5rem] border-l border-gray-100"
             >
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-xl font-bold">Filters</h2>
-                <button onClick={() => {
-                   setIsFilterOpen(false);
-                }}>
-                  <X className="w-6 h-6" />
+              <div className="flex justify-between items-center mb-10">
+                <h2 className="text-2xl font-serif font-bold text-slate-900">Filters</h2>
+                <button 
+                  onClick={() => setIsFilterOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6 text-slate-400" />
                 </button>
               </div>
 
-              <div className="space-y-10">
+              <div className="space-y-12 pb-10">
                 {/* Categories */}
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-black/40 mb-4">Categories</h3>
-                  <div className="flex flex-wrap gap-2">
+                  <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-6 px-1">Categories</h3>
+                  <div className="flex flex-wrap gap-2.5">
                     <button
                       onClick={() => setSearchParams({})}
-                      className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${currentCategory === 'All' ? 'bg-black text-white border-black' : 'bg-white border-gray-100'}`}
+                      className={`px-5 py-2.5 rounded-xl text-xs font-bold border transition-all ${currentCategory === 'All' ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100' : 'bg-white border-gray-100 text-slate-600'}`}
                     >
                       All
                     </button>
@@ -305,7 +307,7 @@ export const Products = () => {
                       <button
                         key={cat.category_id}
                         onClick={() => setSearchParams({ category: cat.category_name })}
-                        className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${currentCategory === cat.category_name ? 'bg-black text-white border-black' : 'bg-white border-gray-100'}`}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-bold border transition-all ${currentCategory === cat.category_name ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100' : 'bg-white border-gray-100 text-slate-600'}`}
                       >
                         {cat.category_name}
                       </button>
@@ -315,24 +317,30 @@ export const Products = () => {
 
                 {/* Price */}
                 <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-black/40">Price Range</h3>
-                    <span className="text-[12px] font-bold">₹{priceRange.max}</span>
+                  <div className="flex justify-between items-center mb-6 px-1">
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Price Range</h3>
+                    <span className="text-sm font-bold text-indigo-600">₹{priceRange.max}</span>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max={maxProductPrice}
-                    step="500"
-                    value={priceRange.max}
-                    onChange={(e) => setPriceRange({ ...priceRange, max: parseInt(e.target.value) })}
-                    className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-black"
-                  />
+                  <div className="px-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max={maxProductPrice}
+                      step="500"
+                      value={priceRange.max}
+                      onChange={(e) => setPriceRange({ ...priceRange, max: parseInt(e.target.value) })}
+                      className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    />
+                    <div className="flex justify-between mt-3 text-[10px] font-bold text-gray-400">
+                      <span>₹0</span>
+                      <span>₹{maxProductPrice}</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Brands */}
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-black/40 mb-4">Brands</h3>
+                  <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-6 px-1">Brands</h3>
                   <div className="grid grid-cols-2 gap-3">
                     {brands.map(brand => (
                       <button
@@ -341,7 +349,7 @@ export const Products = () => {
                           if (selectedBrands.includes(brand)) setSelectedBrands(selectedBrands.filter(b => b !== brand));
                           else setSelectedBrands([...selectedBrands, brand]);
                         }}
-                        className={`py-3 px-1 rounded-xl text-[11px] font-bold border transition-all ${selectedBrands.includes(brand) ? 'bg-black text-white border-black' : 'bg-white border-gray-100'}`}
+                        className={`py-4 px-2 rounded-2xl text-[11px] font-bold border transition-all ${selectedBrands.includes(brand) ? 'bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-200' : 'bg-white border-gray-100 text-slate-600 hover:border-slate-300'}`}
                       >
                         {brand}
                       </button>
@@ -351,8 +359,8 @@ export const Products = () => {
 
                 {/* Sizes */}
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-black/40 mb-4">Sizes</h3>
-                  <div className="flex flex-wrap gap-2">
+                  <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-6 px-1">Sizes</h3>
+                  <div className="flex flex-wrap gap-3">
                     {sizes.map(size => (
                       <button
                         key={size}
@@ -360,7 +368,7 @@ export const Products = () => {
                           if (selectedSizes.includes(size)) setSelectedSizes(selectedSizes.filter(s => s !== size));
                           else setSelectedSizes([...selectedSizes, size]);
                         }}
-                        className={`w-12 h-12 rounded-xl text-xs font-bold border transition-all flex items-center justify-center ${selectedSizes.includes(size) ? 'bg-black text-white border-black' : 'bg-white border-gray-100'}`}
+                        className={`w-14 h-14 rounded-2xl text-xs font-bold border transition-all flex items-center justify-center ${selectedSizes.includes(size) ? 'bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-200' : 'bg-white border-gray-100 text-slate-600 hover:border-slate-300'}`}
                       >
                         {size}
                       </button>
@@ -368,7 +376,7 @@ export const Products = () => {
                   </div>
                 </div>
 
-                <div className="pt-4 grid grid-cols-2 gap-4">
+                <div className="pt-6 grid grid-cols-2 gap-4">
                   <button
                     onClick={() => {
                       setSelectedBrands([]);
@@ -377,13 +385,13 @@ export const Products = () => {
                       setSearchParams({});
                       setIsFilterOpen(false);
                     }}
-                    className="py-4 rounded-2xl bg-gray-100 text-xs font-bold uppercase tracking-widest"
+                    className="py-4.5 rounded-2xl bg-slate-50 text-slate-400 text-xs font-bold uppercase tracking-widest hover:bg-slate-100 transition-colors"
                   >
                     Reset
                   </button>
                   <button
                     onClick={() => setIsFilterOpen(false)}
-                    className="py-4 rounded-2xl bg-black text-white text-xs font-bold uppercase tracking-widest"
+                    className="py-4.5 rounded-2xl bg-slate-900 text-white text-xs font-bold uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-black transition-all active:scale-95"
                   >
                     Apply
                   </button>
