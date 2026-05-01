@@ -309,8 +309,16 @@ export const TodayReport = () => {
       doc.text('THANK YOU FOR SHOPPING AT THE BOY\'S ZONE', W/2, y + 5, { align: 'center' });
 
       if (mode === 'view') {
-        window.open(doc.output('bloburl'), '_blank');
-        toast.success('Preview Opened', { id: 'invoice' });
+        // On mobile browsers, window.open with a blob URL often fails or shows a blank screen
+        // Better to save directly on mobile.
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          doc.save(`Invoice_${order.profiles?.name || 'Customer'}.pdf`);
+          toast.success('Invoice Downloaded', { id: 'invoice' });
+        } else {
+          window.open(doc.output('bloburl'), '_blank');
+          toast.success('Preview Opened', { id: 'invoice' });
+        }
       } else {
         doc.save(`Invoice_${order.profiles?.name || 'Customer'}.pdf`);
         toast.success('Invoice Saved', { id: 'invoice' });
@@ -355,7 +363,7 @@ export const TodayReport = () => {
       doc.text('DATE', metaX, 28);
       doc.setTextColor(...NAVY);
       doc.setFontSize(9);
-      doc.text(`#BZ-ST-${sale.id.toUpperCase()}`, W - margin, 20, { align: 'right' });
+      doc.text(`#BZ-ST-${String(sale.id).toUpperCase().substring(0, 10)}`, W - margin, 20, { align: 'right' });
       doc.text(`${formatDate(sale.date)}`, W - margin, 28, { align: 'right' });
 
       y = 55;
@@ -373,7 +381,7 @@ export const TodayReport = () => {
       doc.setTextColor(...SLATE);
       doc.text('Near Ripusudan Petrol Pump, Suhela', W/2 + 10, y);
       doc.text('Baloda Bazar (C.G.) | +91 9617628157', W/2 + 10, y + 4.5);
-      doc.text(`M: ${sale.mobile}`, margin, y + 5);
+      if (sale.mobile) doc.text(`M: ${sale.mobile}`, margin, y + 5);
 
       y += 28;
       doc.setFillColor(...NAVY);
@@ -457,10 +465,16 @@ export const TodayReport = () => {
       doc.text('THANK YOU FOR SHOPPING AT THE BOY\'S ZONE', W/2, y + 5, { align: 'center' });
 
       if (mode === 'view') {
-        window.open(doc.output('bloburl'), '_blank');
-        toast.success('Preview Opened', { id: 'invoice' });
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          doc.save(`Invoice_${sale.customer || 'Customer'}.pdf`);
+          toast.success('Invoice Downloaded', { id: 'invoice' });
+        } else {
+          window.open(doc.output('bloburl'), '_blank');
+          toast.success('Preview Opened', { id: 'invoice' });
+        }
       } else {
-        doc.save(`Invoice_${sale.customer}.pdf`);
+        doc.save(`Invoice_${sale.customer || 'Customer'}.pdf`);
         toast.success('Invoice Saved', { id: 'invoice' });
       }
     } catch (err) {
