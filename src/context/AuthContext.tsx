@@ -19,7 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 1. Instant Hydration from sessionStorage
   const getCachedUser = () => {
     try {
-      const cached = localStorage.getItem('tbz_user_profile');
+      const cached = sessionStorage.getItem('tbz_user_profile');
       return cached ? JSON.parse(cached) : null;
     } catch {
       return null;
@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateUserState = (profile: User) => {
     setUser(profile);
     setLoginTime(Date.now());
-    localStorage.setItem('tbz_user_profile', JSON.stringify(profile));
+    sessionStorage.setItem('tbz_user_profile', JSON.stringify(profile));
   };
 
   useEffect(() => {
@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setLoginTime(null);
-        localStorage.removeItem('tbz_user_profile');
+        sessionStorage.removeItem('tbz_user_profile');
         setLoading(false);
         clearTimeout(safetyTimer);
       } else if (event === 'INITIAL_SESSION' && !session) {
@@ -137,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoginTime(null);
       
       // 2. Wipe Profile Cache
-      localStorage.removeItem('tbz_user_profile');
+      sessionStorage.removeItem('tbz_user_profile');
       
       // 3. Trigger Supabase SignOut (This handles dynamic storage key automatically)
       await supabase.auth.signOut();
@@ -165,7 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const ACTIVITY_KEY = 'tbz_last_activity';
 
     const checkInactivity = () => {
-      const lastActivity = parseInt(localStorage.getItem(ACTIVITY_KEY) || Date.now().toString());
+      const lastActivity = parseInt(sessionStorage.getItem(ACTIVITY_KEY) || Date.now().toString());
       const now = Date.now();
       
       if (user && (now - lastActivity >= INACTIVITY_LIMIT)) {
@@ -175,12 +175,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const resetTimer = () => { 
-      localStorage.setItem(ACTIVITY_KEY, Date.now().toString()); 
+      sessionStorage.setItem(ACTIVITY_KEY, Date.now().toString()); 
     };
 
     if (user) {
       // Set initial activity time if not present
-      if (!localStorage.getItem(ACTIVITY_KEY)) {
+      if (!sessionStorage.getItem(ACTIVITY_KEY)) {
         resetTimer();
       }
 
@@ -194,7 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         events.forEach(e => window.removeEventListener(e, resetTimer));
       };
     } else {
-      localStorage.removeItem(ACTIVITY_KEY);
+      sessionStorage.removeItem(ACTIVITY_KEY);
     }
   }, [user]);
 

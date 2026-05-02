@@ -27,12 +27,21 @@ export const AdminDashboard = () => {
 
   useEffect(() => {
     fetchData();
+
+    // Set up Realtime listener for Orders and Sales
+    const orderChannel = api.subscribe('orders', () => fetchData());
+    const salesChannel = api.subscribe('store_sales', () => fetchData());
+
+    return () => {
+      api.unsubscribe(orderChannel);
+      api.unsubscribe(salesChannel);
+    };
   }, []);
 
   const fetchData = async () => {
     // 1. Instant Hydration from Cache
     try {
-      const cached = localStorage.getItem('tbz_shop_cache');
+      const cached = sessionStorage.getItem('tbz_shop_cache');
       if (cached) {
         const { products: cProds } = JSON.parse(cached);
         if (cProds) {

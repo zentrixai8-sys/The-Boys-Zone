@@ -97,7 +97,7 @@ export const Billing = () => {
     const loadProducts = async () => {
       // Instant Hydration
       try {
-        const cached = localStorage.getItem('tbz_shop_cache');
+        const cached = sessionStorage.getItem('tbz_shop_cache');
         if (cached) {
           const { products } = JSON.parse(cached);
           if (products) setAllProducts(products);
@@ -600,70 +600,8 @@ export const Billing = () => {
         toast('⏳ Pending payment recorded for follow-up!', { duration: 4000 });
       }
       
-      // ── Auto-deduct stock for each billed item ────────────────────
-      try {
-        const prodRes = await api.request('getProducts');
-        const dbProducts: any[] = prodRes.products || [];
-        
-        // Group items by productId to avoid race conditions and multiple updates for same product
-        const groupedItems: Record<string, BillItem[]> = {};
-        items.forEach(item => {
-          if (!item.productId) return;
-          if (!groupedItems[item.productId]) groupedItems[item.productId] = [];
-          groupedItems[item.productId].push(item);
-        });
-
-        for (const pid in groupedItems) {
-          const match = dbProducts.find(p => p.product_id === pid);
-          if (!match) continue;
-
-          const productItems = groupedItems[pid];
-          let totalDeduction = 0;
-          // Deep copy variants to avoid reference issues
-          const v = match.variants ? JSON.parse(JSON.stringify(match.variants)) : [];
-
-          productItems.forEach(item => {
-            totalDeduction += item.quantity;
-            let sizeFound = false;
-
-            if (v.length > 0) {
-              v.forEach((variant: any) => {
-                if (variant.sizes) {
-                  const targetSize = variant.sizes.find((s: any) => String(s.size) === String(item.size));
-                  if (targetSize) {
-                    if (salesChannel === 'Store') {
-                      targetSize.store_stock = Math.max(0, (targetSize.store_stock || 0) - item.quantity);
-                    } else {
-                      targetSize.online_stock = Math.max(0, (targetSize.online_stock || 0) - item.quantity);
-                    }
-                    targetSize.stock = (targetSize.store_stock || 0) + (targetSize.online_stock || 0);
-                    sizeFound = true;
-                  }
-                }
-              });
-
-              // Fallback if size not found in variants
-              if (!sizeFound && v[0].sizes && v[0].sizes.length > 0) {
-                const s = v[0].sizes[0];
-                if (salesChannel === 'Store') {
-                  s.store_stock = Math.max(0, (s.store_stock || 0) - item.quantity);
-                } else {
-                  s.online_stock = Math.max(0, (s.online_stock || 0) - item.quantity);
-                }
-                s.stock = (s.store_stock || 0) + (s.online_stock || 0);
-              }
-            }
-          });
-
-          const newStock = Math.max(0, (match.stock || 0) - totalDeduction);
-          const updateData: any = { product_id: pid, stock: newStock };
-          if (v.length > 0) updateData.variants = v;
-
-          await api.request('updateProduct', updateData);
-        }
-      } catch (err) {
-        console.error('Stock deduction failed:', err);
-      }
+      // ── Stock deduction is now handled automatically by the API ──
+      // This ensures better performance and consistency.
 
       const newLog = {
         id: Date.now().toString(),

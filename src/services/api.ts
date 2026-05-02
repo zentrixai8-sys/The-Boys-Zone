@@ -83,13 +83,21 @@ export const api = {
       let result: any;
       switch (action) {
         case 'getProducts': {
+          const limit = data.limit || 1000;
           const { data: products, error: pError } = await supabase
             .from('products')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .limit(limit);
+            
           if (pError) throw pError;
 
-          const { data: reviews } = await supabase.from('reviews').select('product_id, rating');
+          // Fetch only necessary reviews in one go
+          const productIds = products.map(p => p.product_id);
+          const { data: reviews } = await supabase
+            .from('reviews')
+            .select('product_id, rating')
+            .in('product_id', productIds);
           
           const statsMap = new Map<string, { count: number, sum: number }>();
           (reviews || []).forEach(r => {
@@ -145,7 +153,9 @@ export const api = {
         case 'getBestSellers': {
           const { data: orders, error } = await supabase
             .from('orders')
-            .select('products');
+            .select('products')
+            .order('date', { ascending: false })
+            .limit(50);
           if (error) throw error;
 
           const productCounts: Record<string, number> = {};
@@ -436,11 +446,63 @@ export const api = {
               address: data.address,
               date: new Date().toISOString()
             }]);
+            
           if (error) {
-            // SILENTLY LOG ERROR TO CATEGORIES TABLE FOR DEBUGGING
             await supabase.from('categories').insert([{ category_name: 'DEBUG_ERROR', image_url: JSON.stringify(error) }]);
             throw error;
           }
+
+          // --- AUTO STOCK DEDUCTION (Online) ---
+          try {
+            const orderItems = typeof data.products === 'string' ? JSON.parse(data.products) : data.products;
+            if (Array.isArray(orderItems)) {
+              for (const item of orderItems) {
+                const pid = item.product_id || item.id;
+                if (!pid) continue;
+
+                // 1. Get current product state
+                const { data: product } = await supabase.from('products').select('*').eq('product_id', pid).single();
+                if (!product) continue;
+
+                const qty = Number(item.quantity || 1);
+                const v = product.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
+                
+                let sizeFound = false;
+                if (v && v.length > 0) {
+                  v.forEach((variant: any) => {
+                    if (variant.sizes) {
+                      const targetSize = variant.sizes.find((s: any) => String(s.size) === String(item.selectedSize || item.size));
+                      if (targetSize) {
+                        targetSize.online_stock = Math.max(0, (targetSize.online_stock || 0) - qty);
+                        targetSize.stock = (targetSize.store_stock || 0) + (targetSize.online_stock || 0);
+                        sizeFound = true;
+                      }
+                    }
+                  });
+
+                  // Fallback to first size if not found
+                  if (!sizeFound && v[0].sizes && v[0].sizes.length > 0) {
+                    const s = v[0].sizes[0];
+                    s.online_stock = Math.max(0, (s.online_stock || 0) - qty);
+                    s.stock = (s.store_stock || 0) + (s.online_stock || 0);
+                  }
+                }
+
+                // 2. Update stock
+                const newTotalStock = Math.max(0, (product.stock || 0) - qty);
+                await supabase.from('products')
+                  .update({ 
+                    stock: newTotalStock, 
+                    variants: v 
+                  })
+                  .eq('product_id', pid);
+              }
+            }
+          } catch (stockErr) {
+            console.error('Online stock deduction failed:', stockErr);
+            // Don't throw, we don't want to break the success message for the user if only stock sync failed
+          }
+
           result = true;
           break;
         }
@@ -470,10 +532,49 @@ export const api = {
              pdf_url: data.pdf_url || null,
              payment_method: data.payment_method || 'Cash'
           }));
-          const { error } = await supabase
-            .from('store_sales')
-            .insert(itemsData);
+          
+          const { error } = await supabase.from('store_sales').insert(itemsData);
           if (error) throw error;
+
+          // --- AUTO STOCK DEDUCTION (Store) ---
+          try {
+            for (const item of data.items) {
+              const pid = item.productId;
+              if (!pid) continue;
+
+              const { data: product } = await supabase.from('products').select('*').eq('product_id', pid).single();
+              if (!product) continue;
+
+              const qty = Number(item.quantity || 1);
+              const v = product.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
+              
+              let sizeFound = false;
+              if (v && v.length > 0) {
+                v.forEach((variant: any) => {
+                  if (variant.sizes) {
+                    const targetSize = variant.sizes.find((s: any) => String(s.size) === String(item.size));
+                    if (targetSize) {
+                      targetSize.store_stock = Math.max(0, (targetSize.store_stock || 0) - qty);
+                      targetSize.stock = (targetSize.store_stock || 0) + (targetSize.online_stock || 0);
+                      sizeFound = true;
+                    }
+                  }
+                });
+
+                if (!sizeFound && v[0].sizes && v[0].sizes.length > 0) {
+                  const s = v[0].sizes[0];
+                  s.store_stock = Math.max(0, (s.store_stock || 0) - qty);
+                  s.stock = (s.store_stock || 0) + (s.online_stock || 0);
+                }
+              }
+
+              const newTotalStock = Math.max(0, (product.stock || 0) - qty);
+              await supabase.from('products').update({ stock: newTotalStock, variants: v }).eq('product_id', pid);
+            }
+          } catch (stockErr) {
+            console.error('Store stock deduction failed:', stockErr);
+          }
+
           result = true;
           break;
         }
@@ -801,4 +902,22 @@ export const api = {
       throw error;
     }
   },
+
+  // Real-time helper methods
+  subscribe(table: string, callback: (payload: any) => void) {
+    const channel = supabase.channel(`realtime_${table}_${Math.random().toString(36).substring(7)}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: table },
+        (payload) => callback(payload)
+      )
+      .subscribe();
+    return channel;
+  },
+
+  unsubscribe(channel: any) {
+    if (channel) {
+      supabase.removeChannel(channel);
+    }
+  }
 };
