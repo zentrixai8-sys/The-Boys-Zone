@@ -62,10 +62,8 @@ export const PendingPayments = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [data, logs] = await Promise.all([
-        api.request('getPendingPayments'),
-        api.request('getAllPaymentLogs').catch(() => []),
-      ]);
+      const data = await api.request('getPendingPayments').catch(() => []);
+      const logs = await api.request('getAllPaymentLogs').catch(() => []);
       setRecords(data || []);
       setPaymentLogs(logs || []);
     } catch (e) {

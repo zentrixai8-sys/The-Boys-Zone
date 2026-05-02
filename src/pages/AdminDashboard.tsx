@@ -90,9 +90,15 @@ export const AdminDashboard = () => {
     };
 
     // Run all in parallel, they will update state as they finish
-    Promise.allSettled([loadProducts(), loadOrders(), loadUsers(), loadStoreSales(), loadStoreItems()]).then(() => {
+    const loadData = async () => {
+      await loadProducts();
+      await loadOrders();
+      await loadUsers();
+      await loadStoreSales();
+      await loadStoreItems();
       setLoading(false);
-    });
+    };
+    loadData();
   };
 
   // Safe date parsing helper

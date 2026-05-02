@@ -31,10 +31,8 @@ export const AdminMaster = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [catsData, offersData] = await Promise.all([
-        api.request('getCategories'),
-        api.request('getOffers')
-      ]);
+      const catsData = await api.request('getCategories').catch(() => []);
+      const offersData = await api.request('getOffers').catch(() => []);
       setCategories(catsData);
       setOffers(offersData);
     } catch (error) {

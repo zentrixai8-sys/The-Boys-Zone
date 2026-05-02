@@ -5,26 +5,21 @@ import { Product, Category, Offer } from '../types';
 export function useHomeData() {
   const fetcher = async () => {
     try {
-      const [productsRes, bestSellersRes, categoriesRes, offersRes] = await Promise.allSettled([
-        api.request('getProducts', { limit: 12 }),
-        api.request('getBestSellers'),
-        api.request('getCategories'),
-        api.request('getOffers')
-      ]);
+      // Fetch sequentially to prevent Supabase Auth LockManager timeouts on concurrent requests
+      const productsData = await api.request('getProducts', { limit: 12 }).catch(e => { console.error(e); return null; });
+      const bestSellersData = await api.request('getBestSellers').catch(e => { console.error(e); return []; });
+      const categoriesData = await api.request('getCategories').catch(e => { console.error(e); return []; });
+      const offersData = await api.request('getOffers').catch(e => { console.error(e); return []; });
 
-      const allProds = productsRes.status === 'fulfilled' && productsRes.value.products 
-        ? productsRes.value.products 
-        : [];
+      const allProds = productsData?.products || [];
       const products = allProds.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online').slice(0, 12);
 
-      const allBS = bestSellersRes.status === 'fulfilled' ? (bestSellersRes.value || []) : [];
+      const allBS = bestSellersData || [];
       const bestSellers = allBS.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online');
 
-      const categories = categoriesRes.status === 'fulfilled' 
-        ? (Array.isArray(categoriesRes.value) ? categoriesRes.value : (categoriesRes.value.categories || [])) 
-        : [];
+      const categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.categories || []);
 
-      const offers = offersRes.status === 'fulfilled' ? (offersRes.value || []) : [];
+      const offers = offersData || [];
 
       return { products, bestSellers, categories, offers };
     } catch (e) {
