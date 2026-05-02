@@ -19,12 +19,12 @@ export const OrderSuccess = () => {
         Your order is being processed and will be shipped soon.
       </p>
 
-      <Link 
-        to="/" 
-        className="w-full max-w-xs bg-gray-900 text-white py-4 rounded-xl text-[14px] font-bold hover:bg-black transition-colors shadow-lg shadow-black/10"
+      <a 
+        href="/" 
+        className="w-full max-w-xs block mx-auto bg-gray-900 text-white py-4 rounded-xl text-[14px] font-bold hover:bg-black transition-colors shadow-lg shadow-black/10"
       >
         Back to Home
-      </Link>
+      </a>
     </div>
   );
 };

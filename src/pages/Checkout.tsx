@@ -115,7 +115,7 @@ export const Checkout = () => {
             localStorage.removeItem('tbz_order_recovery');
             clearCart();
             toast.success('Payment recovered and order placed!');
-            navigate('/order-success');
+            window.location.replace('/order-success');
           } else {
             setIsRecovering(false);
           }
@@ -192,7 +192,7 @@ export const Checkout = () => {
         });
         toast.success('Order placed successfully via Cash on Delivery!');
         clearCart();
-        navigate('/order-success');
+        window.location.replace('/order-success');
       } catch (error: any) {
         try {
           await supabase.from('categories').insert([{ 
@@ -252,7 +252,7 @@ export const Checkout = () => {
           localStorage.removeItem('tbz_order_recovery');
           clearCart();
           toast.success('Order placed successfully!');
-          navigate('/order-success');
+          window.location.replace('/order-success');
         } catch (error: any) {
           console.error('Final order creation failed:', error);
           
