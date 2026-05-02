@@ -7,19 +7,19 @@ import { api } from '../services/api';
 import jsPDF from 'jspdf';
 
 const subCategoryMap: Record<string, string[]> = {
-  'Shirt': ['Casual', 'Formal', 'Denim', 'Checkered', 'Printed', 'Party Wear'],
-  'T-Shirt': ['Round Neck', 'Polo', 'Oversized', 'Graphic', 'Full Sleeve'],
+  'Shirts': ['Casual', 'Formal', 'Denim', 'Checkered', 'Printed', 'Party Wear'],
+  'T-Shirts': ['Round Neck', 'Polo', 'Oversized', 'Graphic', 'Full Sleeve'],
   'Jeans': ['Skinny', 'Slim', 'Straight', 'Relaxed', 'Baggy', 'Distressed'],
-  'Pant': ['Chinos', 'Formal', 'Cargo', 'Joggers', 'Cotton Pants'],
+  'Pants': ['Chinos', 'Formal', 'Cargo', 'Joggers', 'Cotton Pants'],
   'Accessories': ['Belts', 'Wallets', 'Watches', 'Sunglasses', 'Perfumes', 'Caps', 'Undergarments', 'Socks', 'Bracelets', 'Key Rings'],
   'Shoes': ['Sneakers', 'Formal Shoes', 'Sandals', 'Loafers', 'Boots', 'Flip-Flops'],
 };
 
 const categorySizeMap: Record<string, string[]> = {
-  'Shirt': ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
-  'T-Shirt': ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
+  'Shirts': ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
+  'T-Shirts': ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
   'Jeans': ['28', '30', '32', '34', '36', '38', '40'],
-  'Pant': ['28', '30', '32', '34', '36', '38', '40'],
+  'Pants': ['28', '30', '32', '34', '36', '38', '40'],
   'Shoes': ['6', '7', '8', '9', '10', '11'],
   'Accessories': ['One Size'],
 };
@@ -978,9 +978,9 @@ export const Billing = () => {
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-black font-medium transition-all"
                 >
                   <option value="">Select Category...</option>
-                  <option value="Shirt">Shirt</option>
-                  <option value="T-Shirt">T-Shirt</option>
-                  <option value="Pant">Pant</option>
+                  <option value="Shirts">Shirts</option>
+                  <option value="T-Shirts">T-Shirts</option>
+                  <option value="Pants">Pants</option>
                   <option value="Jeans">Jeans</option>
                   <option value="Accessories">Accessories</option>
                   <option value="Shoes">Shoes</option>
