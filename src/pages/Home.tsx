@@ -434,7 +434,7 @@ export const Home = () => {
                 key={product.product_id || (product as any).id}
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
+                viewport={{ once: true, margin: "200px" }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
                 onClick={() => window.location.href = `/product/${product.product_id || (product as any).id}`}
                 className="group relative cursor-pointer"

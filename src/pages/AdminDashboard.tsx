@@ -468,6 +468,9 @@ export const AdminDashboard = () => {
               const grad = gradients[stat.color] || 'from-gray-500 to-gray-400';
 
               const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+                const isMobile = window.innerWidth < 768;
+                if (isMobile) return;
+
                 const card = e.currentTarget;
                 const rect = card.getBoundingClientRect();
                 const x = e.clientX - rect.left;
@@ -484,6 +487,9 @@ export const AdminDashboard = () => {
                 }
               };
               const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+                const isMobile = window.innerWidth < 768;
+                if (isMobile) return;
+
                 const card = e.currentTarget;
                 card.style.transform = 'perspective(600px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
                 const gloss = card.querySelector('.card-gloss') as HTMLElement;
@@ -740,9 +746,9 @@ export const AdminDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             {/* Size Revenue Pie Chart */}
             <motion.div 
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
+              viewport={{ once: true, margin: "100px" }}
               transition={{ delay: 0.1, duration: 0.6, ease: "easeOut" }}
               whileHover={{ y: -5, transition: { duration: 0.2 } }}
               className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-shadow duration-300 flex flex-col relative overflow-hidden"
@@ -787,9 +793,9 @@ export const AdminDashboard = () => {
 
             {/* Top 5 Products Bar Chart */}
             <motion.div 
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
+              viewport={{ once: true, margin: "100px" }}
               transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
               whileHover={{ y: -5, transition: { duration: 0.2 } }}
               className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-shadow duration-300 flex flex-col relative overflow-hidden"

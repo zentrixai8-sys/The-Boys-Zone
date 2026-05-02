@@ -34,6 +34,12 @@ export const ProductDetail = () => {
 
   useEffect(() => {
     if (product) {
+      // Redirect if this is a Store-only product (should not be visible online)
+      if (product.sale_type === 'Store') {
+        navigate('/products');
+        return;
+      }
+
       if (product.variants && product.variants.length > 0) {
         if (!selectedColor) setSelectedColor(product.variants[0].color);
         if (!selectedSize && product.variants[0].sizes.length > 0) {
@@ -46,7 +52,7 @@ export const ProductDetail = () => {
       }
       fetchReviews(product.product_id);
     }
-  }, [product, selectedColor, selectedSize]);
+  }, [product, selectedColor, selectedSize, navigate]);
 
 
 
@@ -218,19 +224,26 @@ export const ProductDetail = () => {
                   <AnimatePresence mode="wait">
                     <motion.img 
                       key={currentImageIndex}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
                       transition={{ duration: 0.2 }}
                       src={galleryImages[currentImageIndex] || selectedColorImage || product.image_url} 
                       alt={product.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover touch-pan-y"
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.2}
+                      onDragEnd={(_, info) => {
+                        if (info.offset.x < -50) nextImage();
+                        if (info.offset.x > 50) prevImage();
+                      }}
                       referrerPolicy="no-referrer"
                     />
                   </AnimatePresence>
 
-                  {/* Mobile Image Indicator */}
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 md:hidden">
+                  {/* Image Indicators */}
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5">
                     {galleryImages.map((_, i) => (
                       <div 
                         key={i} 
@@ -239,23 +252,36 @@ export const ProductDetail = () => {
                     ))}
                   </div>
 
-                  {/* Desktop Arrows (Secondary) */}
+                  {/* Navigation Arrows */}
                   {galleryImages.length > 1 && (
-                    <div className="hidden md:block">
+                    <>
                       <button 
                         onClick={prevImage}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg transition-all hover:bg-white md:opacity-0 group-hover:opacity-100"
                       >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
                       <button 
                         onClick={nextImage}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg transition-all hover:bg-white md:opacity-0 group-hover:opacity-100"
                       >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
-                    </div>
+                    </>
                   )}
+                </div>
+
+                {/* Mobile Thumbnails */}
+                <div className="flex md:hidden gap-3 px-4 py-4 overflow-x-auto scrollbar-hide bg-white border-b border-gray-100">
+                  {galleryImages.map((img, idx) => (
+                    <button 
+                      key={idx}
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={`relative w-16 h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${currentImageIndex === idx ? 'border-indigo-600 shadow-md ring-2 ring-indigo-50' : 'border-gray-100 opacity-60'}`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -582,8 +608,8 @@ export const ProductDetail = () => {
         <h2 className="text-[22px] font-serif text-gray-800 mb-8 tracking-wide">Recently Viewed</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
            {allProducts
-             .filter(p => p.product_id !== product.product_id)
-             .slice(0, 1)
+             .filter(p => p.product_id !== product.product_id && p.sale_type !== 'Store')
+             .slice(0, 4)
              .map(p => <ProductCard key={p.product_id} product={p} />)
            }
         </div>
@@ -601,7 +627,7 @@ export const ProductDetail = () => {
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
            {allProducts
-             .filter(p => p.product_id !== product.product_id)
+             .filter(p => p.product_id !== product.product_id && p.sale_type !== 'Store')
              .slice(0, 5)
              .map(p => <ProductCard key={p.product_id} product={p} />)
            }

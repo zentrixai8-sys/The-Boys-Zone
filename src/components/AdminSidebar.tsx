@@ -376,34 +376,10 @@ export const AdminSidebar = () => {
         initial={false}
         animate={isCollapsed ? 'collapsed' : 'expanded'}
         variants={sidebarVariants}
-        className="hidden md:block fixed top-0 left-0 bottom-0 z-110"
+        className="hidden md:block fixed top-0 left-0 bottom-0 z-[110]"
       >
         <SidebarContent />
       </motion.aside>
-
-      {/* Mobile Sidebar Overlay (More Menu) */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="md:hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[110]"
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="md:hidden fixed top-0 right-0 bottom-0 w-[280px] z-[120]"
-            >
-              <SidebarContent mobile={true} />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* Image Viewer Modal */}
       <AnimatePresence>

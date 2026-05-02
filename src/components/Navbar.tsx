@@ -157,7 +157,7 @@ export const Navbar = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (searchQuery.trim()) {
-                  navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+                  navigate(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
                 }
               }}
               className="relative hidden lg:block w-48 mr-2 group"
@@ -305,7 +305,7 @@ export const Navbar = () => {
             onSubmit={(e) => {
               e.preventDefault();
               if (searchQuery.trim()) {
-                navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+                navigate(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
               }
             }}
             className="relative"
@@ -337,7 +337,7 @@ export const Navbar = () => {
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (searchQuery.trim()) {
-                      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+                      navigate(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
                       setIsMenuOpen(false);
                     }
                   }}

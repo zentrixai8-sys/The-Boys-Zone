@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../services/api';
@@ -37,6 +37,10 @@ export const Checkout = () => {
 
   const loadRazorpay = () => {
     return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.onload = () => resolve(true);
@@ -44,6 +48,28 @@ export const Checkout = () => {
       document.body.appendChild(script);
     });
   };
+
+  React.useEffect(() => {
+    // Fail-safe: Check for any paid but unsynced orders on mount
+    const recoverOrder = async () => {
+      const pending = localStorage.getItem('tbz_order_recovery');
+      if (pending && user) {
+        try {
+          const { payload, status } = JSON.parse(pending);
+          if (status === 'paid') {
+            await api.request('createOrder', payload);
+            localStorage.removeItem('tbz_order_recovery');
+            clearCart();
+            toast.success('Recovered your previous order!');
+            navigate('/order-success');
+          }
+        } catch (e) {
+          console.error('Recovery failed', e);
+        }
+      }
+    };
+    recoverOrder();
+  }, [user]);
 
   const handlePayment = async () => {
     if (!addressParts.house || !addressParts.city || !addressParts.pincode) {
@@ -101,6 +127,15 @@ export const Checkout = () => {
       return;
     }
 
+    // Pre-create order payload for fail-safe storage
+    const orderPayload = {
+      user_id: user?.id,
+      products: JSON.stringify(cart),
+      total_amount: totalPrice,
+      payment_status: 'Paid',
+      address: fullAddress
+    };
+
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
       amount: totalPrice * 100,
@@ -109,31 +144,45 @@ export const Checkout = () => {
       description: 'Order Payment',
       image: 'https://picsum.photos/200',
       handler: async function (response: any) {
-        try {
-          const fullAddress = [
-            addressParts.house,
-            addressParts.city,
-            addressParts.dist,
-            addressParts.state,
-            addressParts.pincode
-          ].filter(Boolean).join(' | ');
+        setLoading(true); // Keep loading active during order creation
+        const finalPayload = { 
+          ...orderPayload, 
+          payment_id: response.razorpay_payment_id 
+        };
 
-          await api.request('createOrder', {
-            user_id: user?.id,
-            products: JSON.stringify(cart), // Stringify cart to match Supabase expectations
-            total_amount: totalPrice,
-            payment_id: response.razorpay_payment_id,
-            payment_status: 'Paid',
-            address: fullAddress
-          });
+        // Step 1: Save to local storage as "Paid but pending sync" (CRITICAL FAIL-SAFE)
+        localStorage.setItem('tbz_order_recovery', JSON.stringify({
+          status: 'paid',
+          payload: finalPayload
+        }));
 
-          toast.success('Order placed successfully!');
-          clearCart();
-          navigate('/order-success');
-        } catch (error: any) {
-          console.error('Order Creation Error:', error);
-          toast.error('Payment successful, but failed to save order. Please contact support with Payment ID: ' + response.razorpay_payment_id);
-        }
+        // Step 2: Attempt to create order in DB with a retry loop
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        const tryCreateOrder = async () => {
+          try {
+            await api.request('createOrder', finalPayload);
+            // Success! Clear recovery and cart
+            localStorage.removeItem('tbz_order_recovery');
+            toast.success('Order placed successfully!');
+            clearCart();
+            navigate('/order-success');
+          } catch (error: any) {
+            attempts++;
+            console.error(`Order Creation Attempt ${attempts} failed:`, error);
+            
+            if (attempts < maxAttempts) {
+              // Wait 2 seconds and try again
+              setTimeout(tryCreateOrder, 2000);
+            } else {
+              toast.error('Payment successful, but failed to save order to database. Our team will manually verify this. Payment ID: ' + response.razorpay_payment_id);
+              setLoading(false);
+            }
+          }
+        };
+
+        await tryCreateOrder();
       },
       prefill: {
         name: user?.name || '',

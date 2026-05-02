@@ -30,6 +30,7 @@ const categorySizeMap: Record<string, string[]> = {
 
 interface BillItem {
   id: string;
+  productId?: string;
   category: string;
   productName: string;
   price: number;
@@ -169,9 +170,8 @@ export const Billing = () => {
   useEffect(() => {
     if (category && productName) {
       const match = allProducts.filter(p => 
-        p.category === category && 
-        p.sub_category === productName &&
-        p.sale_type === salesChannel
+        (p.category || '').toLowerCase() === category.toLowerCase() && 
+        (p.sub_category || '').toLowerCase() === productName.toLowerCase()
       );
       
       // Priority 1: Sizes from database variants
@@ -179,7 +179,7 @@ export const Billing = () => {
       match.forEach(p => {
         (p.variants || []).forEach((v: any) => {
           (v.sizes || []).forEach((s: any) => {
-            if (s.size) dbSizes.add(s.size);
+            if (s.size) dbSizes.add(String(s.size));
           });
         });
       });
@@ -194,19 +194,26 @@ export const Billing = () => {
       }
 
       if (match.length > 0) {
-        const totalStock = match.reduce((sum, p) => {
-          const productStock = (p.variants || []).reduce((vSum: number, v: any) => {
+        const targetProduct = match[0]; // Consistency: Use the same product that handleAddItem picks
+        const variants = targetProduct.variants || [];
+        const hasSizes = variants.some((v: any) => v.sizes && v.sizes.length > 0);
+        
+        if (variants.length === 0 || !hasSizes) {
+          setCurrentStock(Number(targetProduct.stock) || 0);
+        } else {
+          const productStock = variants.reduce((vSum: number, v: any) => {
             const sizeSum = (v.sizes || []).reduce((sSum: number, s: any) => {
-              // If size is selected, only count that size
-              if (selectedSize && s.size !== selectedSize) return sSum;
-              const val = salesChannel === 'Store' ? (s.store_stock || 0) : (s.online_stock || 0);
-              return sSum + Number(val);
+              // String-safe size comparison
+              if (selectedSize && String(s.size) !== String(selectedSize)) return sSum;
+              const val = salesChannel === 'Store' 
+                ? (s.store_stock ?? (s.online_stock !== undefined ? 0 : s.stock ?? 0)) 
+                : (s.online_stock ?? (s.store_stock !== undefined ? 0 : s.stock ?? 0));
+              return sSum + Number(val || 0);
             }, 0);
             return vSum + sizeSum;
           }, 0);
-          return sum + productStock;
-        }, 0);
-        setCurrentStock(totalStock);
+          setCurrentStock(productStock);
+        }
       } else {
         setCurrentStock(0);
       }
@@ -223,8 +230,15 @@ export const Billing = () => {
       return;
     }
 
+    // Find the first matching product to get its ID for accurate stock deduction
+    const targetProduct = allProducts.find(p => 
+      (p.category || '').toLowerCase() === category.toLowerCase() && 
+      (p.sub_category || '').toLowerCase() === productName.toLowerCase()
+    );
+
     const newItem: BillItem = {
       id: Date.now().toString(),
+      productId: targetProduct?.product_id,
       category,
       productName: selectedSize ? `${productName} (Size: ${selectedSize})` : productName,
       price: parseFloat(price),
@@ -589,25 +603,33 @@ export const Billing = () => {
       // ── Auto-deduct stock for each billed item ────────────────────
       try {
         const prodRes = await api.request('getProducts');
-        const allProducts: any[] = prodRes.products || [];
-        const deductPromises = items.map(async (item) => {
-          const match = allProducts.find(
-            p => (p.title?.toLowerCase() === item.productName?.toLowerCase() ||
-                 p.title?.toLowerCase().includes(item.productName?.toLowerCase())) &&
-                 p.sale_type === salesChannel
-          );
-          if (match) {
-            const newStock = Math.max(0, (match.stock || 0) - item.quantity);
-            const updateData: any = { product_id: match.product_id, stock: newStock };
-            
-            // Deduct from the specific size
-            if (match.variants && match.variants.length > 0) {
-              const v = [...match.variants];
-              let sizeFound = false;
-              
+        const dbProducts: any[] = prodRes.products || [];
+        
+        // Group items by productId to avoid race conditions and multiple updates for same product
+        const groupedItems: Record<string, BillItem[]> = {};
+        items.forEach(item => {
+          if (!item.productId) return;
+          if (!groupedItems[item.productId]) groupedItems[item.productId] = [];
+          groupedItems[item.productId].push(item);
+        });
+
+        for (const pid in groupedItems) {
+          const match = dbProducts.find(p => p.product_id === pid);
+          if (!match) continue;
+
+          const productItems = groupedItems[pid];
+          let totalDeduction = 0;
+          // Deep copy variants to avoid reference issues
+          const v = match.variants ? JSON.parse(JSON.stringify(match.variants)) : [];
+
+          productItems.forEach(item => {
+            totalDeduction += item.quantity;
+            let sizeFound = false;
+
+            if (v.length > 0) {
               v.forEach((variant: any) => {
                 if (variant.sizes) {
-                  const targetSize = variant.sizes.find((s: any) => s.size === item.size);
+                  const targetSize = variant.sizes.find((s: any) => String(s.size) === String(item.size));
                   if (targetSize) {
                     if (salesChannel === 'Store') {
                       targetSize.store_stock = Math.max(0, (targetSize.store_stock || 0) - item.quantity);
@@ -620,25 +642,28 @@ export const Billing = () => {
                 }
               });
 
-              // Fallback if size not found in variants (e.g. old data)
+              // Fallback if size not found in variants
               if (!sizeFound && v[0].sizes && v[0].sizes.length > 0) {
-                const s = { ...v[0].sizes[0] };
+                const s = v[0].sizes[0];
                 if (salesChannel === 'Store') {
                   s.store_stock = Math.max(0, (s.store_stock || 0) - item.quantity);
                 } else {
                   s.online_stock = Math.max(0, (s.online_stock || 0) - item.quantity);
                 }
                 s.stock = (s.store_stock || 0) + (s.online_stock || 0);
-                v[0].sizes[0] = s;
               }
-              updateData.variants = v;
             }
-            
-            await api.request('updateProduct', updateData);
-          }
-        });
-        await Promise.allSettled(deductPromises);
-      } catch (_) { /* stock deduction is best-effort, non-blocking */ }
+          });
+
+          const newStock = Math.max(0, (match.stock || 0) - totalDeduction);
+          const updateData: any = { product_id: pid, stock: newStock };
+          if (v.length > 0) updateData.variants = v;
+
+          await api.request('updateProduct', updateData);
+        }
+      } catch (err) {
+        console.error('Stock deduction failed:', err);
+      }
 
       const newLog = {
         id: Date.now().toString(),

@@ -335,6 +335,21 @@ export const AdminProducts = () => {
         }
       }
 
+      // Sync top-level color and size columns for better Supabase visibility/filtering
+      if (payload.variants && payload.variants.length > 0) {
+        // Set 'color' column to the first variant's color
+        payload.color = payload.variants[0].color || '';
+        
+        // Set 'size' column to a comma-separated list of all unique sizes
+        const allSizes = new Set<string>();
+        payload.variants.forEach((v: any) => {
+          (v.sizes || []).forEach((s: any) => {
+            if (s.size) allSizes.add(String(s.size));
+          });
+        });
+        payload.size = Array.from(allSizes).join(', ');
+      }
+
       if (action === 'addProduct') {
         delete payload.product_id;
       }

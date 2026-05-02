@@ -36,7 +36,7 @@ const Card3D = ({ children, className = '' }: { children: React.ReactNode; class
   const [glare, setGlare] = useState({ x: 50, y: 50 });
   const [hovering, setHovering] = useState(false);
   const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!tiltRef.current) return;
+    if (!tiltRef.current || window.innerWidth < 768) return;
     const r = tiltRef.current.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
     setRot({ x: ((r.height / 2 - y) / r.height) * 12, y: ((x - r.width / 2) / r.width) * 12 });
@@ -74,6 +74,7 @@ export const AdminInventory = () => {
 
   // "Add Stock" input per product
   const [addQtyMap, setAddQtyMap] = useState<Record<string, string>>({});
+  const [selectedSizeMap, setSelectedSizeMap] = useState<Record<string, string>>({});
   const [noteMap, setNoteMap] = useState<Record<string, string>>({});
 
   // History modal
@@ -105,18 +106,41 @@ export const AdminInventory = () => {
       
       // Also update variants if they exist for consistency
       if (product.variants && product.variants.length > 0) {
-        const v = [...product.variants];
-        if (v[0].sizes && v[0].sizes.length > 0) {
-          const s = { ...v[0].sizes[0] };
+        const v = JSON.parse(JSON.stringify(product.variants)); // Deep copy to avoid reference issues
+        const selectedSize = selectedSizeMap[product.product_id];
+        let sizeFound = false;
+
+        // Try to find the specific size in any variant
+        v.forEach((variant: any) => {
+          if (variant.sizes) {
+            const targetSize = variant.sizes.find((s: any) => 
+              selectedSize ? String(s.size) === String(selectedSize) : true
+            );
+            
+            if (targetSize && !sizeFound) {
+              if (product.sale_type === 'Store') {
+                targetSize.store_stock = (targetSize.store_stock || 0) + qty;
+              } else {
+                targetSize.online_stock = (targetSize.online_stock || 0) + qty;
+              }
+              targetSize.stock = (targetSize.store_stock || 0) + (targetSize.online_stock || 0);
+              sizeFound = true;
+            }
+          }
+        });
+
+        // Fallback to first size if none specified or found
+        if (!sizeFound && v[0].sizes && v[0].sizes.length > 0) {
+          const s = v[0].sizes[0];
           if (product.sale_type === 'Store') {
             s.store_stock = (s.store_stock || 0) + qty;
           } else {
             s.online_stock = (s.online_stock || 0) + qty;
           }
           s.stock = (s.store_stock || 0) + (s.online_stock || 0);
-          v[0].sizes[0] = s;
-          updateData.variants = v;
         }
+        
+        updateData.variants = v;
       }
 
       await api.request('updateProduct', updateData);
@@ -399,6 +423,20 @@ export const AdminInventory = () => {
                             <div className="flex items-center gap-2">
                               <div className="flex flex-col gap-1.5">
                                 <div className="flex items-center gap-1.5">
+                                  {/* Size Selector */}
+                                  {product.variants && product.variants.length > 0 && (
+                                    <select
+                                      value={selectedSizeMap[product.product_id] || ''}
+                                      onChange={e => setSelectedSizeMap(prev => ({ ...prev, [product.product_id]: e.target.value }))}
+                                      className="px-2 py-1.5 bg-white rounded-lg border border-slate-300 text-[10px] font-black focus:ring-2 focus:ring-black/20 focus:outline-none"
+                                    >
+                                      <option value="">Select Size</option>
+                                      {Array.from(new Set(product.variants.flatMap(v => v.sizes?.map(s => String(s.size)) || []))).map(size => (
+                                        <option key={size} value={size}>{size}</option>
+                                      ))}
+                                    </select>
+                                  )}
+
                                   <span className="text-[11px] text-slate-400 font-bold">{product.stock} +</span>
                                   <input
                                     type="number" min="1"
@@ -418,16 +456,16 @@ export const AdminInventory = () => {
                                   value={noteMap[product.product_id] || ''}
                                   onChange={e => setNoteMap(prev => ({ ...prev, [product.product_id]: e.target.value }))}
                                   placeholder="Note (optional)"
-                                  className="w-48 px-2 py-1 bg-white rounded-lg border border-slate-200 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-black/20"
+                                  className="w-full px-2 py-1 bg-white rounded-lg border border-slate-200 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-black/20"
                                 />
                               </div>
                               <button
                                 onClick={() => handleAddStock(product)}
-                                disabled={updatingId === product.product_id || !addQtyMap[product.product_id]}
+                                disabled={updatingId === product.product_id || !addQtyMap[product.product_id] || (product.variants && product.variants.length > 0 && !selectedSizeMap[product.product_id])}
                                 className="px-3 py-2 bg-slate-900 text-white rounded-xl text-[11px] font-black hover:bg-black transition-colors disabled:opacity-40 flex items-center gap-1 whitespace-nowrap"
                               >
                                 {updatingId === product.product_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                                {updatingId === product.product_id ? 'Saving…' : 'Add'}
+                                {updatingId === product.product_id ? 'Saving…' : 'Add Stock'}
                               </button>
                             </div>
                           </td>
