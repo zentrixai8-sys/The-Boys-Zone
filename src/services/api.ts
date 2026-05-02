@@ -436,6 +436,22 @@ export const api = {
         case 'createOrder': {
           if (!data.user_id) throw new Error('User ID is required to create an order');
           
+          // --- PRE-FLIGHT CHECK: Ensure Profile Exists to prevent FK constraint error ---
+          const { error: profileCheckError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', data.user_id)
+            .single();
+            
+          if (profileCheckError && profileCheckError.code === 'PGRST116') {
+            // Profile missing, auto-create a basic one to satisfy FK constraint
+            await supabase.from('profiles').upsert([{
+              id: data.user_id,
+              name: 'Customer',
+              password: 'auto_generated'
+            }]);
+          }
+
           const orderData = {
             user_id: data.user_id,
             products: typeof data.products === 'string' ? data.products : JSON.stringify(data.products),
