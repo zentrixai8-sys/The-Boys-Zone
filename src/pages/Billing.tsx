@@ -7,25 +7,21 @@ import { api } from '../services/api';
 import jsPDF from 'jspdf';
 
 const subCategoryMap: Record<string, string[]> = {
-  'Shirt':       ['Casual', 'Formal', 'Denim', 'Checkered', 'Printed', 'Party Wear'],
-  'T-Shirt':     ['Round Neck', 'Polo', 'Oversized', 'Graphic', 'Full Sleeve'],
-  'Jeans':       ['Skinny', 'Slim', 'Straight', 'Relaxed', 'Baggy', 'Distressed'],
-  'Pant':        ['Chinos', 'Formal', 'Cargo', 'Joggers', 'Cotton Pants'],
-  'Pants':       ['Chinos', 'Formal', 'Cargo', 'Joggers', 'Cotton Pants'],
+  'Shirt': ['Casual', 'Formal', 'Denim', 'Checkered', 'Printed', 'Party Wear'],
+  'T-Shirt': ['Round Neck', 'Polo', 'Oversized', 'Graphic', 'Full Sleeve'],
+  'Jeans': ['Skinny', 'Slim', 'Straight', 'Relaxed', 'Baggy', 'Distressed'],
+  'Pant': ['Chinos', 'Formal', 'Cargo', 'Joggers', 'Cotton Pants'],
   'Accessories': ['Belts', 'Wallets', 'Watches', 'Sunglasses', 'Perfumes', 'Caps', 'Undergarments', 'Socks', 'Bracelets', 'Key Rings'],
-  'Footwear':    ['Sneakers', 'Formal Shoes', 'Sandals', 'Loafers', 'Boots', 'Flip-Flops'],
-  'Shoes':       ['Sneakers', 'Formal Shoes', 'Sandals', 'Loafers', 'Boots', 'Flip-Flops'],
+  'Shoes': ['Sneakers', 'Formal Shoes', 'Sandals', 'Loafers', 'Boots', 'Flip-Flops'],
 };
 
 const categorySizeMap: Record<string, string[]> = {
-  'Shirt':       ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
-  'T-Shirt':     ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
-  'Jeans':       ['28', '30', '32', '34', '36', '38', '40'],
-  'Pant':        ['28', '30', '32', '34', '36', '38', '40'],
-  'Pants':       ['28', '30', '32', '34', '36', '38', '40'],
-  'Footwear':    ['6', '7', '8', '9', '10', '11'],
-  'Shoes':       ['6', '7', '8', '9', '10', '11'],
-  'Accessories': ['Free Size'],
+  'Shirt': ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
+  'T-Shirt': ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
+  'Jeans': ['28', '30', '32', '34', '36', '38', '40'],
+  'Pant': ['28', '30', '32', '34', '36', '38', '40'],
+  'Shoes': ['6', '7', '8', '9', '10', '11'],
+  'Accessories': ['One Size'],
 };
 
 interface BillItem {
@@ -987,7 +983,7 @@ export const Billing = () => {
                   <option value="Pant">Pant</option>
                   <option value="Jeans">Jeans</option>
                   <option value="Accessories">Accessories</option>
-                  <option value="Footwear">Footwear</option>
+                  <option value="Shoes">Shoes</option>
                 </select>
               </div>
 
