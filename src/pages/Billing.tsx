@@ -169,10 +169,20 @@ export const Billing = () => {
 
   useEffect(() => {
     if (category && productName) {
-      const match = allProducts.filter(p => 
-        (p.category || '').trim().toLowerCase() === category.trim().toLowerCase() && 
-        (p.sub_category || '').trim().toLowerCase() === productName.trim().toLowerCase()
-      );
+      const match = allProducts.filter(p => {
+        const pCat = (p.category || '').trim().toLowerCase();
+        const cCat = category.trim().toLowerCase();
+        
+        // Smart matching for common singular/plural variations
+        const isShirtMatch = (pCat === 'shirt' || pCat === 'shirts') && (cCat === 'shirt' || cCat === 'shirts');
+        const isTShirtMatch = (pCat === 't-shirt' || pCat === 't-shirts') && (cCat === 't-shirt' || cCat === 't-shirts');
+        const isPantMatch = (pCat === 'pant' || pCat === 'pants') && (cCat === 'pant' || cCat === 'pants');
+        
+        const categoriesMatch = pCat === cCat || isShirtMatch || isTShirtMatch || isPantMatch;
+        const subCategoriesMatch = (p.sub_category || '').trim().toLowerCase() === productName.trim().toLowerCase();
+        
+        return categoriesMatch && subCategoriesMatch;
+      });
       
       // Priority 1: Sizes from database variants
       const dbSizes = new Set<string>();
