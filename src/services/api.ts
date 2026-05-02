@@ -448,6 +448,7 @@ export const api = {
             await supabase.from('profiles').upsert([{
               id: data.user_id,
               name: 'Customer',
+              email: `customer_${Date.now()}@temp.com`, // Dummy email to satisfy NOT NULL constraint
               password: 'auto_generated'
             }]);
           }

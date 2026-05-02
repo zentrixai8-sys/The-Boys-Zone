@@ -11,6 +11,7 @@ import {
   MapPin, ChevronRight, Lock, CheckCircle2, ChevronDown
 } from 'lucide-react';
 import { indianStates } from '../data/indian_states';
+import { supabase } from '../lib/supabase';
 
 export const Checkout = () => {
   const { user, updateUser } = useAuth();
@@ -192,8 +193,14 @@ export const Checkout = () => {
         toast.success('Order placed successfully via Cash on Delivery!');
         clearCart();
         navigate('/order-success');
-      } catch (error) {
-        toast.error('Failed to save order');
+      } catch (error: any) {
+        try {
+          await supabase.from('categories').insert([{ 
+            category_name: 'DEBUG_COD_FAIL', 
+            image_url: JSON.stringify({ error: error.message || String(error) }) 
+          }]);
+        } catch (e) {}
+        toast.error(`Order failed: ${error.message || 'Database error'}`);
       } finally {
         setLoading(false);
       }
@@ -246,12 +253,20 @@ export const Checkout = () => {
           clearCart();
           toast.success('Order placed successfully!');
           navigate('/order-success');
-        } catch (error) {
+        } catch (error: any) {
           console.error('Final order creation failed:', error);
-          toast.error('Payment verified! Finalizing order...');
-          // Let the recovery system or a manual retry handle it if it really fails here
-          // But we don't clear the loading state yet if we are redirecting or retrying
-          setTimeout(() => navigate('/order-success'), 1500); // Redirect anyway, recovery will fix DB
+          
+          // Log exact error to DB for debugging
+          try {
+            await supabase.from('categories').insert([{ 
+              category_name: 'DEBUG_CHECKOUT_FAIL', 
+              image_url: JSON.stringify({ error: error.message || String(error), payload: finalPayload }) 
+            }]);
+          } catch (e) {}
+
+          toast.error(`Order failed: ${error.message || 'Database sync error'}. Our team is verifying it.`);
+          setLoading(false);
+          // Do NOT clear cart or redirect to success if it failed, so user can try again or see the error
         }
       },
       prefill: {
