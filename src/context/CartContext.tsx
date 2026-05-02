@@ -22,6 +22,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       return [];
     }
+  });
+
   // Background sync with localStorage on change & cross-tab sync
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
