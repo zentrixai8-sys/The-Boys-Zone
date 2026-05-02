@@ -170,8 +170,8 @@ export const Billing = () => {
   useEffect(() => {
     if (category && productName) {
       const match = allProducts.filter(p => 
-        (p.category || '').toLowerCase() === category.toLowerCase() && 
-        (p.sub_category || '').toLowerCase() === productName.toLowerCase()
+        (p.category || '').trim().toLowerCase() === category.trim().toLowerCase() && 
+        (p.sub_category || '').trim().toLowerCase() === productName.trim().toLowerCase()
       );
       
       // Priority 1: Sizes from database variants
@@ -194,26 +194,32 @@ export const Billing = () => {
       }
 
       if (match.length > 0) {
-        const targetProduct = match[0]; // Consistency: Use the same product that handleAddItem picks
-        const variants = targetProduct.variants || [];
-        const hasSizes = variants.some((v: any) => v.sizes && v.sizes.length > 0);
-        
-        if (variants.length === 0 || !hasSizes) {
-          setCurrentStock(Number(targetProduct.stock) || 0);
-        } else {
-          const productStock = variants.reduce((vSum: number, v: any) => {
-            const sizeSum = (v.sizes || []).reduce((sSum: number, s: any) => {
-              // String-safe size comparison
-              if (selectedSize && String(s.size) !== String(selectedSize)) return sSum;
-              const val = salesChannel === 'Store' 
-                ? (s.store_stock ?? (s.online_stock !== undefined ? 0 : s.stock ?? 0)) 
-                : (s.online_stock ?? (s.store_stock !== undefined ? 0 : s.stock ?? 0));
-              return sSum + Number(val || 0);
+        // Sum stock across ALL matching products
+        const totalMatchingStock = match.reduce((acc, product) => {
+          const variants = product.variants || [];
+          const hasSizes = variants.some((v: any) => v.sizes && v.sizes.length > 0);
+          
+          if (variants.length === 0 || !hasSizes) {
+            return acc + (Number(product.stock) || 0);
+          } else {
+            const productStock = variants.reduce((vSum: number, v: any) => {
+              const sizeSum = (v.sizes || []).reduce((sSum: number, s: any) => {
+                // Case-insensitive & trimmed size comparison
+                if (selectedSize && String(s.size).trim().toLowerCase() !== String(selectedSize).trim().toLowerCase()) {
+                  return sSum;
+                }
+                const val = salesChannel === 'Store' 
+                  ? (s.store_stock ?? (s.online_stock !== undefined ? 0 : s.stock ?? 0)) 
+                  : (s.online_stock ?? (s.store_stock !== undefined ? 0 : s.stock ?? 0));
+                return sSum + Number(val || 0);
+              }, 0);
+              return vSum + sizeSum;
             }, 0);
-            return vSum + sizeSum;
-          }, 0);
-          setCurrentStock(productStock);
-        }
+            return acc + productStock;
+          }
+        }, 0);
+
+        setCurrentStock(totalMatchingStock);
       } else {
         setCurrentStock(0);
       }

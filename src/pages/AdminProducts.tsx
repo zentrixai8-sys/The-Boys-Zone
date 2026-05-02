@@ -75,6 +75,7 @@ const categorySizes: Record<string, string[]> = {
   'Pants': ['28', '30', '32', '34', '36', '38', '40'],
   'Footwear': ['6', '7', '8', '9', '10', '11'],
   'Shoes': ['6', '7', '8', '9', '10', '11'],
+  'Accessories': ['One Size'],
 };
 
 export const AdminProducts = () => {
@@ -332,6 +333,17 @@ export const AdminProducts = () => {
             ...v,
             color: v.color || 'Standard'
           }));
+        }
+      }
+
+      // Clean variants: Only keep sizes that belong to the current category
+      if (payload.variants && payload.category) {
+        const validSizes = categorySizes[payload.category] || [];
+        if (validSizes.length > 0) {
+           payload.variants = payload.variants.map((v: any) => ({
+             ...v,
+             sizes: (v.sizes || []).filter((s: any) => validSizes.includes(String(s.size)))
+           }));
         }
       }
 
