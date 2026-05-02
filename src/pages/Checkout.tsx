@@ -16,6 +16,7 @@ export const Checkout = () => {
   const { user, updateUser } = useAuth();
   const { cart, totalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(false);
   const [fetchingLocation, setFetchingLocation] = useState(false);
   const [showStateDropdown, setShowStateDropdown] = useState(false);
   const [stateSearch, setStateSearch] = useState('');
@@ -91,22 +92,24 @@ export const Checkout = () => {
     });
   };
 
-  React.useEffect(() => {
-    // Fail-safe: Check for any paid but unsynced orders on mount
     const recoverOrder = async () => {
       const pending = localStorage.getItem('tbz_order_recovery');
       if (pending && user) {
+        setIsRecovering(true);
         try {
           const { payload, status } = JSON.parse(pending);
           if (status === 'paid') {
             await api.request('createOrder', payload);
             localStorage.removeItem('tbz_order_recovery');
             clearCart();
-            toast.success('Recovered your previous order!');
+            toast.success('Payment recovered and order placed!');
             navigate('/order-success');
+          } else {
+            setIsRecovering(false);
           }
         } catch (e) {
           console.error('Recovery failed', e);
+          setIsRecovering(false);
         }
       }
     };
@@ -116,6 +119,22 @@ export const Checkout = () => {
   }, [user]);
 
   const handlePayment = useCallback(async () => {
+    if (isRecovering) {
+      toast.error('Processing your previous payment, please wait...');
+      return;
+    }
+
+    const pending = localStorage.getItem('tbz_order_recovery');
+    if (pending) {
+      const parsed = JSON.parse(pending);
+      if (parsed.status === 'paid') {
+        toast.error('You have a pending successful payment. Please wait while we confirm your order.');
+        // Trigger a reload to force recovery to pick it up if it didn't already
+        window.location.reload();
+        return;
+      }
+    }
+
     if (!addressParts.house || !addressParts.city || !addressParts.pincode) {
       toast.error('Please fill all mandatory address fields (House, City, Pincode)');
       return;
@@ -563,15 +582,19 @@ export const Checkout = () => {
 
               <button
                 onClick={handlePayment}
-                disabled={loading}
+                disabled={loading || isRecovering}
                 className={`w-full py-6 rounded-4xl text-[13px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4 mt-10 disabled:opacity-50 shadow-2xl hover:scale-[1.02] active:scale-[0.98] ${
+                  (loading || isRecovering) ? 'bg-slate-700 text-slate-400' :
                   paymentMethod === 'cod' 
                     ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/20' 
                     : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20'
                 }`}
               >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                {loading || isRecovering ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>{isRecovering ? 'Recovering...' : 'Processing...'}</span>
+                  </>
                 ) : (
                   <>
                     {paymentMethod === 'cod' ? 'Confirm COD Order' : `Pay Securely`}
