@@ -104,6 +104,7 @@ export const Checkout = () => {
     });
   };
 
+  React.useEffect(() => {
     const recoverOrder = async () => {
       const pending = localStorage.getItem('tbz_order_recovery');
       if (pending && user) {
