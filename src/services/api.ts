@@ -434,24 +434,30 @@ export const api = {
         }
 
         case 'createOrder': {
-          const { error } = await supabase
+          if (!data.user_id) throw new Error('User ID is required to create an order');
+          
+          const orderData = {
+            user_id: data.user_id,
+            products: typeof data.products === 'string' ? data.products : JSON.stringify(data.products),
+            total_amount: Number(data.total_amount) || 0,
+            payment_id: data.payment_id || `INTERNAL_${Date.now()}`,
+            payment_status: data.payment_status || 'Paid',
+            order_status: data.order_status || 'Processing',
+            address: data.address || '',
+            date: new Date().toISOString()
+          };
+
+          const { data: newOrder, error } = await supabase
             .from('orders')
-            .insert([{
-              user_id: data.user_id,
-              products: typeof data.products === 'string' ? data.products : JSON.stringify(data.products),
-              total_amount: Number(data.total_amount),
-              payment_id: data.payment_id,
-              payment_status: data.payment_status || 'Paid',
-              order_status: 'Processing',
-              address: data.address,
-              date: new Date().toISOString()
-            }]);
+            .insert([orderData])
+            .select()
+            .single();
             
           if (error) {
-            await supabase.from('categories').insert([{ category_name: 'DEBUG_ERROR', image_url: JSON.stringify(error) }]);
+            console.error('Critical Order Creation Error:', error);
             throw error;
           }
-
+          
           // --- AUTO STOCK DEDUCTION (Online) ---
           try {
             const orderItems = typeof data.products === 'string' ? JSON.parse(data.products) : data.products;
