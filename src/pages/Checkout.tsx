@@ -21,15 +21,26 @@ export const Checkout = () => {
   const [showStateDropdown, setShowStateDropdown] = useState(false);
   const [stateSearch, setStateSearch] = useState('');
 
-  const [addressParts, setAddressParts] = useState(() => {
-    return {
-      house: user?.address?.split(' | ')[0] || '',
-      city: user?.address?.split(' | ')[1] || '',
-      dist: user?.district || user?.address?.split(' | ')[2] || '',
-      state: user?.state || user?.address?.split(' | ')[3] || '',
-      pincode: user?.pincode || user?.address?.split(' | ')[4] || ''
-    };
+  const [addressParts, setAddressParts] = useState({
+    house: user?.address?.split(' | ')[0] || '',
+    city: user?.address?.split(' | ')[1] || '',
+    dist: user?.district || user?.address?.split(' | ')[2] || '',
+    state: user?.state || user?.address?.split(' | ')[3] || '',
+    pincode: user?.pincode || user?.address?.split(' | ')[4] || ''
   });
+
+  // Auto-refresh data when profile finishes loading asynchronously
+  React.useEffect(() => {
+    if (user && !addressParts.house && !addressParts.city) {
+      setAddressParts({
+        house: user.address?.split(' | ')[0] || '',
+        city: user.address?.split(' | ')[1] || '',
+        dist: user.district || user.address?.split(' | ')[2] || '',
+        state: user.state || user.address?.split(' | ')[3] || '',
+        pincode: user.pincode || user.address?.split(' | ')[4] || ''
+      });
+    }
+  }, [user]);
   const [saveToProfile, setSaveToProfile] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
   const navigate = useNavigate();

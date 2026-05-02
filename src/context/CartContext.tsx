@@ -22,12 +22,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       return [];
     }
-  });
-
-  // Background sync with localStorage on change
+  // Background sync with localStorage on change & cross-tab sync
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'cart' && e.newValue) {
+        try {
+          setCart(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const addToCart = (product: Product, quantity = 1) => {
     // When adding, use the size from the product structure directly 
