@@ -4,10 +4,12 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Order } from '../types';
 import { formatPrice, formatDate } from '../lib/utils';
-import { Package, Clock, MapPin, ChevronRight, User as UserIcon, Phone, Mail, Camera, Save, Loader2, Upload, ChevronDown, Star } from 'lucide-react';
+import { Package, Clock, MapPin, ChevronRight, User as UserIcon, Phone, Mail, Camera, Save, Loader2, Upload, ChevronDown, Star, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
+
+import { indianStates } from '../data/indian_states';
 
 export const Profile = () => {
   const { user, updateUser } = useAuth();
@@ -16,34 +18,74 @@ export const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [fetchingLocation, setFetchingLocation] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [reviewingProduct, setReviewingProduct] = useState<{order_id: string, product_id: string, rating: number, comment: string} | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // State for search/dropdown
+  const [stateSearch, setStateSearch] = useState('');
+  const [showStateDropdown, setShowStateDropdown] = useState(false);
+
   const [formData, setFormData] = useState(() => {
-    const addr = user?.address || '';
-    const parts = addr.split(' | ');
     return {
       name: user?.name || '',
       phone: user?.phone || '',
       address: user?.address || '',
       avatar_url: user?.avatar_url || '',
-      // Structured address parts
-      house: parts[0] || '',
-      city: parts[1] || '',
-      dist: parts[2] || '',
-      state: parts[3] || '',
-      pincode: parts[4] || ''
+      house: user?.address?.split(' | ')[0] || '',
+      city: user?.address?.split(' | ')[1] || '',
+      dist: user?.district || user?.address?.split(' | ')[2] || '',
+      state: user?.state || user?.address?.split(' | ')[3] || '',
+      pincode: user?.pincode || user?.address?.split(' | ')[4] || ''
     };
   });
+
+  const fetchLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+        const data = await res.json();
+        
+        if (data.address) {
+          const addr = data.address;
+          setFormData(prev => ({
+            ...prev,
+            house: addr.suburb || addr.neighbourhood || addr.road || prev.house,
+            city: addr.city || addr.town || addr.village || prev.city,
+            dist: addr.state_district || addr.county || prev.dist,
+            state: addr.state || prev.state,
+            pincode: addr.postcode || prev.pincode
+          }));
+          toast.success('Location fetched successfully!');
+        }
+      } catch (err) {
+        console.error('Reverse geocode failed:', err);
+        toast.error('Failed to fetch address from location');
+      } finally {
+        setFetchingLocation(false);
+      }
+    }, (error) => {
+      console.error('Geolocation error:', error);
+      toast.error('Location permission denied or unavailable');
+      setFetchingLocation(false);
+    });
+  };
 
   // Auto-open edit mode if ?edit=true is in the URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('edit') === 'true') {
       setEditMode(true);
-      // Scroll to top so the edit form is visible
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [location.search]);
@@ -68,13 +110,11 @@ export const Profile = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Image size should be less than 5MB');
       return;
@@ -96,7 +136,7 @@ export const Profile = () => {
       toast.success('Image uploaded! Click Save to apply changes.');
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload image. Make sure "profile" bucket exists, is public, and has an INSERT policy for anonymous users.');
+      toast.error('Failed to upload image');
     } finally {
       setUploading(false);
     }
@@ -107,7 +147,6 @@ export const Profile = () => {
     if (!user) return;
     setUpdating(true);
     try {
-      // Join the structured address fields
       const joinedAddress = [
         formData.house,
         formData.city,
@@ -120,7 +159,10 @@ export const Profile = () => {
         name: formData.name,
         phone: formData.phone,
         avatar_url: formData.avatar_url,
-        address: joinedAddress
+        address: joinedAddress,
+        district: formData.dist,
+        state: formData.state,
+        pincode: formData.pincode
       };
 
       await api.request('updateProfile', {
@@ -208,14 +250,16 @@ export const Profile = () => {
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <Phone className="w-4 h-4 text-black/20" />
-                    <span className="text-black/60">{user.phone}</span>
+                    <span className="text-black/60">{user.phone || 'No phone saved'}</span>
                   </div>
-                  {user.address && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <MapPin className="w-4 h-4 text-black/20" />
-                      <span className="text-black/60">{user.address}</span>
+                  <div className="flex items-start gap-3 text-sm">
+                    <MapPin className="w-4 h-4 text-black/20 mt-1" />
+                    <div className="flex-1 min-w-0">
+                       <p className="text-black/60 leading-relaxed">
+                         {user.address ? user.address.replace(/ \| /g, ', ') : 'No address saved'}
+                       </p>
                     </div>
-                  )}
+                  </div>
                 </div>
                 <button
                   onClick={() => setEditMode(true)}
@@ -226,6 +270,19 @@ export const Profile = () => {
               </>
             ) : (
               <form onSubmit={handleUpdateProfile} className="space-y-4 text-left">
+                <div className="flex justify-between items-center mb-2">
+                   <h3 className="font-bold text-sm">Edit Profile</h3>
+                   <button 
+                    type="button"
+                    onClick={fetchLocation}
+                    disabled={fetchingLocation}
+                    className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800 transition-colors disabled:opacity-50"
+                   >
+                     {fetchingLocation ? <Loader2 className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
+                     {fetchingLocation ? 'Fetching...' : 'Auto-Fill Location'}
+                   </button>
+                </div>
+
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">Full Name</label>
                   <input
@@ -244,7 +301,8 @@ export const Profile = () => {
                     className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
                   />
                 </div>
-                <div className="space-y-4">
+                
+                <div className="space-y-4 pt-2 border-t border-black/5">
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">House No / Street</label>
                     <input
@@ -255,6 +313,7 @@ export const Profile = () => {
                       placeholder="e.g. 123, Luxury Apartments"
                     />
                   </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">City</label>
@@ -262,26 +321,6 @@ export const Profile = () => {
                         type="text"
                         value={formData.city}
                         onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">District</label>
-                      <input
-                        type="text"
-                        value={formData.dist}
-                        onChange={(e) => setFormData({ ...formData, dist: e.target.value })}
-                        className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">State</label>
-                      <input
-                        type="text"
-                        value={formData.state}
-                        onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                         className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
                       />
                     </div>
@@ -296,20 +335,99 @@ export const Profile = () => {
                       />
                     </div>
                   </div>
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mt-4 mb-1 block">Avatar URL (Optional)</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={formData.avatar_url}
-                      onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
-                      placeholder="https://..."
-                      className="flex-1 px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
-                    />
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* State Dropdown with Search */}
+                    <div className="relative">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">State</label>
+                      <div 
+                        onClick={() => setShowStateDropdown(!showStateDropdown)}
+                        className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm flex justify-between items-center cursor-pointer hover:bg-black/10 transition-all"
+                      >
+                         <span className={formData.state ? 'text-black' : 'text-black/30'}>
+                           {formData.state || 'Select State'}
+                         </span>
+                         <ChevronDown className={`w-3 h-3 transition-transform ${showStateDropdown ? 'rotate-180' : ''}`} />
+                      </div>
+                      
+                      <AnimatePresence>
+                        {showStateDropdown && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-black/5 overflow-hidden"
+                          >
+                            <div className="p-2 border-b border-black/5">
+                               <input 
+                                 type="text"
+                                 autoFocus
+                                 value={stateSearch}
+                                 onChange={(e) => setStateSearch(e.target.value)}
+                                 placeholder="Search State..."
+                                 className="w-full px-3 py-2 bg-slate-50 border-none rounded-lg text-xs focus:ring-0"
+                               />
+                            </div>
+                            <div className="max-h-48 overflow-y-auto">
+                               {indianStates
+                                .filter(s => s.toLowerCase().includes(stateSearch.toLowerCase()))
+                                .map(state => (
+                                 <div 
+                                   key={state}
+                                   onClick={() => {
+                                     setFormData({ ...formData, state });
+                                     setShowStateDropdown(false);
+                                     setStateSearch('');
+                                   }}
+                                   className="px-4 py-2.5 text-xs hover:bg-slate-50 cursor-pointer flex justify-between items-center"
+                                 >
+                                   {state}
+                                   {formData.state === state && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+                                 </div>
+                               ))}
+                               <div 
+                                 onClick={() => {
+                                   if (stateSearch) {
+                                     setFormData({ ...formData, state: stateSearch });
+                                     setShowStateDropdown(false);
+                                     setStateSearch('');
+                                   }
+                                 }}
+                                 className="px-4 py-2.5 text-xs font-bold text-indigo-600 bg-indigo-50/50 hover:bg-indigo-50 cursor-pointer"
+                               >
+                                 Manual Entry: "{stateSearch || 'Type here'}"
+                               </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">District</label>
+                      <input
+                        type="text"
+                        value={formData.dist}
+                        onChange={(e) => setFormData({ ...formData, dist: e.target.value })}
+                        className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
+                        placeholder="Type District Name..."
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="flex gap-2 pt-2">
+
+                <div className="mt-6 border-t border-black/5 pt-6">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-1 block">Avatar URL (Optional)</label>
+                  <input
+                    type="text"
+                    value={formData.avatar_url}
+                    onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
+                    placeholder="https://..."
+                    className="w-full px-4 py-2 bg-black/5 border-none rounded-xl text-sm focus:ring-2 focus:ring-black"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-6">
                   <button
                     type="button"
                     onClick={() => setEditMode(false)}
@@ -320,10 +438,10 @@ export const Profile = () => {
                   <button
                     type="submit"
                     disabled={updating || uploading}
-                    className="flex-1 py-3 bg-black text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-black/90 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-3 bg-black text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-black/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/10"
                   >
                     {updating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-                    Save
+                    Save Info
                   </button>
                 </div>
               </form>

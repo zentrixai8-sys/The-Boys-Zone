@@ -97,6 +97,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: session.user.email || '',
           name: session.user.user_metadata.name || 'User',
           phone: session.user.user_metadata.phone || '',
+          address: session.user.user_metadata.address || '',
+          district: session.user.user_metadata.district || '',
+          state: session.user.user_metadata.state || '',
+          pincode: session.user.user_metadata.pincode || '',
           role: session.user.user_metadata.role || 'user',
           avatar_url: session.user.user_metadata.avatar_url,
           created_at: session.user.created_at

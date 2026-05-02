@@ -766,13 +766,33 @@ export const api = {
 
         case 'updateProfile': {
           const { id, ...updateData } = data;
-          const { error } = await supabase.from('profiles').update(updateData).eq('id', id);
-          if (error) throw error;
-          if (updateData.name || updateData.phone || updateData.avatar_url) {
-            await supabase.auth.updateUser({
-              data: { name: updateData.name, phone: updateData.phone, avatar_url: updateData.avatar_url }
-            });
+          
+          // 1. Update Profiles table only for existing columns
+          const profileFields = ['name', 'phone', 'avatar_url', 'password'];
+          const profileUpdates: any = {};
+          profileFields.forEach(f => {
+            if (updateData[f] !== undefined) profileUpdates[f] = updateData[f];
+          });
+
+          if (Object.keys(profileUpdates).length > 0) {
+            const { error: pError } = await supabase.from('profiles').update(profileUpdates).eq('id', id);
+            if (pError) throw pError;
           }
+
+          // 2. Update Auth User Metadata for all fields (including address fields)
+          const authUpdates: any = {};
+          const allFields = ['name', 'phone', 'avatar_url', 'address', 'district', 'state', 'pincode'];
+          allFields.forEach(f => {
+            if (updateData[f] !== undefined) authUpdates[f] = updateData[f];
+          });
+
+          if (Object.keys(authUpdates).length > 0) {
+            const { error: aError } = await supabase.auth.updateUser({
+              data: authUpdates
+            });
+            if (aError) throw aError;
+          }
+
           result = true;
           break;
         }

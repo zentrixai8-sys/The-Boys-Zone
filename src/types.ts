@@ -4,6 +4,9 @@ export interface User {
   email: string;
   phone: string;
   address?: string;
+  district?: string;
+  state?: string;
+  pincode?: string;
   role: "user" | "admin";
   avatar_url?: string;
   created_at: string;

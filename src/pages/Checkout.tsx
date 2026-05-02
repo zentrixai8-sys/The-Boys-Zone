@@ -8,32 +8,74 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Loader2, ShieldCheck, CreditCard, ShoppingBag, 
-  MapPin, ChevronRight, Lock, CheckCircle2 
+  MapPin, ChevronRight, Lock, CheckCircle2, ChevronDown
 } from 'lucide-react';
-
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+import { indianStates } from '../data/indian_states';
 
 export const Checkout = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { cart, totalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
+  const [fetchingLocation, setFetchingLocation] = useState(false);
+  const [showStateDropdown, setShowStateDropdown] = useState(false);
+  const [stateSearch, setStateSearch] = useState('');
+
   const [addressParts, setAddressParts] = useState(() => {
-    const parts = (user?.address || '').split(' | ');
     return {
-      house: parts[0] || '',
-      city: parts[1] || '',
-      dist: parts[2] || '',
-      state: parts[3] || '',
-      pincode: parts[4] || ''
+      house: user?.address?.split(' | ')[0] || '',
+      city: user?.address?.split(' | ')[1] || '',
+      dist: user?.district || user?.address?.split(' | ')[2] || '',
+      state: user?.state || user?.address?.split(' | ')[3] || '',
+      pincode: user?.pincode || user?.address?.split(' | ')[4] || ''
     };
   });
   const [saveToProfile, setSaveToProfile] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
   const navigate = useNavigate();
+
+  const fetchLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+        const data = await res.json();
+        
+        if (data.address) {
+          const addr = data.address;
+          setAddressParts(prev => ({
+            ...prev,
+            house: addr.suburb || addr.neighbourhood || addr.road || prev.house,
+            city: addr.city || addr.town || addr.village || prev.city,
+            dist: addr.state_district || addr.county || prev.dist,
+            state: addr.state || prev.state,
+            pincode: addr.postcode || prev.pincode
+          }));
+          toast.success('Location fetched successfully!');
+        }
+      } catch (err) {
+        console.error('Reverse geocode failed:', err);
+        toast.error('Failed to fetch address from location');
+      } finally {
+        setFetchingLocation(false);
+      }
+    }, (error) => {
+      console.error('Geolocation error:', error);
+      toast.error('Location permission denied or unavailable');
+      setFetchingLocation(false);
+    });
+  };
+
+  React.useEffect(() => {
+    if (totalPrice > 300 && paymentMethod === 'cod') {
+      setPaymentMethod('online');
+    }
+  }, [totalPrice, paymentMethod]);
 
   const loadRazorpay = () => {
     return new Promise((resolve) => {
@@ -89,10 +131,17 @@ export const Checkout = () => {
 
     if (saveToProfile && user) {
       try {
+        const updateData = {
+          address: fullAddress,
+          district: addressParts.dist,
+          state: addressParts.state,
+          pincode: addressParts.pincode
+        };
         await api.request('updateProfile', {
           id: user.id,
-          address: fullAddress
+          ...updateData
         });
+        updateUser(updateData);
       } catch (err) {
         console.error('Failed to update profile address');
       }
@@ -233,13 +282,21 @@ export const Checkout = () => {
               animate={{ opacity: 1, x: 0 }}
               className="bg-white rounded-[2.5rem] border-2 border-slate-200 shadow-xl shadow-slate-200/30 overflow-hidden"
             >
-              <div className="p-8 lg:p-12 border-b-2 border-slate-100 bg-slate-50/50">
+              <div className="p-8 lg:p-12 border-b-2 border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h2 className="text-xl font-black uppercase tracking-widest flex items-center gap-4 text-slate-900">
                   <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
                     <MapPin className="w-5 h-5" />
                   </div>
                   Delivery Address
                 </h2>
+                <button 
+                  onClick={fetchLocation}
+                  disabled={fetchingLocation}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50"
+                >
+                  {fetchingLocation ? <Loader2 className="w-3 h-3 animate-spin" /> : <MapPin className="w-3 h-3" />}
+                  {fetchingLocation ? 'Fetching...' : 'Fetch Current Location'}
+                </button>
               </div>
               
               <div className="p-8 lg:p-12 space-y-10">
@@ -291,21 +348,79 @@ export const Checkout = () => {
                           required
                           value={addressParts.dist}
                           onChange={(e) => setAddressParts({ ...addressParts, dist: e.target.value })}
+                          placeholder="Type District..."
                           className="w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-2xl text-[13px] font-bold focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
+                      <div className="space-y-3 relative">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">State</label>
-                        <input
-                          type="text"
-                          required
-                          value={addressParts.state}
-                          onChange={(e) => setAddressParts({ ...addressParts, state: e.target.value })}
-                          className="w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-2xl text-[13px] font-bold focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all"
-                        />
+                        <div 
+                          onClick={() => setShowStateDropdown(!showStateDropdown)}
+                          className="w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-2xl text-[13px] font-bold flex justify-between items-center cursor-pointer hover:border-indigo-200 transition-all"
+                        >
+                           <span className={addressParts.state ? 'text-slate-900' : 'text-slate-300'}>
+                             {addressParts.state || 'Select State'}
+                           </span>
+                           <ChevronDown className={`w-4 h-4 transition-transform ${showStateDropdown ? 'rotate-180' : ''}`} />
+                        </div>
+                        
+                        <AnimatePresence>
+                          {showStateDropdown && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              className="absolute z-50 w-full mt-2 bg-white rounded-3xl shadow-2xl border-2 border-slate-100 overflow-hidden"
+                            >
+                              <div className="p-4 border-b border-slate-100">
+                                 <input 
+                                   type="text"
+                                   autoFocus
+                                   value={stateSearch}
+                                   onChange={(e) => setStateSearch(e.target.value)}
+                                   placeholder="Search State..."
+                                   className="w-full px-4 py-2 bg-slate-50 border-none rounded-xl text-xs focus:ring-0"
+                                   onClick={(e) => e.stopPropagation()}
+                                 />
+                              </div>
+                              <div className="max-h-48 overflow-y-auto">
+                                 {indianStates
+                                  .filter(s => s.toLowerCase().includes(stateSearch.toLowerCase()))
+                                  .map(state => (
+                                   <div 
+                                     key={state}
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       setAddressParts({ ...addressParts, state });
+                                       setShowStateDropdown(false);
+                                       setStateSearch('');
+                                     }}
+                                     className="px-6 py-3 text-[13px] font-bold text-slate-600 hover:bg-slate-50 cursor-pointer flex justify-between items-center"
+                                   >
+                                     {state}
+                                     {addressParts.state === state && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                                   </div>
+                                 ))}
+                                 <div 
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     if (stateSearch) {
+                                       setAddressParts({ ...addressParts, state: stateSearch });
+                                       setShowStateDropdown(false);
+                                       setStateSearch('');
+                                     }
+                                   }}
+                                   className="px-6 py-3 text-[13px] font-black text-indigo-600 bg-indigo-50/50 hover:bg-indigo-50 cursor-pointer"
+                                 >
+                                   Manual: "{stateSearch || 'Type here'}"
+                                 </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                       <div className="space-y-3">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Pincode (6-Digits)</label>
@@ -362,7 +477,23 @@ export const Checkout = () => {
                     </div>
                     <div>
                       <span className="font-black text-sm text-slate-900 block uppercase">Online Payment</span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PhonePe, Google Pay, Cards</span>
+                      <div className="flex items-center gap-4 mt-6 bg-slate-50/50 p-4 rounded-[2rem] border border-slate-100 flex-wrap">
+                        <div className="h-10 w-16 bg-white rounded-xl border border-slate-200 p-1.5 flex items-center justify-center shadow-sm hover:scale-105 transition-transform shrink-0">
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" className="h-full w-auto object-contain" alt="UPI" />
+                        </div>
+                        <div className="h-10 w-16 bg-white rounded-xl border border-slate-200 p-1.5 flex items-center justify-center shadow-sm hover:scale-105 transition-transform shrink-0">
+                          <img src="https://img.icons8.com/color/48/google-pay.png" className="h-full w-auto object-contain" alt="GPay" />
+                        </div>
+                        <div className="h-10 w-16 bg-white rounded-xl border border-slate-200 p-1.5 flex items-center justify-center shadow-sm hover:scale-105 transition-transform shrink-0">
+                          <img src="https://img.icons8.com/color/48/paytm.png" className="h-full w-auto object-contain" alt="Paytm" />
+                        </div>
+                        <div className="h-10 w-16 bg-white rounded-xl border border-slate-200 p-1.5 flex items-center justify-center shadow-sm hover:scale-105 transition-transform shrink-0">
+                          <img src="https://img.icons8.com/color/48/visa.png" className="h-full w-auto object-contain" alt="Visa" />
+                        </div>
+                        <div className="h-10 w-16 bg-white rounded-xl border border-slate-200 p-1.5 flex items-center justify-center shadow-sm hover:scale-105 transition-transform shrink-0">
+                          <img src="https://img.icons8.com/color/48/mastercard.png" className="h-full w-auto object-contain" alt="Mastercard" />
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className={`w-6 h-6 rounded-full border-4 flex items-center justify-center transition-all ${
@@ -372,7 +503,7 @@ export const Checkout = () => {
                   </div>
                 </div>
 
-                {totalPrice < 400 && (
+                {totalPrice <= 300 && (
                   <div
                     onClick={() => setPaymentMethod('cod')}
                     className={`group relative p-8 border-2 rounded-4xl flex items-center justify-between cursor-pointer transition-all ${
