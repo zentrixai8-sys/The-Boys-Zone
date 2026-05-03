@@ -19,6 +19,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 1. Instant Hydration from sessionStorage
   const getCachedUser = () => {
     try {
+      // If a logout was triggered, NEVER restore from cache — block auto-login on refresh
+      if (sessionStorage.getItem('tbz_force_logout') === '1') return null;
       const cached = sessionStorage.getItem('tbz_user_profile');
       return cached ? JSON.parse(cached) : null;
     } catch {
@@ -91,6 +93,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        // If force-logout flag is set, refuse to restore session — sign out and stop
+        if (sessionStorage.getItem('tbz_force_logout') === '1') {
+          await supabase.auth.signOut({ scope: 'local' });
+          setLoading(false);
+          return;
+        }
+        // Clear any stale logout flag — user is actively logging in
+        sessionStorage.removeItem('tbz_force_logout');
+        
         // 1. Instant Hydration from metadata (So the name appears immediately)
         const initialUser: User = {
           id: session.user.id,
@@ -156,32 +167,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    // 1. Set force-logout flag FIRST — this blocks getCachedUser on any future refresh
+    sessionStorage.setItem('tbz_force_logout', '1');
+    
+    // 2. Instantly clear UI state
+    setUser(null);
+    setLoginTime(null);
+    sessionStorage.removeItem('tbz_user_profile');
+    sessionStorage.removeItem('tbz_active_session');
+    
     try {
-      // 1. Force clear state immediately for instant UI response
-      setUser(null);
-      setLoginTime(null);
-      
-      // 2. Wipe Profile Cache
-      sessionStorage.removeItem('tbz_user_profile');
-      
-      // 3. Trigger Supabase SignOut (This handles dynamic storage key automatically)
-      await supabase.auth.signOut();
-      
-      // 4. Forcefully clear ALL session storage to absolutely guarantee local logout
-      sessionStorage.clear();
-      
-      toast.success('Logged out successfully');
-      
-      // 5. Hard redirect to clear any React memory state, SWR caches, and URL hash fragments
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 500);
+      await supabase.auth.signOut({ scope: 'local' });
     } catch (e) {
-      console.error('Logout error', e);
-      // Fallback: forcefully clear all session storage to guarantee local logout
-      sessionStorage.clear();
-      window.location.href = '/';
+      console.error('Supabase signOut error (ignored):', e);
     }
+    
+    toast.success('Logged out successfully');
+    
+    // 3. Hard redirect immediately — no setTimeout to avoid race conditions
+    window.location.href = '/login';
   };
 
   const updateUser = (userData: Partial<User>) => {
