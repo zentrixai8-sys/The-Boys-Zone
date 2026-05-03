@@ -19,7 +19,7 @@ export interface StockLog {
 
 const STOCK_LOG_KEY = 'tbz_stock_in_logs';
 
-export const getStockLogs = (): StockLog[] => {
+const getStockLogs = (): StockLog[] => {
   try { return JSON.parse(localStorage.getItem(STOCK_LOG_KEY) || '[]'); } catch { return []; }
 };
 

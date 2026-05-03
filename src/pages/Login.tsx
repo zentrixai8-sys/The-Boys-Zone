@@ -82,9 +82,9 @@ export const Login = () => {
       toast.success(`Welcome back, ${name}!`);
       
       if (role === 'admin') {
-        navigate('/admin');
+        window.location.href = '/admin';
       } else {
-        navigate('/');
+        window.location.href = '/';
       }
     } catch (error: any) {
       toast.error(error.message || 'Login failed');
