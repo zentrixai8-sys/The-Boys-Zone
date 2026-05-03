@@ -74,6 +74,9 @@ export const Login = () => {
     
     console.log('Attempting login for:', email);
     
+    // Clear any stale logout flag so AuthContext doesn't block the new session
+    sessionStorage.removeItem('tbz_force_logout');
+    
     try {
       const rawUser = await api.request('login', { email, password });
       const role = rawUser.user_metadata?.role || 'user';
