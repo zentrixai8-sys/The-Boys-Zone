@@ -21,6 +21,12 @@ export const supabase = createClient(
       autoRefreshToken: true,
       detectSessionInUrl: true,
       storage: window.sessionStorage,
+      // Bypass Navigator LockManager — sessionStorage is already per-tab,
+      // so cross-tab lock contention is impossible. The default navigator.locks
+      // deadlocks when SWR fires multiple concurrent requests on the same tab.
+      lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
+        return await fn();
+      },
     }
   }
 );
