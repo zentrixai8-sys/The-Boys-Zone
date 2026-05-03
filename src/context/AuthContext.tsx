@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+  import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { User } from '../types';
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
@@ -146,10 +146,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 3. Trigger Supabase SignOut (This handles dynamic storage key automatically)
       await supabase.auth.signOut();
       
+      // 4. Forcefully clear ALL session storage to absolutely guarantee local logout
+      sessionStorage.clear();
+      
       toast.success('Logged out successfully');
+      
+      // 5. Hard redirect to clear any React memory state, SWR caches, and URL hash fragments
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 500);
     } catch (e) {
       console.error('Logout error', e);
-      // Fallback: reload the page to be absolutely sure
+      // Fallback: forcefully clear all session storage to guarantee local logout
+      sessionStorage.clear();
       window.location.href = '/';
     }
   };

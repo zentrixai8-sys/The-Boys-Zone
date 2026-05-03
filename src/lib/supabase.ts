@@ -18,6 +18,19 @@ const getTabId = () => {
   return window.name;
 };
 
+const customSessionStorage = {
+  getItem: (key: string) => {
+    if (typeof window === 'undefined') return null;
+    return window.sessionStorage.getItem(key);
+  },
+  setItem: (key: string, value: string) => {
+    if (typeof window !== 'undefined') window.sessionStorage.setItem(key, value);
+  },
+  removeItem: (key: string) => {
+    if (typeof window !== 'undefined') window.sessionStorage.removeItem(key);
+  }
+};
+
 const createSupabaseClient = () => createClient(
   supabaseUrl, 
   supabaseAnonKey,
@@ -27,8 +40,7 @@ const createSupabaseClient = () => createClient(
       autoRefreshToken: true,
       detectSessionInUrl: true,
       storageKey: `tbz-auth-v1-${getTabId()}`,
-      storage: window.sessionStorage,
-      lockType: 'null'
+      storage: customSessionStorage
     }
   }
 );
