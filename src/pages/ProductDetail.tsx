@@ -18,7 +18,7 @@ import { ProductCard } from '../components/ProductCard';
 export const ProductDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const { products: allProducts, isLoading: productsLoading } = useProducts();
+  const { products: allProducts, isLoading: productsLoading, isError, mutate } = useProducts();
   const product = useMemo(() => allProducts.find(p => p.product_id === id) || null, [allProducts, id]);
 
   const [reviews, setReviews] = useState<any[]>([]);
@@ -169,7 +169,23 @@ export const ProductDetail = () => {
     );
   }
 
-  if (!product) return null;
+  if (!product && !productsLoading && isError) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-32 text-center">
+        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+          <X className="w-8 h-8 text-red-500" />
+        </div>
+        <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">Product Not Found</h2>
+        <p className="text-gray-500 mb-10 max-w-sm mx-auto">We couldn't retrieve the details for this creation. It might be a connection issue.</p>
+        <div className="flex justify-center gap-4">
+          <button onClick={() => navigate('/products')} className="px-8 py-3 border-2 border-gray-200 rounded-xl text-sm font-bold">Back to Shop</button>
+          <button onClick={() => mutate()} className="px-8 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-200">Try Again</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product && !productsLoading) return null;
   const averageRating = product.rating || 'New';
   const totalReviewCount = product.reviewCount || 0;
 

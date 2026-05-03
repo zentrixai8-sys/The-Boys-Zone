@@ -6,10 +6,10 @@ export function useHomeData() {
   const fetcher = async () => {
     try {
       // Fetch sequentially to prevent Supabase Auth LockManager timeouts on concurrent requests
-      const productsData = await api.request('getProducts', { limit: 12 }).catch(e => { console.error(e); return null; });
-      const bestSellersData = await api.request('getBestSellers').catch(e => { console.error(e); return []; });
-      const categoriesData = await api.request('getCategories').catch(e => { console.error(e); return []; });
-      const offersData = await api.request('getOffers').catch(e => { console.error(e); return []; });
+      const productsData = await api.request('getProducts', { limit: 12 });
+      const bestSellersData = await api.request('getBestSellers');
+      const categoriesData = await api.request('getCategories');
+      const offersData = await api.request('getOffers');
 
       const allProds = productsData?.products || [];
       const products = allProds.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online').slice(0, 12);
@@ -30,7 +30,10 @@ export function useHomeData() {
 
   const { data, error, isLoading, mutate } = useSWR('home_data', fetcher, {
     revalidateOnFocus: true,
-    dedupingInterval: 30000,
+    revalidateOnMount: true,
+    revalidateIfStale: true,
+    dedupingInterval: 5000, // Reduced from 30s for more frequent sync
+    errorRetryCount: 3,
   });
 
   return {

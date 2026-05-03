@@ -16,11 +16,14 @@ export function useProducts() {
   };
 
   const { data, error, isLoading, mutate } = useSWR('products', fetcher, {
-    // SWR caching & revalidation options
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
-    dedupingInterval: 5000, // 5 seconds
-    focusThrottleInterval: 5000,
+    revalidateIfStale: true,
+    revalidateOnMount: true,
+    dedupingInterval: 2000, // Reduced from 5s to 2s for better responsiveness on back/forth
+    errorRetryCount: 3,
+    errorRetryInterval: 1000,
+    focusThrottleInterval: 2000,
   });
 
   // Setup Supabase Realtime for instant UI updates

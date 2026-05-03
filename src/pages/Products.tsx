@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useSearchParams } from 'react-router-dom';
 
 export const Products = () => {
-  const { products: allProducts, isLoading: productsLoading } = useProducts();
+  const { products: allProducts, isLoading: productsLoading, isError, mutate } = useProducts();
   const { categories: fetchedCategories, isLoading: categoriesLoading } = useCategories();
   const loading = productsLoading || categoriesLoading;
 
@@ -238,6 +238,20 @@ export const Products = () => {
               {Array(12).fill(0).map((_, i) => (
                 <div key={i} className="aspect-[4/5] bg-gray-50 rounded-xl animate-pulse" />
               ))}
+            </div>
+          ) : isError ? (
+            <div className="text-center py-32 bg-gray-50 rounded-[2rem] border border-dashed border-gray-200">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <X className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-serif font-bold text-gray-900 mb-2">Connection Issue</h3>
+              <p className="text-gray-500 mb-8 max-w-xs mx-auto">We're having trouble reaching our showroom. Please check your connection and try again.</p>
+              <button
+                onClick={() => mutate()}
+                className="px-8 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-95"
+              >
+                Try Again
+              </button>
             </div>
           ) : filteredProducts.length > 0 ? (
             <motion.div
