@@ -305,6 +305,16 @@ export const api = {
             password: data.password,
           });
           if (error) throw error;
+          
+          // Generate a unique session token for this login instance
+          const sessionId = Math.random().toString(36).substring(2, 15);
+          sessionStorage.setItem('tbz_active_session', sessionId);
+          
+          // Update remote metadata so other active sessions can detect they've been superseded
+          await supabase.auth.updateUser({
+            data: { session_id: sessionId }
+          });
+          
           result = user;
           break;
         }
