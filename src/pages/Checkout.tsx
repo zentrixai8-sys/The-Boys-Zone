@@ -183,42 +183,132 @@ export const Checkout = () => {
       return;
     }
 
-    // Pre-create order payload for fail-safe storage
-    const orderPayload = {
-      user_id: user?.id,
-      products: JSON.stringify(cart),
-      total_amount: totalPrice,
-      payment_status: 'Paid',
-      address: fullAddress
-    };
+    // Capture values in closure BEFORE Razorpay opens
+    const capturedCart = JSON.stringify(cart);
+    const capturedTotal = totalPrice;
+    const capturedUserId = user?.id;
+    const capturedName = user?.name || 'Online Customer';
 
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: totalPrice * 100,
+      amount: capturedTotal * 100,
       currency: 'INR',
       name: 'The Boys Zone',
       description: 'Order Payment',
       image: 'https://picsum.photos/200',
       handler: async function (response: any) {
         setLoading(true);
-        const finalPayload = { 
-          ...orderPayload, 
-          payment_id: response.razorpay_payment_id  
-        };
+        const paymentId = response.razorpay_payment_id;
 
         try {
-          // Direct flow: Payment Log → Order (handled inside createOrder)
-          await api.request('createOrder', {
-            ...finalPayload,
-            customer_name: user?.name || 'Online Customer'
-          });
-          
+          // GUARD: Check if this payment was already processed (prevent duplicates)
+          const { data: existingOrder } = await supabase
+            .from('orders')
+            .select('order_id')
+            .eq('payment_id', paymentId)
+            .maybeSingle();
+
+          if (existingOrder) {
+            clearCart();
+            toast.success('Order already placed!');
+            window.location.href = '/order-success';
+            return;
+          }
+
+          // PRE-FLIGHT: Ensure user profile exists (FK constraint)
+          const { error: profileErr } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', capturedUserId)
+            .single();
+
+          if (profileErr && profileErr.code === 'PGRST116') {
+            await supabase.from('profiles').upsert([{
+              id: capturedUserId,
+              name: capturedName,
+              email: `customer_${Date.now()}@temp.com`,
+              password: 'auto_generated'
+            }]);
+          }
+
+          // STEP 1: Payment Log FIRST (strict tracking)
+          const { error: logErr } = await supabase.from('payment_logs').insert([{
+            customer_name: capturedName,
+            amount_paid: capturedTotal,
+            payment_method: 'Online Payment (Razorpay)',
+            note: `Order Payment: ${paymentId}`,
+            paid_at: new Date().toISOString()
+          }]);
+
+          if (logErr) {
+            console.error('Payment log insert failed:', logErr);
+          }
+
+          // STEP 2: Create Order
+          const { error: orderErr } = await supabase.from('orders').insert([{
+            user_id: capturedUserId,
+            products: capturedCart,
+            total_amount: capturedTotal,
+            payment_id: paymentId,
+            payment_status: 'Paid',
+            order_status: 'Processing',
+            address: fullAddress,
+            date: new Date().toISOString()
+          }]);
+
+          if (orderErr) {
+            console.error('Order insert failed:', orderErr);
+            // Debug log to database so admin can see what went wrong
+            try {
+              await supabase.from('categories').insert([{
+                category_name: 'DEBUG_ORDER_FAIL',
+                image_url: JSON.stringify({ 
+                  error: orderErr.message, 
+                  code: orderErr.code,
+                  payment_id: paymentId,
+                  user_id: capturedUserId,
+                  total: capturedTotal
+                })
+              }]);
+            } catch (_) {}
+            toast.error('Payment done but order failed. Contact support with ID: ' + paymentId);
+            setLoading(false);
+            return;
+          }
+
+          // STEP 3: Stock deduction (non-blocking)
+          try {
+            const items = JSON.parse(capturedCart);
+            if (Array.isArray(items)) {
+              for (const item of items) {
+                const pid = item.product_id || item.id;
+                if (!pid) continue;
+                const { data: product } = await supabase.from('products').select('*').eq('product_id', pid).single();
+                if (product) {
+                  const newStock = Math.max(0, (product.stock ?? 0) - (item.quantity || 1));
+                  await supabase.from('products').update({ stock: newStock }).eq('product_id', pid);
+                }
+              }
+            }
+          } catch (stockErr) {
+            console.error('Stock deduction failed (non-critical):', stockErr);
+          }
+
+          // SUCCESS
           clearCart();
           toast.success('Order placed successfully!');
           window.location.href = '/order-success';
-        } catch (err) {
-          console.error('Order creation failed:', err);
-          toast.error('Payment successful but order creation failed. Please contact support with payment ID: ' + finalPayload.payment_id);
+
+        } catch (err: any) {
+          console.error('Payment handler critical error:', err);
+          // Debug log to database
+          try {
+            await supabase.from('categories').insert([{
+              category_name: 'DEBUG_HANDLER_CRASH',
+              image_url: JSON.stringify({ error: err?.message || String(err), payment_id: paymentId })
+            }]);
+          } catch (_) {}
+          toast.error('Something went wrong. Contact support with Payment ID: ' + paymentId);
           setLoading(false);
         }
       },
@@ -233,6 +323,10 @@ export const Checkout = () => {
     };
 
     const paymentObject = new window.Razorpay(options);
+    paymentObject.on('payment.failed', function () {
+      toast.error('Payment failed. Please try again.');
+      setLoading(false);
+    });
     paymentObject.open();
     setLoading(false);
   }, [user, cart, totalPrice, addressParts, saveToProfile, paymentMethod, navigate, clearCart, updateUser]);
