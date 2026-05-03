@@ -467,6 +467,21 @@ export const api = {
             console.error('Critical Order Creation Error:', error);
             throw error;
           }
+
+          // Generate payment log for successful online payments
+          if (orderData.payment_status === 'Paid' && !orderData.payment_id.startsWith('INTERNAL_')) {
+            try {
+               await supabase.from('payment_logs').insert([{
+                 customer_name: data.customer_name || 'Online Customer',
+                 amount_paid: orderData.total_amount,
+                 payment_method: 'Online Payment (Razorpay)',
+                 note: `Auto-generated for Order: ${orderData.payment_id}`,
+                 paid_at: new Date().toISOString()
+               }]);
+            } catch (logErr) {
+               console.error('Failed to create payment log:', logErr);
+            }
+          }
           
           // --- AUTO STOCK DEDUCTION (Online) ---
           try {
