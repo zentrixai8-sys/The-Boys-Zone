@@ -135,30 +135,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    // 3. Single Session Enforcer: Prevent simultaneous logins for the same user ID
-    const sessionValidator = setInterval(async () => {
-      const currentToken = sessionStorage.getItem('tbz_active_session');
-      if (!currentToken) return; // Not fully logged in or bypassed
-
-      const { data } = await supabase.auth.getUser();
-      const remoteToken = data?.user?.user_metadata?.session_id;
-
-      if (remoteToken && remoteToken !== currentToken) {
-        toast.error('Session expired: You logged into this account from another location.', { duration: 5000 });
-        // Trigger manual cleanup because another session took over
-        setUser(null);
-        setLoginTime(null);
-        sessionStorage.removeItem('tbz_user_profile');
-        sessionStorage.clear();
-        await supabase.auth.signOut();
-        window.location.href = '/login';
-      }
-    }, 15000); // Check every 15 seconds
-
     return () => {
       subscription.unsubscribe();
       clearTimeout(safetyTimer);
-      clearInterval(sessionValidator);
     };
   }, []);
 
