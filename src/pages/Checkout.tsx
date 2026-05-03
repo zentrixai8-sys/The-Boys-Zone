@@ -236,7 +236,7 @@ export const Checkout = () => {
         setLoading(true);
         const finalPayload = { 
           ...orderPayload, 
-          payment_id: response.razorpay_payment_id 
+          payment_id: response.razorpay_payment_id  
         };
 
         // 1. Immediate local storage backup — survives page crashes/closes
