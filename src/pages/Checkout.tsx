@@ -239,35 +239,53 @@ export const Checkout = () => {
           payment_id: response.razorpay_payment_id 
         };
 
-        // 1. Immediate local storage backup
+        // 1. Immediate local storage backup — survives page crashes/closes
         localStorage.setItem('tbz_order_recovery', JSON.stringify({
           status: 'paid',
           payload: finalPayload
         }));
 
+        // 2. Create order with retry — MUST succeed before redirect
+        let orderCreated = false;
+        
+        // Attempt 1: Via api.request wrapper
         try {
-          // 2. Direct attempt to create order
           await api.request('createOrder', finalPayload);
+          orderCreated = true;
+        } catch (err1: any) {
+          console.error('createOrder attempt 1 failed:', err1);
           
-          // 3. Success cleanup
+          // Attempt 2: Direct Supabase insert (bypasses api.request timeout/wrapper issues)
+          try {
+            const { error: directErr } = await supabase
+              .from('orders')
+              .insert([{
+                user_id: finalPayload.user_id,
+                products: finalPayload.products,
+                total_amount: Number(finalPayload.total_amount) || 0,
+                payment_id: finalPayload.payment_id,
+                payment_status: 'Paid',
+                order_status: 'Processing',
+                address: finalPayload.address || '',
+                date: new Date().toISOString()
+              }]);
+            if (!directErr) orderCreated = true;
+            else console.error('Direct insert also failed:', directErr);
+          } catch (err2) {
+            console.error('createOrder attempt 2 failed:', err2);
+          }
+        }
+
+        if (orderCreated) {
+          // 3. Order confirmed in DB — safe to redirect
           localStorage.removeItem('tbz_order_recovery');
           clearCart();
           toast.success('Order placed successfully!');
           window.location.href = '/order-success';
-        } catch (error: any) {
-          console.error('Final order creation failed:', error);
-          
-          // Log exact error to DB for debugging
-          try {
-            await supabase.from('categories').insert([{ 
-              category_name: 'DEBUG_CHECKOUT_FAIL', 
-              image_url: JSON.stringify({ error: error.message || String(error), payload: finalPayload }) 
-            }]);
-          } catch (e) {}
-
-          toast.error(`Order failed: ${error.message || 'Database sync error'}. Our team is verifying it.`);
+        } else {
+          // Keep recovery data so it retries on next page load
+          toast.error('Payment received! Order is being confirmed. Please do not pay again.');
           setLoading(false);
-          // Do NOT clear cart or redirect to success if it failed, so user can try again or see the error
         }
       },
       prefill: {
