@@ -1,3 +1,4 @@
+declare global { interface Window { Razorpay: any; } }
 import React, { useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -17,7 +18,6 @@ export const Checkout = () => {
   const { user, updateUser } = useAuth();
   const { cart, totalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
-  const [isRecovering, setIsRecovering] = useState(false);
   const [fetchingLocation, setFetchingLocation] = useState(false);
   const [showStateDropdown, setShowStateDropdown] = useState(false);
   const [stateSearch, setStateSearch] = useState('');
@@ -105,49 +105,11 @@ export const Checkout = () => {
   };
 
   React.useEffect(() => {
-    const recoverOrder = async () => {
-      const pending = localStorage.getItem('tbz_order_recovery');
-      if (pending && user) {
-        setIsRecovering(true);
-        try {
-          const { payload, status } = JSON.parse(pending);
-          if (status === 'paid') {
-            await api.request('createOrder', payload);
-            localStorage.removeItem('tbz_order_recovery');
-            clearCart();
-            toast.success('Payment recovered and order placed!');
-            window.location.href = '/order-success';
-          } else {
-            setIsRecovering(false);
-          }
-        } catch (e) {
-          console.error('Recovery failed', e);
-          setIsRecovering(false);
-        }
-      }
-    };
-    recoverOrder();
     // Pre-load Razorpay script for faster mobile experience
     loadRazorpay();
   }, [user]);
 
   const handlePayment = useCallback(async () => {
-    if (isRecovering) {
-      toast.error('Processing your previous payment, please wait...');
-      return;
-    }
-
-    const pending = localStorage.getItem('tbz_order_recovery');
-    if (pending) {
-      const parsed = JSON.parse(pending);
-      if (parsed.status === 'paid') {
-        toast.error('You have a pending successful payment. Please wait while we confirm your order.');
-        // Trigger a reload to force recovery to pick it up if it didn't already
-        window.location.reload();
-        return;
-      }
-    }
-
     if (!addressParts.house || !addressParts.city || !addressParts.pincode) {
       toast.error('Please fill all mandatory address fields (House, City, Pincode)');
       return;
@@ -239,52 +201,32 @@ export const Checkout = () => {
           payment_id: response.razorpay_payment_id  
         };
 
-        // 1. Immediate local storage backup — survives page crashes/closes
-        localStorage.setItem('tbz_order_recovery', JSON.stringify({
-          status: 'paid',
-          payload: finalPayload
-        }));
-
-        // 2. Create order with retry — MUST succeed before redirect
-        let orderCreated = false;
-        
-        // Attempt 1: Via api.request wrapper
         try {
-          await api.request('createOrder', finalPayload);
-          orderCreated = true;
-        } catch (err1: any) {
-          console.error('createOrder attempt 1 failed:', err1);
-          
-          // Attempt 2: Direct Supabase insert (bypasses api.request timeout/wrapper issues)
-          try {
-            const { error: directErr } = await supabase
-              .from('orders')
-              .insert([{
-                user_id: finalPayload.user_id,
-                products: finalPayload.products,
-                total_amount: Number(finalPayload.total_amount) || 0,
-                payment_id: finalPayload.payment_id,
-                payment_status: 'Paid',
-                order_status: 'Processing',
-                address: finalPayload.address || '',
-                date: new Date().toISOString()
-              }]);
-            if (!directErr) orderCreated = true;
-            else console.error('Direct insert also failed:', directErr);
-          } catch (err2) {
-            console.error('createOrder attempt 2 failed:', err2);
+          const { error: directErr } = await supabase
+            .from('orders')
+            .insert([{
+              user_id: finalPayload.user_id,
+              products: finalPayload.products,
+              total_amount: Number(finalPayload.total_amount) || 0,
+              payment_id: finalPayload.payment_id,
+              payment_status: 'Paid',
+              order_status: 'Processing',
+              address: finalPayload.address || '',
+              date: new Date().toISOString()
+            }]);
+            
+          if (directErr) {
+            console.error('Order insert failed:', directErr);
+            toast.error('Payment successful but order creation failed. Please contact support with payment ID: ' + finalPayload.payment_id);
+            setLoading(false);
+          } else {
+            clearCart();
+            toast.success('Order placed successfully!');
+            window.location.href = '/order-success';
           }
-        }
-
-        if (orderCreated) {
-          // 3. Order confirmed in DB — safe to redirect
-          localStorage.removeItem('tbz_order_recovery');
-          clearCart();
-          toast.success('Order placed successfully!');
-          window.location.href = '/order-success';
-        } else {
-          // Keep recovery data so it retries on next page load
-          toast.error('Payment received! Order is being confirmed. Please do not pay again.');
+        } catch (err) {
+          console.error('Order creation failed:', err);
+          toast.error('Payment successful but order creation failed. Please contact support with payment ID: ' + finalPayload.payment_id);
           setLoading(false);
         }
       },
@@ -627,18 +569,18 @@ export const Checkout = () => {
 
               <button
                 onClick={handlePayment}
-                disabled={loading || isRecovering}
+                disabled={loading}
                 className={`w-full py-6 rounded-4xl text-[13px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4 mt-10 disabled:opacity-50 shadow-2xl hover:scale-[1.02] active:scale-[0.98] ${
-                  (loading || isRecovering) ? 'bg-slate-700 text-slate-400' :
+                  loading ? 'bg-slate-700 text-slate-400' :
                   paymentMethod === 'cod' 
                     ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/20' 
                     : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20'
                 }`}
               >
-                {loading || isRecovering ? (
+                {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>{isRecovering ? 'Recovering...' : 'Processing...'}</span>
+                    <span>Processing...</span>
                   </>
                 ) : (
                   <>
