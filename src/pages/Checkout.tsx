@@ -18,7 +18,6 @@ export const Checkout = () => {
   const { user, updateUser } = useAuth();
   const { cart, totalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
-  const [isRecovering, setIsRecovering] = useState(false);
   const [fetchingLocation, setFetchingLocation] = useState(false);
   const [showStateDropdown, setShowStateDropdown] = useState(false);
   const [stateSearch, setStateSearch] = useState('');
@@ -47,47 +46,10 @@ export const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
   const navigate = useNavigate();
 
-  // 1. Mobile Network Recovery Logic
+  // Clean up any stale recovery tokens from previous buggy versions
   React.useEffect(() => {
-    const recoverOrder = async () => {
-      const pending = localStorage.getItem('tbz_order_recovery');
-      if (pending && user) {
-        setIsRecovering(true);
-        try {
-          const { payload, status } = JSON.parse(pending);
-          if (status === 'paid') {
-            // Check if the order ALREADY exists to prevent duplicates!
-            const { data: existingOrder } = await supabase
-              .from('orders')
-              .select('id')
-              .eq('payment_id', payload.payment_id)
-              .single();
-
-            if (!existingOrder) {
-               // Only create if it doesn't exist
-               await api.request('createOrder', {
-                 ...payload,
-                 customer_name: user?.name || 'Online Customer'
-               });
-            }
-            
-            // ALWAYS remove the recovery token and redirect to success
-            localStorage.removeItem('tbz_order_recovery');
-            clearCart();
-            toast.success('Payment recovered and order placed!');
-            window.location.href = '/order-success';
-          } else {
-            setIsRecovering(false);
-          }
-        } catch (e) {
-          console.error('Recovery failed', e);
-          // Only stop recovering, don't remove token yet in case of pure network failure
-          setIsRecovering(false);
-        }
-      }
-    };
-    recoverOrder();
-  }, [user, clearCart]);
+    localStorage.removeItem('tbz_order_recovery');
+  }, []);
 
   const fetchLocation = () => {
     if (!navigator.geolocation) {
@@ -244,19 +206,13 @@ export const Checkout = () => {
           payment_id: response.razorpay_payment_id  
         };
 
-        // Immediate local storage backup — survives page crashes/closes/mobile network drops
-        localStorage.setItem('tbz_order_recovery', JSON.stringify({
-          payload: finalPayload,
-          status: 'paid'
-        }));
-
         try {
+          // Direct flow: Payment Log → Order (handled inside createOrder)
           await api.request('createOrder', {
             ...finalPayload,
             customer_name: user?.name || 'Online Customer'
           });
           
-          localStorage.removeItem('tbz_order_recovery');
           clearCart();
           toast.success('Order placed successfully!');
           window.location.href = '/order-success';
@@ -284,18 +240,6 @@ export const Checkout = () => {
   if (!user) {
     navigate('/login');
     return null;
-  }
-
-  if (isRecovering) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50/50 space-y-6">
-        <Loader2 className="w-16 h-16 text-indigo-600 animate-spin" />
-        <div className="text-center">
-          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Recovering Payment</h2>
-          <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-2">Please wait while we confirm your order...</p>
-        </div>
-      </div>
-    );
   }
 
   return (
