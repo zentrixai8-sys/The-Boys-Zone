@@ -446,17 +446,37 @@ export const api = {
             }]);
           }
 
+          const paymentId = data.payment_id || `INTERNAL_${Date.now()}`;
+          const paymentStatus = data.payment_status || 'Paid';
+
+          // STEP 1: Generate payment log FIRST (Strict tracking requirement)
+          if (paymentStatus === 'Paid' && !paymentId.startsWith('INTERNAL_')) {
+            const { error: logErr } = await supabase.from('payment_logs').insert([{
+              customer_name: data.customer_name || 'Online Customer',
+              amount_paid: Number(data.total_amount) || 0,
+              payment_method: 'Online Payment (Razorpay)',
+              note: `Auto-generated for Order: ${paymentId}`,
+              paid_at: new Date().toISOString()
+            }]);
+            
+            if (logErr) {
+              console.error('Critical Payment Log Error:', logErr);
+              throw new Error('Payment tracking failed. Order aborted to prevent tracking mismatch.');
+            }
+          }
+
           const orderData = {
             user_id: data.user_id,
             products: typeof data.products === 'string' ? data.products : JSON.stringify(data.products),
             total_amount: Number(data.total_amount) || 0,
-            payment_id: data.payment_id || `INTERNAL_${Date.now()}`,
-            payment_status: data.payment_status || 'Paid',
+            payment_id: paymentId,
+            payment_status: paymentStatus,
             order_status: data.order_status || 'Processing',
             address: data.address || '',
             date: new Date().toISOString()
           };
 
+          // STEP 2: Place the Order
           const { data: newOrder, error } = await supabase
             .from('orders')
             .insert([orderData])
@@ -466,21 +486,6 @@ export const api = {
           if (error) {
             console.error('Critical Order Creation Error:', error);
             throw error;
-          }
-
-          // Generate payment log for successful online payments
-          if (orderData.payment_status === 'Paid' && !orderData.payment_id.startsWith('INTERNAL_')) {
-            try {
-               await supabase.from('payment_logs').insert([{
-                 customer_name: data.customer_name || 'Online Customer',
-                 amount_paid: orderData.total_amount,
-                 payment_method: 'Online Payment (Razorpay)',
-                 note: `Auto-generated for Order: ${orderData.payment_id}`,
-                 paid_at: new Date().toISOString()
-               }]);
-            } catch (logErr) {
-               console.error('Failed to create payment log:', logErr);
-            }
           }
           
           // --- AUTO STOCK DEDUCTION (Online) ---
