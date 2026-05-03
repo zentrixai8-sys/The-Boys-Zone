@@ -95,7 +95,7 @@ export const Profile = () => {
       const res = await api.request('getUserOrders', { user_id: user?.id });
       return Array.isArray(res) ? res : [];
     },
-    { revalidateOnFocus: true, revalidateOnMount: true }
+    { revalidateOnFocus: true, revalidateOnMount: true, dedupingInterval: 3000, keepPreviousData: true }
   );
 
   const orders = userOrders || [];

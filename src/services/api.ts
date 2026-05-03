@@ -526,9 +526,10 @@ export const api = {
         case 'getUserOrders': {
           const { data: orders, error } = await supabase
             .from('orders')
-            .select('*, profiles(name, phone)')
+            .select('*')
             .eq('user_id', data.user_id)
-            .order('date', { ascending: false });
+            .order('date', { ascending: false })
+            .limit(50);
           if (error) throw error;
           result = orders || [];
           break;
