@@ -253,6 +253,17 @@ export const api = {
           break;
         }
 
+        case 'getReviews': {
+          const { data: reviews, error } = await supabase
+            .from('reviews')
+            .select('*, profiles(name, avatar_url)')
+            .eq('product_id', data.product_id)
+            .order('date', { ascending: false });
+          if (error) throw error;
+          result = reviews || [];
+          break;
+        }
+
         case 'getOffers': {
           const { data: offers, error } = await supabase
             .from('offers')
