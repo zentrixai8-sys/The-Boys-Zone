@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import useSWR from 'swr';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -14,8 +15,6 @@ import { indianStates } from '../data/indian_states';
 export const Profile = () => {
   const { user, updateUser } = useAuth();
   const location = useLocation();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fetchingLocation, setFetchingLocation] = useState(false);
@@ -90,21 +89,17 @@ export const Profile = () => {
     }
   }, [location.search]);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user) return;
-      setLoading(true);
-      try {
-        const userOrders = await api.request('getUserOrders', { user_id: user.id });
-        setOrders(Array.isArray(userOrders) ? userOrders : []);
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrders();
-  }, [user]);
+  const { data: userOrders, isLoading: ordersLoading, mutate: mutateOrders } = useSWR(
+    user ? `orders_${user.id}` : null,
+    async () => {
+      const res = await api.request('getUserOrders', { user_id: user?.id });
+      return Array.isArray(res) ? res : [];
+    },
+    { revalidateOnFocus: true, revalidateOnMount: true }
+  );
+
+  const orders = userOrders || [];
+  const loading = ordersLoading;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

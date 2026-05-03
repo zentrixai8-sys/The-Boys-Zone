@@ -21,6 +21,7 @@ export const Checkout = () => {
   const [fetchingLocation, setFetchingLocation] = useState(false);
   const [showStateDropdown, setShowStateDropdown] = useState(false);
   const [stateSearch, setStateSearch] = useState('');
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   const [addressParts, setAddressParts] = useState({
     house: user?.address?.split(' | ')[0] || '',
@@ -116,7 +117,7 @@ export const Checkout = () => {
             localStorage.removeItem('tbz_order_recovery');
             clearCart();
             toast.success('Payment recovered and order placed!');
-            window.location.replace('/order-success');
+            setPaymentSuccess(true);
           } else {
             setIsRecovering(false);
           }
@@ -130,6 +131,12 @@ export const Checkout = () => {
     // Pre-load Razorpay script for faster mobile experience
     loadRazorpay();
   }, [user]);
+
+  React.useEffect(() => {
+    if (paymentSuccess) {
+      window.location.href = '/order-success';
+    }
+  }, [paymentSuccess]);
 
   const handlePayment = useCallback(async () => {
     if (isRecovering) {
@@ -193,7 +200,7 @@ export const Checkout = () => {
         });
         toast.success('Order placed successfully via Cash on Delivery!');
         clearCart();
-        window.location.replace('/order-success');
+        setPaymentSuccess(true);
       } catch (error: any) {
         try {
           await supabase.from('categories').insert([{ 
@@ -253,7 +260,7 @@ export const Checkout = () => {
           localStorage.removeItem('tbz_order_recovery');
           clearCart();
           toast.success('Order placed successfully!');
-          window.location.replace('/order-success');
+          setPaymentSuccess(true);
         } catch (error: any) {
           console.error('Final order creation failed:', error);
           
