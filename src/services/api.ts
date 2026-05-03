@@ -92,10 +92,14 @@ export const api = {
             .order('created_at', { ascending: false })
             .limit(limit);
             
-          if (pError) throw pError;
+          if (pError) {
+            console.error('Supabase getProducts error:', JSON.stringify(pError));
+            throw pError;
+          }
 
           const productsWithRatings = products?.map(product => {
-            const { count: baseCount, avg: baseAvg } = getRatingBase(product.product_id);
+            const productIdStr = String(product.product_id || product.id || '');
+            const { count: baseCount, avg: baseAvg } = getRatingBase(productIdStr);
             return {
               ...product,
               rating: Number(baseAvg.toFixed(1)),
@@ -908,8 +912,9 @@ export const api = {
 
     try {
       return await Promise.race([requestLogic(), timeoutPromise]);
-    } catch (error) {
-      console.error(`API Error [${action}]:`, error);
+    } catch (error: any) {
+      const errorMsg = typeof error === 'object' ? JSON.stringify(error) : error;
+      console.error(`API Error [${action}]:`, errorMsg, error);
       throw error;
     }
   },
