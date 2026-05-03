@@ -27,7 +27,8 @@ const createSupabaseClient = () => createClient(
       autoRefreshToken: true,
       detectSessionInUrl: true,
       storageKey: `tbz-auth-v1-${getTabId()}`,
-      storage: window.sessionStorage
+      storage: window.sessionStorage,
+      lockType: 'null'
     }
   }
 );

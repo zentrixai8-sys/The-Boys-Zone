@@ -77,9 +77,11 @@ const compressImage = (file: File, maxDimension = 1280): Promise<File> => {
 
 export const api = {
   async request(action: string, data: any = {}) {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timed out. Please check your connection.')), 15000)
+    );
 
-
-    try {
+    const requestLogic = async () => {
       let result: any;
       switch (action) {
         case 'getProducts': {
@@ -935,13 +937,13 @@ export const api = {
         default:
           throw new Error(`Action ${action} not implemented`);
       }
-
-
       return result;
+    };
 
+    try {
+      return await Promise.race([requestLogic(), timeoutPromise]);
     } catch (error) {
-      console.error(`API Error [${action}]:`, JSON.stringify(error, null, 2), error);
-
+      console.error(`API Error [${action}]:`, error);
       throw error;
     }
   },
