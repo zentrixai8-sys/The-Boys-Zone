@@ -15,8 +15,7 @@ const createSupabaseClient = () => createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      // Using default localStorage allows Supabase to correctly manage multi-tab locks
-      // without deadlocking or crashing.
+      storage: window.sessionStorage,
     }
   }
 );
