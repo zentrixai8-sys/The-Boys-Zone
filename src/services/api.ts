@@ -78,7 +78,7 @@ const compressImage = (file: File, maxDimension = 1280): Promise<File> => {
 export const api = {
   async request(action: string, data: any = {}) {
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Request timed out. Please check your connection.')), 15000)
+      setTimeout(() => reject(new Error('Request timed out. Please check your connection.')), 45000)
     );
 
     const requestLogic = async () => {
@@ -94,32 +94,12 @@ export const api = {
             
           if (pError) throw pError;
 
-          // Fetch only necessary reviews in one go
-          const productIds = products.map(p => p.product_id);
-          const { data: reviews } = await supabase
-            .from('reviews')
-            .select('product_id, rating')
-            .in('product_id', productIds);
-          
-          const statsMap = new Map<string, { count: number, sum: number }>();
-          (reviews || []).forEach(r => {
-            const current = statsMap.get(r.product_id) || { count: 0, sum: 0 };
-            statsMap.set(r.product_id, {
-              count: current.count + 1,
-              sum: current.sum + (r.rating || 0)
-            });
-          });
-
           const productsWithRatings = products?.map(product => {
-            const stats = statsMap.get(product.product_id) || { count: 0, sum: 0 };
             const { count: baseCount, avg: baseAvg } = getRatingBase(product.product_id);
-            const totalCount = baseCount + stats.count;
-            const finalAvg = ((baseAvg * baseCount) + stats.sum) / totalCount;
-
             return {
               ...product,
-              rating: Number(finalAvg.toFixed(1)),
-              reviewCount: totalCount
+              rating: Number(baseAvg.toFixed(1)),
+              reviewCount: baseCount
             };
           });
 
@@ -196,26 +176,12 @@ export const api = {
           
           if (prodErr) throw prodErr;
 
-          const { data: reviews, error: rError } = await supabase
-            .from('reviews')
-            .select('product_id, rating')
-            .in('product_id', sortedProductIds);
-          
-          if (rError) throw rError;
-          
           const productsWithRatings = bestSellerProducts.map(product => {
-            const productReviews = reviews?.filter(r => r.product_id === product.product_id) || [];
-            const realReviewCount = productReviews.length;
-            const realRatingSum = productReviews.reduce((sum, r) => sum + r.rating, 0);
             const { count: baseCount, avg: baseAvg } = getRatingBase(product.product_id);
-            
-            const totalCount = baseCount + realReviewCount;
-            const finalAvg = ((baseAvg * baseCount) + realRatingSum) / totalCount;
-
             return {
               ...product,
-              rating: Number(finalAvg.toFixed(1)),
-              reviewCount: totalCount
+              rating: Number(baseAvg.toFixed(1)),
+              reviewCount: baseCount
             };
           });
 
