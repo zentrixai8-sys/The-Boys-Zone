@@ -219,23 +219,87 @@ export const Checkout = () => {
 
           for (let attempt = 1; attempt <= 3; attempt++) {
             try {
-              // Server-side payment logging and order creation via Edge Function
-              const { data, error } = await supabase.functions.invoke('payment-webhook', {
-                body: {
-                  paymentId,
-                  cart: capturedCart,
-                  total: capturedTotal,
-                  userId: capturedUserId,
-                  address: fullAddress,
-                  customerName: capturedName
-                }
-              });
+              // GUARD: Check if this payment was already processed (prevent duplicates)
+              const { data: existingOrder } = await supabase
+                .from('orders')
+                .select('order_id')
+                .eq('payment_id', paymentId)
+                .maybeSingle();
 
-              if (error) throw error;
-              if (data && data.error) throw new Error(data.error);
+              if (existingOrder) {
+                clearCart();
+                toast.success('Order already placed!');
+                window.location.href = '/order-success';
+                return;
+              }
+
+              // PRE-FLIGHT: Ensure user profile exists (FK constraint)
+              const { error: profileErr } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', capturedUserId)
+                .single();
+
+              if (profileErr && profileErr.code === 'PGRST116') {
+                await supabase.from('profiles').upsert([{
+                  id: capturedUserId,
+                  name: capturedName,
+                  email: `customer_${Date.now()}@temp.com`,
+                  password: 'auto_generated'
+                }]);
+              }
+
+              // STEP 1: Payment Log FIRST (strict tracking)
+              const { error: logErr } = await supabase.from('payment_logs').insert([{
+                customer_name: capturedName,
+                amount_paid: capturedTotal,
+                payment_method: 'Online Payment (Razorpay)',
+                note: `Order Payment: ${paymentId}`,
+                paid_at: new Date().toISOString()
+              }]);
+
+              if (logErr) {
+                console.error('Payment log insert failed:', logErr);
+                throw logErr;
+              }
+
+              // STEP 2: Create Order
+              const { error: orderErr } = await supabase.from('orders').insert([{
+                user_id: capturedUserId,
+                products: capturedCart,
+                total_amount: capturedTotal,
+                payment_id: paymentId,
+                payment_status: 'Paid',
+                order_status: 'Processing',
+                address: fullAddress,
+                date: new Date().toISOString()
+              }]);
+
+              if (orderErr) {
+                console.error('Order insert failed:', orderErr);
+                throw orderErr;
+              }
+
+              // STEP 3: Stock deduction (non-blocking, don't throw)
+              try {
+                const items = JSON.parse(capturedCart);
+                if (Array.isArray(items)) {
+                  for (const item of items) {
+                    const pid = item.product_id || item.id;
+                    if (!pid) continue;
+                    const { data: product } = await supabase.from('products').select('*').eq('product_id', pid).single();
+                    if (product) {
+                      const newStock = Math.max(0, (product.stock ?? 0) - (item.quantity || 1));
+                      await supabase.from('products').update({ stock: newStock }).eq('product_id', pid);
+                    }
+                  }
+                }
+              } catch (stockErr) {
+                console.error('Stock deduction failed (non-critical):', stockErr);
+              }
 
               success = true;
-              break; // exit loop on success
+              break; // exit retry loop on success
             } catch (err: any) {
               console.warn(`Payment log/order creation attempt ${attempt} failed:`, err);
               lastError = err;
