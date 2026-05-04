@@ -8,7 +8,7 @@ import { formatPrice, formatDate } from '../lib/utils';
 import { 
   ShoppingBag, Star, Truck, ShieldCheck, RefreshCcw, 
   ChevronRight, Minus, Plus, MessageSquare, Send, 
-  Loader2, ChevronLeft, Heart, Share2, ChevronDown
+  Loader2, ChevronLeft, Heart, Share2, ChevronDown, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProducts } from '../hooks/useProducts';

@@ -189,6 +189,12 @@ export const Checkout = () => {
     const capturedUserId = user?.id;
     const capturedName = user?.name || 'Online Customer';
 
+    // Chunk cart into Razorpay notes for webhook fallback
+    const cartChunks: Record<string, string> = {};
+    for (let i = 0; i < capturedCart.length; i += 250) {
+      cartChunks[`c${Math.floor(i / 250)}`] = capturedCart.substring(i, i + 250);
+    }
+
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
       amount: capturedTotal * 100,
@@ -196,102 +202,52 @@ export const Checkout = () => {
       name: 'The Boys Zone',
       description: 'Order Payment',
       image: 'https://picsum.photos/200',
+      notes: {
+        userId: capturedUserId,
+        address: fullAddress.substring(0, 250),
+        customerName: capturedName.substring(0, 250),
+        ...cartChunks
+      },
       handler: async function (response: any) {
         setLoading(true);
         const paymentId = response.razorpay_payment_id;
 
         try {
-          // GUARD: Check if this payment was already processed (prevent duplicates)
-          const { data: existingOrder } = await supabase
-            .from('orders')
-            .select('order_id')
-            .eq('payment_id', paymentId)
-            .maybeSingle();
+          // Retry mechanism: try up to 3 times
+          let success = false;
+          let lastError = null;
 
-          if (existingOrder) {
-            clearCart();
-            toast.success('Order already placed!');
-            window.location.href = '/order-success';
-            return;
-          }
-
-          // PRE-FLIGHT: Ensure user profile exists (FK constraint)
-          const { error: profileErr } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', capturedUserId)
-            .single();
-
-          if (profileErr && profileErr.code === 'PGRST116') {
-            await supabase.from('profiles').upsert([{
-              id: capturedUserId,
-              name: capturedName,
-              email: `customer_${Date.now()}@temp.com`,
-              password: 'auto_generated'
-            }]);
-          }
-
-          // STEP 1: Payment Log FIRST (strict tracking)
-          const { error: logErr } = await supabase.from('payment_logs').insert([{
-            customer_name: capturedName,
-            amount_paid: capturedTotal,
-            payment_method: 'Online Payment (Razorpay)',
-            note: `Order Payment: ${paymentId}`,
-            paid_at: new Date().toISOString()
-          }]);
-
-          if (logErr) {
-            console.error('Payment log insert failed:', logErr);
-          }
-
-          // STEP 2: Create Order
-          const { error: orderErr } = await supabase.from('orders').insert([{
-            user_id: capturedUserId,
-            products: capturedCart,
-            total_amount: capturedTotal,
-            payment_id: paymentId,
-            payment_status: 'Paid',
-            order_status: 'Processing',
-            address: fullAddress,
-            date: new Date().toISOString()
-          }]);
-
-          if (orderErr) {
-            console.error('Order insert failed:', orderErr);
-            // Debug log to database so admin can see what went wrong
+          for (let attempt = 1; attempt <= 3; attempt++) {
             try {
-              await supabase.from('categories').insert([{
-                category_name: 'DEBUG_ORDER_FAIL',
-                image_url: JSON.stringify({ 
-                  error: orderErr.message, 
-                  code: orderErr.code,
-                  payment_id: paymentId,
-                  user_id: capturedUserId,
-                  total: capturedTotal
-                })
-              }]);
-            } catch (_) {}
-            toast.error('Payment done but order failed. Contact support with ID: ' + paymentId);
-            setLoading(false);
-            return;
-          }
-
-          // STEP 3: Stock deduction (non-blocking)
-          try {
-            const items = JSON.parse(capturedCart);
-            if (Array.isArray(items)) {
-              for (const item of items) {
-                const pid = item.product_id || item.id;
-                if (!pid) continue;
-                const { data: product } = await supabase.from('products').select('*').eq('product_id', pid).single();
-                if (product) {
-                  const newStock = Math.max(0, (product.stock ?? 0) - (item.quantity || 1));
-                  await supabase.from('products').update({ stock: newStock }).eq('product_id', pid);
+              // Server-side payment logging and order creation via Edge Function
+              const { data, error } = await supabase.functions.invoke('payment-webhook', {
+                body: {
+                  paymentId,
+                  cart: capturedCart,
+                  total: capturedTotal,
+                  userId: capturedUserId,
+                  address: fullAddress,
+                  customerName: capturedName
                 }
+              });
+
+              if (error) throw error;
+              if (data && data.error) throw new Error(data.error);
+
+              success = true;
+              break; // exit loop on success
+            } catch (err: any) {
+              console.warn(`Payment log/order creation attempt ${attempt} failed:`, err);
+              lastError = err;
+              if (attempt < 3) {
+                // Wait before retrying (exponential backoff)
+                await new Promise(res => setTimeout(res, 1000 * attempt));
               }
             }
-          } catch (stockErr) {
-            console.error('Stock deduction failed (non-critical):', stockErr);
+          }
+
+          if (!success) {
+            throw lastError;
           }
 
           // SUCCESS
