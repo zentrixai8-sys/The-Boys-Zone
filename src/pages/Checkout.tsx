@@ -207,32 +207,55 @@ export const Checkout = () => {
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     const directInsert = async (table: string, body: any, token: string) => {
-      const res = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${token}`,
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(body)
-      });
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Insert to ${table} failed: ${res.status} - ${errText}`);
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'apikey': supabaseAnonKey,
+        'Prefer': 'return=minimal'
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Insert to ${table} failed: ${res.status} - ${errText}`);
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
     };
 
     const directSelect = async (table: string, query: string, token: string) => {
-      const res = await fetch(`${supabaseUrl}/rest/v1/${table}?${query}`, {
-        method: 'GET',
-        headers: {
-          'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${token}`,
-        }
-      });
-      if (!res.ok) return [];
-      return await res.json();
+      const headers: Record<string, string> = {
+        'apikey': supabaseAnonKey,
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/${table}?${query}`, {
+          method: 'GET',
+          headers,
+          signal: controller.signal
+        });
+        if (!res.ok) return [];
+        return await res.json();
+      } catch (err) {
+        console.error(`Select from ${table} failed:`, err);
+        return [];
+      } finally {
+        clearTimeout(timeoutId);
+      }
     };
 
     const options = {
@@ -252,25 +275,11 @@ export const Checkout = () => {
         setLoading(true);
         const paymentId = response.razorpay_payment_id;
 
-        // MOBILE FIX: Restore auth session that may have been lost
+        // MOBILE FIX: Use the captured token exclusively. 
+        // Do NOT call supabase.auth.getSession() here because when returning from a UPI app,
+        // the browser tab wakes up and the Supabase JS client's internal LockManager can deadlock,
+        // causing it to hang forever.
         let activeToken = capturedAccessToken;
-        try {
-          const { data: currentSession } = await supabase.auth.getSession();
-          if (!currentSession?.session?.access_token && capturedRefreshToken) {
-            // Session was lost (mobile tab suspension) — restore it
-            await supabase.auth.setSession({
-              access_token: capturedAccessToken,
-              refresh_token: capturedRefreshToken
-            });
-          }
-          // Re-fetch to get the latest valid token
-          const { data: refreshed } = await supabase.auth.getSession();
-          if (refreshed?.session?.access_token) {
-            activeToken = refreshed.session.access_token;
-          }
-        } catch (sessionErr) {
-          console.warn('Session restore failed, using captured token:', sessionErr);
-        }
 
         try {
           // Retry mechanism: try up to 3 times
@@ -376,10 +385,10 @@ export const Checkout = () => {
           console.error('Payment handler critical error:', err);
           // Debug log to database
           try {
-            await supabase.from('categories').insert([{
+            await directInsert('categories', {
               category_name: 'DEBUG_HANDLER_CRASH',
               image_url: JSON.stringify({ error: err?.message || String(err), payment_id: paymentId })
-            }]);
+            }, activeToken);
           } catch (_) {}
           toast.error('Something went wrong. Contact support with Payment ID: ' + paymentId);
           setLoading(false);
