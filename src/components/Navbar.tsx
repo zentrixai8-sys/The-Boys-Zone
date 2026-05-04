@@ -73,14 +73,14 @@ export const Navbar = () => {
   return (
     <nav className="sticky top-0 z-100 bg-white border-b border-black/5 transition-all duration-300">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-14 md:h-20">
 
           {/* Logo (Left) */}
           <Link to="/" className="shrink-0 flex items-center gap-3">
             <img
               src="https://i.ibb.co/Pvj8V4T7/Whats-App-Image-2026-02-26-at-2-40-25-PM.jpg"
               alt="The Boys Zone Logo"
-              className="h-10 sm:h-12 w-auto object-contain rounded-lg shadow-sm"
+              className="h-8 sm:h-10 md:h-12 w-auto object-contain rounded-lg shadow-sm"
             />
             <span className="hidden lg:block text-xl font-serif font-black tracking-tight uppercase animate-premium-shine">
               The Boys Zone
@@ -88,8 +88,8 @@ export const Navbar = () => {
           </Link>
 
           {/* Brand Name next to logo on mobile */}
-          <div className="flex-1 md:hidden flex justify-start px-2">
-            <span className="text-[11px] font-serif font-black tracking-[0.15em] uppercase whitespace-nowrap animate-premium-shine">
+          <div className="flex-1 md:hidden flex justify-start px-1.5">
+            <span className="text-[10px] font-serif font-black tracking-[0.12em] uppercase whitespace-nowrap animate-premium-shine">
               The Boys Zone
             </span>
           </div>
@@ -152,7 +152,7 @@ export const Navbar = () => {
           </div>
 
           {/* Icons (Right) */}
-          <div className="flex items-center justify-end gap-3.5 md:gap-6 shrink-0">
+          <div className="flex items-center justify-end gap-2 md:gap-6 shrink-0">
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
@@ -175,8 +175,8 @@ export const Navbar = () => {
 
             {user ? (
               <div className="relative group">
-                <div className="flex items-center gap-2 md:pr-4 md:pl-1.5 py-1.5 rounded-full transition-all cursor-pointer hover:bg-gray-50 border border-transparent hover:border-gray-100">
-                  <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100/50 overflow-hidden shrink-0 shadow-sm">
+                <div className="flex items-center gap-2 md:pr-4 md:pl-1.5 py-1 md:py-1.5 rounded-full transition-all cursor-pointer hover:bg-gray-50 border border-transparent hover:border-gray-100">
+                  <div className="w-7 h-7 md:w-9 md:h-9 rounded-full bg-indigo-50 flex items-center justify-center border border-indigo-100/50 overflow-hidden shrink-0 shadow-sm">
                     {isUploading ? (
                       <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
                     ) : user.avatar_url ? (
@@ -260,7 +260,7 @@ export const Navbar = () => {
               </Link>
             )}
 
-            <Link to="/wishlist" className="relative group/wishlist flex items-center justify-center w-10 h-10 rounded-full hover:bg-rose-50 transition-colors">
+            <Link to="/wishlist" className="relative group/wishlist flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full hover:bg-rose-50 transition-colors">
               <Heart className={`w-5 h-5 stroke-[1.5] transition-all ${wishlistCount > 0 ? 'fill-rose-500 text-rose-500' : 'text-gray-600 group-hover/wishlist:text-rose-500 group-hover/wishlist:fill-rose-50'}`} />
               {wishlistCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 bg-rose-500 text-white text-[9px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-1 shadow-sm border-2 border-white ring-1 ring-rose-500/20">
@@ -269,7 +269,7 @@ export const Navbar = () => {
               )}
             </Link>
 
-            <Link to="/cart" className="relative group/cart flex items-center justify-center w-10 h-10 rounded-full hover:bg-indigo-50 transition-colors">
+            <Link to="/cart" className="relative group/cart items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full hover:bg-indigo-50 transition-colors hidden md:flex">
               <ShoppingCart className="w-5 h-5 stroke-[1.5] text-gray-600 group-hover/cart:text-indigo-600 transition-colors" />
               {totalItems > 0 && (
                 <span className="absolute top-1.5 right-1.5 bg-[#051F20] text-white text-[9px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-1 shadow-sm border-2 border-white">
@@ -300,7 +300,7 @@ export const Navbar = () => {
 
       {/* Mobile Search Bar - Flipkart Style (Hidden on Auth Pages) */}
       {!['/login', '/register', '/forgot-password'].includes(location.pathname) && (
-        <div className="md:hidden px-4 pb-4">
+        <div className="md:hidden px-3 pb-2.5">
           <form 
             onSubmit={(e) => {
               e.preventDefault();
@@ -315,9 +315,9 @@ export const Navbar = () => {
               placeholder="Search for products, brands and more"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#f0f2f5] text-[13px] font-medium text-gray-900 rounded-lg pl-10 pr-4 py-2.5 border-none focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-600 transition-all placeholder:text-gray-500"
+              className="w-full bg-[#f0f2f5] text-[12px] font-medium text-gray-900 rounded-lg pl-9 pr-4 py-2 border-none focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#2874f0] transition-all placeholder:text-gray-400"
             />
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
           </form>
         </div>
       )}

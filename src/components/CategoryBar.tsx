@@ -63,21 +63,21 @@ export const CategoryBar = () => {
         {/* Categories Container */}
         <div 
           ref={scrollRef}
-          className="flex items-start md:justify-center justify-start gap-5 sm:gap-12 py-4 px-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+          className="flex items-start md:justify-center justify-start gap-4 sm:gap-12 py-2.5 md:py-4 px-3 md:px-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
         >
           {/* "All" Category */}
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/products')}
-            className={`flex flex-col items-center gap-2 cursor-pointer min-w-[70px] sm:min-w-[80px] snap-center group/item transition-all ${!currentCategory ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}
+            className={`flex flex-col items-center gap-1 md:gap-2 cursor-pointer min-w-[56px] sm:min-w-[80px] snap-center group/item transition-all ${!currentCategory ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}
           >
-            <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-300 relative overflow-hidden ${!currentCategory ? 'border-indigo-600 bg-indigo-50 shadow-indigo-100 shadow-lg' : 'border-gray-100 bg-gray-50 group-hover/item:border-indigo-300'}`}>
-               <span className="text-[10px] font-black text-indigo-700 tracking-[0.2em] uppercase">All</span>
+            <div className={`w-11 h-11 sm:w-16 sm:h-16 rounded-full md:rounded-2xl flex items-center justify-center border-2 transition-all duration-300 relative overflow-hidden ${!currentCategory ? 'border-[#2874f0] bg-blue-50 shadow-blue-100 shadow-lg md:border-indigo-600 md:bg-indigo-50 md:shadow-indigo-100' : 'border-gray-100 bg-gray-50 group-hover/item:border-indigo-300'}`}>
+               <span className="text-[8px] md:text-[10px] font-black text-indigo-700 tracking-[0.15em] md:tracking-[0.2em] uppercase">All</span>
                {/* Shine Overlay */}
                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-[25deg] animate-gold-shine" />
             </div>
-            <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-center animate-premium-shine ${!currentCategory ? 'opacity-100' : ''}`}>
+            <span className={`text-[9px] sm:text-[11px] font-bold md:font-black uppercase tracking-wider md:tracking-widest text-center animate-premium-shine ${!currentCategory ? 'opacity-100' : ''}`}>
               For You
             </span>
           </motion.div>
@@ -91,9 +91,9 @@ export const CategoryBar = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategoryClick(cat.category_name)}
-              className={`flex flex-col items-center gap-2 cursor-pointer min-w-[70px] sm:min-w-[80px] snap-center group/item transition-all ${currentCategory === cat.category_name ? 'opacity-100' : 'opacity-70 hover:opacity-100'}`}
+              className={`flex flex-col items-center gap-1 md:gap-2 cursor-pointer min-w-[56px] sm:min-w-[80px] snap-center group/item transition-all ${currentCategory === cat.category_name ? 'opacity-100' : 'opacity-70 hover:opacity-100'}`}
             >
-              <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border-2 transition-all duration-300 relative ${currentCategory === cat.category_name ? 'border-indigo-600 bg-indigo-50 shadow-indigo-100 shadow-lg' : 'border-gray-50 bg-gray-50 group-hover/item:border-indigo-300 shadow-sm'}`}>
+              <div className={`w-11 h-11 sm:w-16 sm:h-16 rounded-full md:rounded-2xl overflow-hidden border-2 transition-all duration-300 relative ${currentCategory === cat.category_name ? 'border-[#2874f0] bg-blue-50 shadow-blue-100 shadow-lg md:border-indigo-600 md:bg-indigo-50 md:shadow-indigo-100' : 'border-gray-50 bg-gray-50 group-hover/item:border-indigo-300 shadow-sm'}`}>
                 <img 
                   src={cat.image_url} 
                   alt={cat.category_name}
@@ -102,7 +102,7 @@ export const CategoryBar = () => {
                 {/* Shine Overlay */}
                 <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-[25deg] animate-gold-shine" />
               </div>
-              <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-center line-clamp-1 max-w-full animate-premium-shine ${currentCategory === cat.category_name ? 'opacity-100' : ''}`}>
+              <span className={`text-[9px] sm:text-[11px] font-bold md:font-black uppercase tracking-wider md:tracking-widest text-center line-clamp-1 max-w-full animate-premium-shine ${currentCategory === cat.category_name ? 'opacity-100' : ''}`}>
                 {cat.category_name}
               </span>
             </motion.div>

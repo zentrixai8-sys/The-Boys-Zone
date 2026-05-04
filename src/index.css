@@ -28,7 +28,14 @@
     position: relative;
     touch-action: manipulation;
   }
-  
+
+  /* Mobile bottom nav clearance */
+  @media (max-width: 767px) {
+    main {
+      padding-bottom: 60px;
+    }
+  }
+
   /* Prevent iOS auto-zoom on input focus */
   @media screen and (max-width: 768px) {
     input, select, textarea {

@@ -56,13 +56,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="group relative bg-white border border-black/[0.03] hover:border-indigo-100 rounded-2xl transition-all flex flex-col shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 overflow-hidden"
+      className="group relative bg-white border border-black/[0.03] hover:border-indigo-100 rounded-lg md:rounded-2xl transition-all flex flex-col shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 overflow-hidden"
     >
       <Link to={`/product/${product.product_id}`} className="block relative aspect-[4/5] overflow-hidden bg-[#f9f9f9] w-full">
         {product.discount_price && product.discount_price < product.price && (
-          <div className="absolute top-2 left-2 z-20 bg-black text-white text-[9px] font-black px-2 py-1 rounded shadow-lg uppercase tracking-widest overflow-hidden">
+          <div className="absolute top-1.5 left-1.5 md:top-2 md:left-2 z-20 bg-[#388e3c] text-white text-[8px] md:text-[9px] font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-sm shadow-lg uppercase tracking-wider overflow-hidden">
             <span className="relative z-10">
-              SALE {Math.round(((product.price - product.discount_price) / product.price) * 100)}%
+              SALE {Math.round(((product.price - product.discount_price) / product.price) * 100)}% off
             </span>
             <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-[25deg] animate-[shimmer_1.5s_infinite]" />
           </div>
@@ -71,10 +71,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Wishlist Heart Icon */}
         <button 
           onClick={handleToggleWishlist}
-          className="absolute top-2 right-2 z-20 p-2 bg-white/70 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-all transform hover:scale-110 active:scale-95 group/wish"
+          className="absolute top-1.5 right-1.5 md:top-2 md:right-2 z-20 p-1.5 md:p-2 bg-white/70 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-all transform hover:scale-110 active:scale-95 group/wish"
         >
           <Heart 
-            className={`w-3.5 h-3.5 transition-colors ${isWishlisted ? 'fill-rose-500 text-rose-500' : 'text-slate-400 group-hover/wish:text-rose-500'}`} 
+            className={`w-3 h-3 md:w-3.5 md:h-3.5 transition-colors ${isWishlisted ? 'fill-rose-500 text-rose-500' : 'text-slate-400 group-hover/wish:text-rose-500'}`} 
           />
         </button>
 
@@ -95,33 +95,38 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </Link>
       
       {/* Details Section - Compact & Premium */}
-      <div className="p-3.5 flex flex-col gap-1.5 bg-white">
+      <div className="p-2 md:p-3.5 flex flex-col gap-1 md:gap-1.5 bg-white">
         {/* Top Row: Brand & Rating */}
         <div className="flex items-center justify-between">
-          <span className="text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase truncate pr-2">
+          <span className="text-[8px] md:text-[9px] font-bold md:font-black tracking-[0.15em] md:tracking-[0.2em] text-slate-400 uppercase truncate pr-2">
             {product.brand || 'The Boys Zone'}
           </span>
           <div className="flex items-center gap-1 shrink-0">
-            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-[10px] font-bold text-slate-600">{product.rating || '4.8'}</span>
+            <Star className="w-2.5 h-2.5 md:w-3 md:h-3 fill-yellow-400 text-yellow-400" />
+            <span className="text-[9px] md:text-[10px] font-bold text-slate-600">{product.rating || '4.8'}</span>
           </div>
         </div>
 
         {/* Title */}
         <Link to={`/product/${product.product_id}`} className="block">
-          <h3 className="text-[12px] md:text-[13px] font-black text-slate-900 truncate uppercase mt-0.5 group-hover:text-indigo-600 transition-colors">
+          <h3 className="text-[11px] md:text-[13px] font-bold md:font-black text-slate-900 truncate uppercase mt-0 md:mt-0.5 group-hover:text-indigo-600 transition-colors leading-tight">
             {product.title}
           </h3>
         </Link>
 
         {/* Price Row */}
         <div className="flex items-baseline gap-2 mt-0.5">
-           <span className="text-[14px] md:text-[15px] font-black text-indigo-600 tracking-tight">
+           <span className="text-[12px] md:text-[15px] font-bold md:font-black text-slate-900 tracking-tight">
              {formatPrice(product.discount_price || product.price)}
            </span>
            {product.discount_price && product.discount_price < product.price && (
-              <span className="text-[10px] font-bold text-red-500 line-through">
+              <span className="text-[9px] md:text-[10px] font-medium text-gray-400 line-through">
                 {formatPrice(product.price)}
+              </span>
+           )}
+           {product.discount_price && product.discount_price < product.price && (
+              <span className="text-[9px] md:text-[10px] font-bold text-[#388e3c] hidden md:inline">
+                {Math.round(((product.price - product.discount_price) / product.price) * 100)}% off
               </span>
            )}
         </div>

@@ -73,13 +73,13 @@ export const Products = () => {
   });
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12 py-16">
+    <div className="max-w-[1440px] mx-auto px-2 md:px-8 lg:px-12 py-4 md:py-16 pb-20 md:pb-16">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-gray-100 pb-8">
         <div>
-          <h1 className="text-4xl lg:text-5xl font-serif font-bold tracking-tight text-slate-900 mb-2">
+          <h1 className="text-xl md:text-4xl lg:text-5xl font-bold md:font-serif tracking-tight text-slate-900 mb-1 md:mb-2">
             Explore Collection
           </h1>
-          <p className="text-gray-500 font-medium">Discover our premium range of boys' essentials</p>
+          <p className="text-gray-500 font-medium text-xs md:text-base">Discover our premium range of boys' essentials</p>
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -234,7 +234,7 @@ export const Products = () => {
         {/* Product Grid */}
         <div className="flex-1">
           {loading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-8">
               {Array(12).fill(0).map((_, i) => (
                 <div key={i} className="aspect-[4/5] bg-gray-50 rounded-xl animate-pulse" />
               ))}
@@ -258,7 +258,7 @@ export const Products = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
-              className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8"
+              className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-8"
             >
               {filteredProducts.map(product => (
                 <ProductCard key={product.product_id} product={product} />

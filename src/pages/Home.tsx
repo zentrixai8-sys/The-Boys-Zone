@@ -166,7 +166,7 @@ export const Home = () => {
   const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
-    <div className="bg-white min-h-screen font-sans selection:bg-black selection:text-white">
+    <div className="bg-white min-h-screen font-sans selection:bg-black selection:text-white pb-14 md:pb-0">
       {/* Scroll Progress Bar */}
       <motion.div
         className="fixed top-0 left-0 right-0 h-1 bg-black z-50 origin-left"
@@ -361,7 +361,7 @@ export const Home = () => {
       </section>
 
       {/* 3. Shop by Category (Bonkers Style) */}
-      <section className="py-16 md:py-24 bg-white relative z-20 border-b-4 border-black">
+      <section className="py-8 md:py-24 bg-white relative z-20 border-b-4 border-black">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
@@ -369,12 +369,12 @@ export const Home = () => {
             viewport={{ once: true }}
             className="flex justify-between items-end mb-10"
           >
-            <h2 className="text-4xl md:text-5xl font-black text-black uppercase tracking-tighter">
+            <h2 className="text-2xl md:text-5xl font-black text-black uppercase tracking-tighter">
               SHOP BY CATEGORY
             </h2>
           </motion.div>
 
-          <div className="flex overflow-x-auto pb-8 -mx-4 px-4 sm:mx-0 sm:px-0 gap-6 md:gap-12 snap-x snap-mandatory hide-scrollbar">
+          <div className="flex overflow-x-auto pb-4 md:pb-8 -mx-4 px-4 sm:mx-0 sm:px-0 gap-5 md:gap-12 snap-x snap-mandatory hide-scrollbar">
             {[
               { title: "Oversized Tees", img: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=400&auto=format&fit=crop" },
               { title: "Cargos", img: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=400&auto=format&fit=crop" },
@@ -392,11 +392,11 @@ export const Home = () => {
                 onClick={() => window.location.href = `/products?category=${cat.title.replace(' ', '+')}`}
                 className="flex flex-col items-center gap-4 snap-center cursor-pointer group shrink-0"
               >
-                <div className="w-28 h-28 md:w-40 md:h-40 rounded-full overflow-hidden border-[3px] border-black group-hover:scale-105 transition-transform duration-300 relative shadow-md">
+                <div className="w-20 h-20 md:w-40 md:h-40 rounded-full overflow-hidden border-[2px] md:border-[3px] border-black group-hover:scale-105 transition-transform duration-300 relative shadow-md">
                   <img src={cat.img} alt={cat.title} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
                 </div>
-                <h3 className="text-sm md:text-base font-black uppercase tracking-wider text-black group-hover:text-red-600 transition-colors">{cat.title}</h3>
+                <h3 className="text-[10px] md:text-base font-black uppercase tracking-wider md:tracking-widest text-black group-hover:text-red-600 transition-colors">{cat.title}</h3>
               </motion.div>
             ))}
           </div>
@@ -404,7 +404,7 @@ export const Home = () => {
       </section>
 
       {/* 4. Luxury Best Sellers */}
-      <section className="py-24 bg-[#080808] relative z-20 overflow-hidden border-t-4 border-black">
+      <section className="py-12 md:py-24 bg-[#080808] relative z-20 overflow-hidden border-t-4 border-black">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_35%,_rgba(220,38,38,0.08)_0%,_transparent_50%),_radial-gradient(circle_at_75%_65%,_rgba(67,56,202,0.08)_0%,_transparent_50%)] pointer-events-none" />
         
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -419,7 +419,7 @@ export const Home = () => {
                 <span className="w-12 h-px bg-red-600" />
                 <span className="text-red-500/80 text-[10px] font-black tracking-[0.3em] uppercase">Premium Selection</span>
               </div>
-              <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter">
+              <h2 className="text-2xl md:text-5xl font-black text-white uppercase tracking-tighter">
                 BESTSELLERS
               </h2>
             </div>
@@ -428,7 +428,7 @@ export const Home = () => {
             </Link>
           </motion.div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-10">
             {bestSellers.slice(0, 4).map((product, index) => (
               <motion.div
                 key={product.product_id || (product as any).id}
@@ -485,7 +485,7 @@ export const Home = () => {
       </section>
 
       {/* 4. New Arrivals (Curated 4 Grid) */}
-      <section className="py-24 bg-white relative z-20 border-b-4 border-black">
+      <section className="py-12 md:py-24 bg-white relative z-20 border-b-4 border-black">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
@@ -494,7 +494,7 @@ export const Home = () => {
             className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6"
           >
             <div>
-              <h2 className="text-4xl md:text-5xl font-black text-black uppercase tracking-tighter">
+              <h2 className="text-2xl md:text-5xl font-black text-black uppercase tracking-tighter">
                 NEW DROPS
               </h2>
             </div>
@@ -503,7 +503,7 @@ export const Home = () => {
             </Link>
           </motion.div>
  
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-10">
             {products.slice(0, 4).map((product, index) => (
               <motion.div
                 key={product.product_id || (product as any).id}
