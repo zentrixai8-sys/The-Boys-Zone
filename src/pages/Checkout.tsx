@@ -189,11 +189,51 @@ export const Checkout = () => {
     const capturedUserId = user?.id;
     const capturedName = user?.name || 'Online Customer';
 
+    // CRITICAL FOR MOBILE: Capture auth session NOW, before Razorpay redirects to UPI app.
+    // On mobile, sessionStorage gets wiped when the browser tab is suspended.
+    // We'll restore it inside the handler when the user returns.
+    const { data: sessionData } = await supabase.auth.getSession();
+    const capturedAccessToken = sessionData?.session?.access_token || '';
+    const capturedRefreshToken = sessionData?.session?.refresh_token || '';
+
     // Chunk cart into Razorpay notes for webhook fallback
     const cartChunks: Record<string, string> = {};
     for (let i = 0; i < capturedCart.length; i += 250) {
       cartChunks[`c${Math.floor(i / 250)}`] = capturedCart.substring(i, i + 250);
     }
+
+    // Helper: Direct REST insert (bypasses Supabase JS client auth issues on mobile)
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const directInsert = async (table: string, body: any, token: string) => {
+      const res = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${token}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Insert to ${table} failed: ${res.status} - ${errText}`);
+      }
+    };
+
+    const directSelect = async (table: string, query: string, token: string) => {
+      const res = await fetch(`${supabaseUrl}/rest/v1/${table}?${query}`, {
+        method: 'GET',
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+      if (!res.ok) return [];
+      return await res.json();
+    };
 
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -212,6 +252,26 @@ export const Checkout = () => {
         setLoading(true);
         const paymentId = response.razorpay_payment_id;
 
+        // MOBILE FIX: Restore auth session that may have been lost
+        let activeToken = capturedAccessToken;
+        try {
+          const { data: currentSession } = await supabase.auth.getSession();
+          if (!currentSession?.session?.access_token && capturedRefreshToken) {
+            // Session was lost (mobile tab suspension) — restore it
+            await supabase.auth.setSession({
+              access_token: capturedAccessToken,
+              refresh_token: capturedRefreshToken
+            });
+          }
+          // Re-fetch to get the latest valid token
+          const { data: refreshed } = await supabase.auth.getSession();
+          if (refreshed?.session?.access_token) {
+            activeToken = refreshed.session.access_token;
+          }
+        } catch (sessionErr) {
+          console.warn('Session restore failed, using captured token:', sessionErr);
+        }
+
         try {
           // Retry mechanism: try up to 3 times
           let success = false;
@@ -220,13 +280,8 @@ export const Checkout = () => {
           for (let attempt = 1; attempt <= 3; attempt++) {
             try {
               // GUARD: Check if this payment was already processed (prevent duplicates)
-              const { data: existingOrder } = await supabase
-                .from('orders')
-                .select('order_id')
-                .eq('payment_id', paymentId)
-                .maybeSingle();
-
-              if (existingOrder) {
+              const existingOrders = await directSelect('orders', `payment_id=eq.${paymentId}&select=order_id&limit=1`, activeToken);
+              if (existingOrders && existingOrders.length > 0) {
                 clearCart();
                 toast.success('Order already placed!');
                 window.location.href = '/order-success';
@@ -234,37 +289,31 @@ export const Checkout = () => {
               }
 
               // PRE-FLIGHT: Ensure user profile exists (FK constraint)
-              const { error: profileErr } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('id', capturedUserId)
-                .single();
-
-              if (profileErr && profileErr.code === 'PGRST116') {
-                await supabase.from('profiles').upsert([{
-                  id: capturedUserId,
-                  name: capturedName,
-                  email: `customer_${Date.now()}@temp.com`,
-                  password: 'auto_generated'
-                }]);
+              const profiles = await directSelect('profiles', `id=eq.${capturedUserId}&select=id&limit=1`, activeToken);
+              if (!profiles || profiles.length === 0) {
+                try {
+                  await directInsert('profiles', {
+                    id: capturedUserId,
+                    name: capturedName,
+                    email: `customer_${Date.now()}@temp.com`,
+                    password: 'auto_generated'
+                  }, activeToken);
+                } catch (_profileErr) {
+                  // Profile may already exist due to race condition — safe to ignore
+                }
               }
 
               // STEP 1: Payment Log FIRST (strict tracking)
-              const { error: logErr } = await supabase.from('payment_logs').insert([{
+              await directInsert('payment_logs', {
                 customer_name: capturedName,
                 amount_paid: capturedTotal,
                 payment_method: 'Online Payment (Razorpay)',
                 note: `Order Payment: ${paymentId}`,
                 paid_at: new Date().toISOString()
-              }]);
-
-              if (logErr) {
-                console.error('Payment log insert failed:', logErr);
-                throw logErr;
-              }
+              }, activeToken);
 
               // STEP 2: Create Order
-              const { error: orderErr } = await supabase.from('orders').insert([{
+              await directInsert('orders', {
                 user_id: capturedUserId,
                 products: capturedCart,
                 total_amount: capturedTotal,
@@ -273,12 +322,7 @@ export const Checkout = () => {
                 order_status: 'Processing',
                 address: fullAddress,
                 date: new Date().toISOString()
-              }]);
-
-              if (orderErr) {
-                console.error('Order insert failed:', orderErr);
-                throw orderErr;
-              }
+              }, activeToken);
 
               // STEP 3: Stock deduction (non-blocking, don't throw)
               try {
@@ -287,10 +331,19 @@ export const Checkout = () => {
                   for (const item of items) {
                     const pid = item.product_id || item.id;
                     if (!pid) continue;
-                    const { data: product } = await supabase.from('products').select('*').eq('product_id', pid).single();
-                    if (product) {
-                      const newStock = Math.max(0, (product.stock ?? 0) - (item.quantity || 1));
-                      await supabase.from('products').update({ stock: newStock }).eq('product_id', pid);
+                    const productData = await directSelect('products', `product_id=eq.${pid}&select=stock&limit=1`, activeToken);
+                    if (productData && productData.length > 0) {
+                      const newStock = Math.max(0, (productData[0].stock ?? 0) - (item.quantity || 1));
+                      await fetch(`${supabaseUrl}/rest/v1/products?product_id=eq.${pid}`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'apikey': supabaseAnonKey,
+                          'Authorization': `Bearer ${activeToken}`,
+                          'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify({ stock: newStock })
+                      });
                     }
                   }
                 }
