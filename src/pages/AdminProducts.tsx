@@ -99,8 +99,9 @@ export const AdminProducts = () => {
       return;
     }
 
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error('File size should be less than 20MB');
+    if (file.size > 15 * 1024 * 1024) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      toast.error(`File size is too large (${sizeMB}MB). Max allowed is 15MB.`);
       return;
     }
 
@@ -240,8 +241,9 @@ export const AdminProducts = () => {
       return;
     }
 
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error('File size should be less than 20MB');
+    if (file.size > 15 * 1024 * 1024) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      toast.error(`File size is too large (${sizeMB}MB). Max allowed is 15MB.`);
       return;
     }
 
@@ -922,6 +924,7 @@ export const AdminProducts = () => {
                             {!editingProduct?.is_store_only && (
                               <div className="space-y-2 col-span-1 md:col-span-2 border-t border-slate-300 pt-4">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Variant Photos (Max 3)</label>
+                               <p className="text-[9px] font-bold text-slate-400 mt-0.5">📁 Max size: <span className="text-indigo-500">15MB</span> &nbsp;•&nbsp; 📐 Best ratio: <span className="text-indigo-500">4:5 (Portrait)</span></p>
                                 <div className="flex flex-wrap gap-3">
                                   {variant.images?.map((img, imgIdx) => (
                                     <div key={imgIdx} className="relative group/img">

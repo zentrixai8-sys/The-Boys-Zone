@@ -27,10 +27,34 @@ export const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
+  const [hasPurchased, setHasPurchased] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
   const { addToCart } = useCart();
   const navigate = useNavigate();
+
+  // Check if the logged-in user has purchased & received this product
+  useEffect(() => {
+    if (!user || !product) return;
+    const checkPurchase = async () => {
+      try {
+        const orders = await api.request('getUserOrders', { user_id: user.id });
+        const purchased = Array.isArray(orders) && orders.some((order: any) => {
+          if (order.order_status !== 'Delivered') return false;
+          try {
+            const items = typeof order.products === 'string' ? JSON.parse(order.products) : order.products;
+            return Array.isArray(items) && items.some((item: any) =>
+              item.product?.product_id === product.product_id ||
+              item.product_id === product.product_id ||
+              item.id === product.product_id
+            );
+          } catch { return false; }
+        });
+        setHasPurchased(purchased);
+      } catch { setHasPurchased(false); }
+    };
+    checkPurchase();
+  }, [user, product]);
 
   useEffect(() => {
     if (product) {
@@ -574,7 +598,7 @@ export const ProductDetail = () => {
           <div className="lg:col-span-1">
             <div className="bg-[#f9fafa] p-8 rounded-[32px] border border-gray-100 sticky top-32">
               <h3 className="text-lg font-black mb-6 text-gray-900 uppercase">Rate Product</h3>
-              {user ? (
+              {user && hasPurchased ? (
                 <form onSubmit={handleReviewSubmit} className="space-y-6">
                   <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -603,6 +627,14 @@ export const ProductDetail = () => {
                     {submittingReview ? <Loader2 className="w-5 h-5 animate-spin" /> : 'SUBMIT REVIEW'}
                   </button>
                 </form>
+              ) : user && !hasPurchased ? (
+                <div className="text-center py-6">
+                  <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-100">
+                    <ShieldCheck className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <p className="text-gray-800 font-black text-[13px] mb-1 uppercase tracking-tight">Verified Purchase Only</p>
+                  <p className="text-gray-400 font-medium text-[12px] leading-relaxed">Only customers who have purchased and received this product can leave a review.</p>
+                </div>
               ) : (
                 <div className="text-center py-6">
                   <p className="text-gray-500 mb-6 font-medium text-[13px]">Login to write a review</p>

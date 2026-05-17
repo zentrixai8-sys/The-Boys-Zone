@@ -55,10 +55,11 @@ export const AdminSidebar = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // 5MB limit check
-    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    // 15MB limit check
+    const MAX_FILE_SIZE = 15 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
-      toast.error('File size exceeds 5MB limit');
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      toast.error(`Image size is too large (${sizeMB}MB). Max allowed is 15MB.`);
       return;
     }
 

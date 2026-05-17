@@ -110,8 +110,9 @@ export const Profile = () => {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size should be less than 5MB');
+    if (file.size > 15 * 1024 * 1024) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      toast.error(`Image size is too large (${sizeMB}MB). Max allowed is 15MB.`);
       return;
     }
 
