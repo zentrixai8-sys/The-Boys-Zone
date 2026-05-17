@@ -38,7 +38,7 @@ export const MobileBottomNav = () => {
                 <item.icon
                   className={`w-[20px] h-[20px] ${active ? 'stroke-[2.5]' : 'stroke-[1.5]'}`}
                 />
-                {item.badge && item.badge > 0 && (
+                {(item.badge ?? 0) > 0 && (
                   <span className="absolute -top-1.5 -right-2.5 bg-[#ff6161] text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 leading-none">
                     {item.badge}
                   </span>

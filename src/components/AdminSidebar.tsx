@@ -272,7 +272,7 @@ export const AdminSidebar = () => {
       </div>
 
       {/* Premium Mobile Bottom Navigation Bar (Primary Links Only) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-[150] bg-white/80 backdrop-blur-2xl border-t border-slate-200 px-6 py-3 flex items-center justify-between shadow-[0_-15px_40px_rgba(0,0,0,0.08)] rounded-t-[2.5rem]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-[150] bg-white/80 backdrop-blur-2xl border-t border-slate-200 px-6 pt-3 pb-6 flex items-center justify-between shadow-[0_-15px_40px_rgba(0,0,0,0.08)] rounded-t-[2.5rem]">
         {[menuItems[0], menuItems[1], menuItems[5], menuItems[3]].map((item) => {
           const active = isActive(item.path);
           return (
