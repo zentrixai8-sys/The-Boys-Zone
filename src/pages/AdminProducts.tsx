@@ -112,9 +112,7 @@ export const AdminProducts = () => {
       const filePath = fileName;
 
       const publicUrl = await api.request('uploadFile', {
-        file,
-        bucket: 'product',
-        path: filePath
+        file
       });
 
       setEditingProduct(prev => {
@@ -154,9 +152,7 @@ export const AdminProducts = () => {
       const fileName = `variant-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       
       const publicUrl = await api.request('uploadFile', {
-        file,
-        bucket: 'product',
-        path: fileName
+        file
       });
 
       targetVariant.images = [...currentImages, publicUrl];
@@ -253,9 +249,7 @@ export const AdminProducts = () => {
       const fileName = `variant-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       
       const publicUrl = await api.request('uploadFile', {
-        file,
-        bucket: 'product',
-        path: fileName
+        file
       });
 
       targetVariant.images = [...currentImages, publicUrl];

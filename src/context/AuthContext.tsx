@@ -21,7 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // If a logout was triggered, NEVER restore from cache — block auto-login on refresh
       if (sessionStorage.getItem('tbz_force_logout') === '1') return null;
-      const cached = sessionStorage.getItem('tbz_user_profile');
+      const cached = localStorage.getItem('tbz_user_profile');
       return cached ? JSON.parse(cached) : null;
     } catch {
       return null;
@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateUserState = (profile: User) => {
     setUser(profile);
     setLoginTime(Date.now());
-    sessionStorage.setItem('tbz_user_profile', JSON.stringify(profile));
+    localStorage.setItem('tbz_user_profile', JSON.stringify(profile));
   };
 
   useEffect(() => {
@@ -125,7 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setLoginTime(null);
-        sessionStorage.removeItem('tbz_user_profile');
+        localStorage.removeItem('tbz_user_profile');
         setLoading(false);
         clearTimeout(safetyTimer);
       } else if (event === 'INITIAL_SESSION' && !session) {
@@ -152,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 2. Instantly clear UI state
     setUser(null);
     setLoginTime(null);
-    sessionStorage.removeItem('tbz_user_profile');
+    localStorage.removeItem('tbz_user_profile');
     sessionStorage.removeItem('tbz_active_session');
     
     try {
