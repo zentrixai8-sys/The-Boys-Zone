@@ -16,27 +16,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // 1. Instant Hydration from sessionStorage
-  const getCachedUser = () => {
-    try {
-      // If a logout was triggered, NEVER restore from cache — block auto-login on refresh
-      if (sessionStorage.getItem('tbz_force_logout') === '1') return null;
-      const cached = localStorage.getItem('tbz_user_profile');
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  };
-
-  const [user, setUser] = useState<User | null>(getCachedUser());
+  const [user, setUser] = useState<User | null>(null);
   const [loginTime, setLoginTime] = useState<number | null>(user ? Date.now() : null);
-  // If we have a cached user, we can set loading to false immediately to show the UI
-  const [loading, setLoading] = useState(!user);
+  // Always start with loading=true — Supabase session must be verified before showing authenticated UI
+  const [loading, setLoading] = useState(true);
 
   const updateUserState = (profile: User) => {
     setUser(profile);
     setLoginTime(Date.now());
-    localStorage.setItem('tbz_user_profile', JSON.stringify(profile));
   };
 
   useEffect(() => {
@@ -59,22 +46,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!currentSession) return;
 
           // Profile missing, create it
-          const { data: newProfile, error: upsertError } = await supabase
+          const { data: newProfile } = await supabase
             .from('profiles')
             .upsert([{
               id: sessionUser.id,
               name: sessionUser.user_metadata.name || 'User',
-              email: sessionUser.email,
-              phone: sessionUser.user_metadata.phone || '',
-              password: 'auto_generated'
             }])
             .select()
             .single();
-          
+
           if (newProfile) {
             updateUserState(newProfile);
-          } else if (upsertError) {
-            await supabase.from('categories').insert([{ category_name: 'DEBUG_PROFILE', image_url: JSON.stringify(upsertError) }]);
           }
         } else if (profile) {
           // Verify if we are still supposed to be logged in before updating state
@@ -93,16 +75,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
-        // If force-logout flag is set, refuse to restore session — sign out and stop
-        if (sessionStorage.getItem('tbz_force_logout') === '1') {
-          await supabase.auth.signOut({ scope: 'local' });
-          setLoading(false);
-          return;
-        }
-        // Clear any stale logout flag — user is actively logging in
-        sessionStorage.removeItem('tbz_force_logout');
-        
-        // 1. Instant Hydration from metadata (So the name appears immediately)
         const initialUser: User = {
           id: session.user.id,
           email: session.user.email || '',
@@ -125,11 +97,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setLoginTime(null);
-        localStorage.removeItem('tbz_user_profile');
         setLoading(false);
         clearTimeout(safetyTimer);
       } else if (event === 'INITIAL_SESSION' && !session) {
-        // No session found on load
+        setUser(null);
+        setLoginTime(null);
         setLoading(false);
         clearTimeout(safetyTimer);
       }
@@ -146,24 +118,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    // 1. Set force-logout flag FIRST — this blocks getCachedUser on any future refresh
-    sessionStorage.setItem('tbz_force_logout', '1');
-    
-    // 2. Instantly clear UI state
     setUser(null);
     setLoginTime(null);
-    localStorage.removeItem('tbz_user_profile');
-    sessionStorage.removeItem('tbz_active_session');
-    
+
     try {
-      await supabase.auth.signOut({ scope: 'local' });
+      await supabase.auth.signOut();
     } catch (e) {
       console.error('Supabase signOut error (ignored):', e);
     }
-    
+
     toast.success('Logged out successfully');
-    
-    // 3. Hard redirect immediately — no setTimeout to avoid race conditions
     window.location.href = '/login';
   };
 

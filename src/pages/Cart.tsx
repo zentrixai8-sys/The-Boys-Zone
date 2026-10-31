@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 export const Cart = () => {
   const { cart, removeFromCart, updateQuantity, totalPrice, totalItems } = useCart();
 
-  if (cart.length === 0) {
+  if (!cart || cart.length === 0) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
         <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-8">

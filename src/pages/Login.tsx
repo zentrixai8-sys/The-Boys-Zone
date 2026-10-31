@@ -11,7 +11,7 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -52,28 +52,6 @@ export const Login = () => {
     e.preventDefault();
     setLoading(true);
 
-    // --- Hardcoded Admin Bypass ---
-    if (email.toLowerCase() === 'admin@test.com' && password === 'admin123') {
-      console.warn('⚡ Admin Bypass Activated');
-      const bypassUser = {
-        id: 'tbz-hardcoded-admin-id',
-        email: 'admin@test.com',
-        name: 'The Boys Zone Admin',
-        phone: '9617628157',
-        role: 'admin',
-        created_at: new Date().toISOString()
-      };
-      
-      // @ts-ignore
-      login(bypassUser);
-      toast.success('Admin Bypass Successful! Welcome back.');
-      navigate('/admin');
-      setLoading(false);
-      return;
-    }
-    
-    console.log('Attempting login for:', email);
-    
     // Clear any stale logout flag so AuthContext doesn't block the new session
     sessionStorage.removeItem('tbz_force_logout');
     

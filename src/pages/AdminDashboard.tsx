@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { api } from '../services/api';
 import { Product, Order } from '../types';
 import { formatPrice, formatDate } from '../lib/utils';
@@ -24,6 +24,7 @@ export const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string>('All');
   const [channel, setChannel] = useState<'online' | 'store'>('online');
+  const [chartsReady, setChartsReady] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -36,6 +37,12 @@ export const AdminDashboard = () => {
       api.unsubscribe(orderChannel);
       api.unsubscribe(salesChannel);
     };
+  }, []);
+
+  // Delay chart render by one frame so container layout is computed first
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setChartsReady(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   const fetchData = async () => {
@@ -78,14 +85,13 @@ export const AdminDashboard = () => {
     const loadStoreSales = async () => {
       try {
         const res = await api.request('getStoreSalesAll');
-        setStoreSales(Array.isArray(res) ? res : []);
-      } catch (e) {}
-    };
-
-    const loadStoreItems = async () => {
-      try {
-        const res = await api.request('getStoreSalesRaw');
-        setStoreItems(Array.isArray(res) ? res : []);
+        // getStoreSalesAll now returns { invoices, raw } — no second DB call needed
+        if (res && !Array.isArray(res) && res.invoices) {
+          setStoreSales(res.invoices);
+          setStoreItems(res.raw);
+        } else {
+          setStoreSales(Array.isArray(res) ? res : []);
+        }
       } catch (e) {}
     };
 
@@ -94,8 +100,7 @@ export const AdminDashboard = () => {
       await loadProducts();
       await loadOrders();
       await loadUsers();
-      await loadStoreSales();
-      await loadStoreItems();
+      await loadStoreSales(); // also sets storeItems — no separate DB call
       setLoading(false);
     };
     loadData();
@@ -567,9 +572,9 @@ export const AdminDashboard = () => {
                 </div>
               </div>
               
-              <div className="h-[300px] w-full">
-                {activeDailyRevenue.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+              <div className="h-[300px] w-full min-w-0">
+                {chartsReady && activeDailyRevenue.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%" debounce={50}>
                     <AreaChart data={activeDailyRevenue} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -665,8 +670,8 @@ export const AdminDashboard = () => {
               <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-8 min-h-[300px]">
                 {activeCategoryRevenue.length > 0 ? (
                   <>
-                    <div className="w-64 h-64 shrink-0">
-                      <ResponsiveContainer width="100%" height="100%">
+                    <div className="w-64 h-64 shrink-0 min-w-0">
+                      <ResponsiveContainer width="100%" height="100%" debounce={50}>
                         <PieChart>
                           <Pie
                             data={activeCategoryRevenue}
@@ -773,9 +778,9 @@ export const AdminDashboard = () => {
                 <h3 className="text-xl font-black mb-1 text-slate-800">Product Sizes</h3>
                 <p className="text-sm text-slate-400 font-bold tracking-wide">Which sizes drive the most sales</p>
               </div>
-              <div className="flex-1 flex items-center justify-center min-h-[250px] relative z-10">
-                {activeSizeRevenueData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+              <div className="flex-1 flex items-center justify-center min-h-[250px] relative z-10 min-w-0">
+                {chartsReady && activeSizeRevenueData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%" debounce={50}>
                     <PieChart>
                       <Pie
                         data={activeSizeRevenueData}
@@ -820,9 +825,9 @@ export const AdminDashboard = () => {
                 <h3 className="text-xl font-black mb-1 text-slate-800">Top 5 Products</h3>
                 <p className="text-sm text-slate-400 font-bold tracking-wide">Highest revenue generating items</p>
               </div>
-              <div className="flex-1 min-h-[250px] w-full relative z-10">
-                {activeTopProductsData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+              <div className="flex-1 min-h-[250px] w-full relative z-10 min-w-0">
+                {chartsReady && activeTopProductsData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%" debounce={50}>
                     <BarChart data={activeTopProductsData} layout="vertical" margin={{ top: 0, right: 20, left: 40, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
                       <XAxis type="number" hide />
@@ -860,9 +865,9 @@ export const AdminDashboard = () => {
                 <h3 className="text-xl font-black mb-1 text-slate-800">Top 5 Customers</h3>
                 <p className="text-sm text-slate-400 font-bold tracking-wide">Most valuable buyers</p>
               </div>
-              <div className="flex-1 min-h-[250px] w-full relative z-10">
-                {activeTopCustomersData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+              <div className="flex-1 min-h-[250px] w-full relative z-10 min-w-0">
+                {chartsReady && activeTopCustomersData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%" debounce={50}>
                     <BarChart data={activeTopCustomersData} layout="vertical" margin={{ top: 0, right: 20, left: 40, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
                       <XAxis type="number" hide />

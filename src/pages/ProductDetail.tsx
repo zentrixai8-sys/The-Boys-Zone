@@ -66,7 +66,7 @@ export const ProductDetail = () => {
 
       if (product.variants && product.variants.length > 0) {
         if (!selectedColor) setSelectedColor(product.variants[0].color);
-        if (!selectedSize && product.variants[0].sizes.length > 0) {
+        if (!selectedSize && product.variants[0].sizes && product.variants[0].sizes.length > 0) {
           setSelectedSize(product.variants[0].sizes[0].size);
         }
       } else if (product.sizes && product.sizes.length > 0) {
@@ -81,9 +81,9 @@ export const ProductDetail = () => {
 
 
   const currentVariant = product?.variants?.find(v => v.color === selectedColor);
-  const availableSizes = currentVariant ? currentVariant.sizes : (product?.sizes?.map(s => ({ size: s, stock: product.stock })) || []);
+  const availableSizes = currentVariant ? (currentVariant.sizes || []) : (product?.sizes?.map(s => ({ size: s, stock: product.stock })) || []);
   const currentStock = currentVariant 
-    ? (currentVariant.sizes.find(s => s.size === selectedSize)?.stock || 0)
+    ? (currentVariant.sizes?.find(s => s.size === selectedSize)?.stock || 0)
     : (product?.stock || 0);
   const selectedColorImage = currentVariant?.colorImage;
 
@@ -387,7 +387,7 @@ export const ProductDetail = () => {
                         onMouseEnter={() => setSelectedColor(v.color)}
                         onClick={() => {
                           setSelectedColor(v.color);
-                          if (v.sizes.length > 0) setSelectedSize(v.sizes[0].size);
+                          if (v.sizes && v.sizes.length > 0) setSelectedSize(v.sizes[0].size);
                         }}
                         className={`group relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${selectedColor === v.color ? 'border-indigo-600 shadow-md ring-4 ring-indigo-50' : 'border-gray-100 hover:border-gray-300'}`}
                       >

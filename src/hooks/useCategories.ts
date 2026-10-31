@@ -6,7 +6,7 @@ export function useCategories() {
   const fetcher = async () => {
     try {
       const res = await api.request('getCategories');
-      return Array.isArray(res) ? res as Category[] : (res.categories || []) as Category[];
+      return Array.isArray(res) ? (res as Category[]) : ((res?.categories || []) as Category[]);
     } catch (e) {
       console.error('SWR fetch error in getCategories:', e);
       throw e;
@@ -14,8 +14,10 @@ export function useCategories() {
   };
 
   const { data, error, isLoading, mutate } = useSWR('categories', fetcher, {
-    revalidateOnFocus: true,
-    dedupingInterval: 60000, // 1 minute
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    dedupingInterval: 300000, // 5 minutes — categories rarely change
   });
 
   return {

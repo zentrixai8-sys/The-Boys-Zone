@@ -1,17 +1,6 @@
 import { supabase } from '../lib/supabase';
 import axios from 'axios';
 
-// Helper for social proof: Generate stable base ratings based on product id
-const getRatingBase = (productId: string) => {
-  let hash = 0;
-  for (let i = 0; i < productId.length; i++) {
-    hash = productId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const count = 200 + (Math.abs(hash) % 101); // 200-300 reviews
-  const baseAvg = 3.8 + ((Math.abs(hash * 31) % 12) / 10); // 3.8 - 5.0 base rating
-  return { count, avg: baseAvg };
-};
-
 
 
 /**
@@ -88,7 +77,7 @@ export const api = {
           const limit = data.limit || 1000;
           const { data: products, error: pError } = await supabase
             .from('products')
-            .select('*')
+            .select('product_id, title, price, discount_price, category, brand, stock, image_url, images, variants, sale_type, created_at')
             .order('created_at', { ascending: false })
             .limit(limit);
             
@@ -97,17 +86,7 @@ export const api = {
             throw pError;
           }
 
-          const productsWithRatings = products?.map(product => {
-            const productIdStr = String(product.product_id || product.id || '');
-            const { count: baseCount, avg: baseAvg } = getRatingBase(productIdStr);
-            return {
-              ...product,
-              rating: Number(baseAvg.toFixed(1)),
-              reviewCount: baseCount
-            };
-          });
-
-          result = { products: productsWithRatings || [] };
+          result = { products: (products || []).map(p => ({ ...p, rating: 0, reviewCount: 0 })) };
           break;
         }
 
@@ -119,19 +98,16 @@ export const api = {
             .single();
           if (error) throw error;
 
-          const { count: baseCount, avg: baseAvg } = getRatingBase(product.product_id);
           const { data: reviews } = await supabase.from('reviews').select('rating').eq('product_id', product.product_id);
-          
+
           const realReviewCount = reviews?.length || 0;
-          const realRatingSum = reviews?.reduce((sum, r) => sum + r.rating, 0) || 0;
-          
-          const totalCount = baseCount + realReviewCount;
-          const finalAvg = ((baseAvg * baseCount) + realRatingSum) / totalCount;
+          const realRatingSum = reviews?.reduce((sum: number, r: any) => sum + r.rating, 0) || 0;
+          const realAvg = realReviewCount > 0 ? realRatingSum / realReviewCount : 0;
 
           result = {
             ...product,
-            rating: Number(finalAvg.toFixed(1)),
-            reviewCount: totalCount
+            rating: Number(realAvg.toFixed(1)),
+            reviewCount: realReviewCount
           };
           break;
         }
@@ -168,30 +144,23 @@ export const api = {
             .map(([id]) => id);
 
           if (sortedProductIds.length === 0) {
-             const { data: latestProducts } = await supabase.from('products').select('*').limit(5);
+             const { data: latestProducts } = await supabase.from('products').select('product_id, title, price, discount_price, category, brand, stock, image_url, images, variants, sale_type').limit(5);
              result = latestProducts || [];
              break;
           }
 
           const { data: bestSellerProducts, error: prodErr } = await supabase
             .from('products')
-            .select('*')
+            .select('product_id, title, price, discount_price, category, brand, stock, image_url, images, variants, sale_type')
             .in('product_id', sortedProductIds);
           
           if (prodErr) throw prodErr;
 
-          const productsWithRatings = bestSellerProducts.map(product => {
-            const { count: baseCount, avg: baseAvg } = getRatingBase(product.product_id);
-            return {
-              ...product,
-              rating: Number(baseAvg.toFixed(1)),
-              reviewCount: baseCount
-            };
-          });
-
-          result = productsWithRatings.sort((a, b) => 
-            sortedProductIds.indexOf(a.product_id) - sortedProductIds.indexOf(b.product_id)
-          );
+          result = bestSellerProducts
+            .map((p: any) => ({ ...p, rating: 0, reviewCount: 0 }))
+            .sort((a: any, b: any) =>
+              sortedProductIds.indexOf(a.product_id) - sortedProductIds.indexOf(b.product_id)
+            );
           break;
         }
 
@@ -371,14 +340,10 @@ export const api = {
         }
 
         case 'resetPassword': {
-          const { data: userData, error } = await supabase.auth.updateUser({
+          const { error } = await supabase.auth.updateUser({
             password: data.password
           });
           if (error) throw error;
-          
-          if (userData.user) {
-            await supabase.from('profiles').update({ password: data.password }).eq('id', userData.user.id);
-          }
           result = true;
           break;
         }
@@ -441,8 +406,7 @@ export const api = {
             await supabase.from('profiles').upsert([{
               id: data.user_id,
               name: 'Customer',
-              email: `customer_${Date.now()}@temp.com`, // Dummy email to satisfy NOT NULL constraint
-              password: 'auto_generated'
+              email: `customer_${Date.now()}@temp.com`,
             }]);
           }
 
@@ -492,17 +456,23 @@ export const api = {
           try {
             const orderItems = typeof data.products === 'string' ? JSON.parse(data.products) : data.products;
             if (Array.isArray(orderItems)) {
+              // Batch fetch all products in one query instead of N individual reads
+              const allPids = orderItems.map((i: any) => i.product_id || i.id).filter(Boolean);
+              const { data: fetchedProducts } = await supabase
+                .from('products')
+                .select('product_id, stock, variants')
+                .in('product_id', allPids);
+              const productMap = new Map((fetchedProducts || []).map((p: any) => [p.product_id, p]));
+
               for (const item of orderItems) {
                 const pid = item.product_id || item.id;
                 if (!pid) continue;
-
-                // 1. Get current product state
-                const { data: product } = await supabase.from('products').select('*').eq('product_id', pid).single();
+                const product = productMap.get(pid);
                 if (!product) continue;
 
                 const qty = Number(item.quantity || 1);
                 const v = product.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
-                
+
                 let sizeFound = false;
                 if (v && v.length > 0) {
                   v.forEach((variant: any) => {
@@ -524,13 +494,9 @@ export const api = {
                   }
                 }
 
-                // 2. Update stock
                 const newTotalStock = Math.max(0, (product.stock || 0) - qty);
                 await supabase.from('products')
-                  .update({ 
-                    stock: newTotalStock, 
-                    variants: v 
-                  })
+                  .update({ stock: newTotalStock, variants: v })
                   .eq('product_id', pid);
               }
             }
@@ -575,11 +541,18 @@ export const api = {
 
           // --- AUTO STOCK DEDUCTION (Store) ---
           try {
+            // Batch fetch all products in one query
+            const storePids = data.items.map((i: any) => i.productId).filter(Boolean);
+            const { data: fetchedStoreProducts } = await supabase
+              .from('products')
+              .select('product_id, stock, variants')
+              .in('product_id', storePids);
+            const storeProductMap = new Map((fetchedStoreProducts || []).map((p: any) => [p.product_id, p]));
+
             for (const item of data.items) {
               const pid = item.productId;
               if (!pid) continue;
-
-              const { data: product } = await supabase.from('products').select('*').eq('product_id', pid).single();
+              const product = storeProductMap.get(pid);
               if (!product) continue;
 
               const qty = Number(item.quantity || 1);
@@ -781,6 +754,16 @@ export const api = {
           break;
         }
 
+        case 'deletePendingPayment': {
+          const { error } = await supabase
+            .from('pending_payments')
+            .delete()
+            .eq('id', data.id);
+          if (error) throw error;
+          result = true;
+          break;
+        }
+
         case 'getOrders': {
           const { data: orders, error } = await supabase
             .from('orders')
@@ -887,7 +870,7 @@ export const api = {
         }
 
         case 'getUsers': {
-          const { data: users, error } = await supabase.from('profiles').select('*');
+          const { data: users, error } = await supabase.from('profiles').select('id, name, phone, avatar_url, created_at');
           if (error) throw error;
           result = users;
           break;
@@ -910,11 +893,14 @@ export const api = {
             const inv = invoiceMap.get(row.invoice_id);
             inv.total += Number(row.item_total) || 0;
           }
-          result = Array.from(invoiceMap.values());
+          // Return both grouped invoices and raw rows so callers can use either
+          // without a second DB query
+          result = { invoices: Array.from(invoiceMap.values()), raw: rows || [] };
           break;
         }
 
         case 'getStoreSalesRaw': {
+          // Reuse getStoreSalesAll data to avoid a duplicate DB scan
           const { data: rows, error } = await supabase.from('store_sales').select('*').order('created_at', { ascending: false });
           if (error) throw error;
           result = rows || [];

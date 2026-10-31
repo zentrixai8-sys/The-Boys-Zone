@@ -8,7 +8,7 @@ export function useProducts() {
   const fetcher = async () => {
     try {
       const res = await api.request('getProducts');
-      return res.products as Product[];
+      return (res?.products || []) as Product[];
     } catch (e) {
       console.error('SWR fetch error in getProducts:', e);
       throw e;
@@ -16,27 +16,41 @@ export function useProducts() {
   };
 
   const { data, error, isLoading, mutate } = useSWR('products', fetcher, {
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-    revalidateIfStale: true,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
     revalidateOnMount: true,
-    dedupingInterval: 2000, // Reduced from 5s to 2s for better responsiveness on back/forth
+    dedupingInterval: 60000,
     errorRetryCount: 3,
     errorRetryInterval: 1000,
-    focusThrottleInterval: 2000,
+    focusThrottleInterval: 60000,
   });
 
-  // Setup Supabase Realtime for instant UI updates
+  // Realtime: only revalidate on INSERT/UPDATE/DELETE, not on every postgres event
   useEffect(() => {
     const channel = supabase.channel('realtime_products')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'products' },
+        { event: 'INSERT', schema: 'public', table: 'products' },
+        () => mutate()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'products' },
         (payload) => {
-          console.log('Product changed!', payload);
-          // Optimistically update or trigger re-fetch
-          mutate(); // Re-fetch all to ensure related tables (like ratings) are consistent
+          // Optimistically patch local cache instead of full re-fetch
+          mutate((current: any) => {
+            if (!current) return current;
+            return current.map((p: any) =>
+              p.product_id === payload.new.product_id ? { ...p, ...payload.new } : p
+            );
+          }, { revalidate: false });
         }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'products' },
+        () => mutate()
       )
       .subscribe();
 

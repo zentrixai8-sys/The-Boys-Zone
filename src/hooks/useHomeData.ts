@@ -29,10 +29,10 @@ export function useHomeData() {
   };
 
   const { data, error, isLoading, mutate } = useSWR('home_data', fetcher, {
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnMount: true,
-    revalidateIfStale: true,
-    dedupingInterval: 5000, // Reduced from 30s for more frequent sync
+    revalidateIfStale: false,
+    dedupingInterval: 120000,
     errorRetryCount: 3,
   });
 

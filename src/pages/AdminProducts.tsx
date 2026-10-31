@@ -530,7 +530,7 @@ export const AdminProducts = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                          <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                          {product.image_url && <img src={product.image_url} alt="" className="w-full h-full object-cover" />}
                         </div>
                         <div>
                           <p className="font-bold text-sm text-slate-800">{product.title}</p>
@@ -602,7 +602,7 @@ export const AdminProducts = () => {
               >
                 <div className="flex gap-4">
                   <div className="w-24 h-24 rounded-3xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
-                    <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                    {product.image_url && <img src={product.image_url} alt="" className="w-full h-full object-cover" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
@@ -679,80 +679,71 @@ export const AdminProducts = () => {
               initial={{ opacity: 0, scale: 0.95, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 30 }}
-              className="fixed top-[72px] bottom-4 inset-x-2 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-[1000] md:w-[600px] max-h-[calc(100vh-88px)] md:max-h-[94vh] bg-white/95 backdrop-blur-xl rounded-[2rem] md:rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex flex-col border border-white overflow-hidden"
+              className="fixed top-[72px] bottom-4 inset-x-2 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-[1000] md:w-[860px] max-h-[calc(100vh-88px)] md:max-h-[94vh] bg-white/98 backdrop-blur-xl rounded-[2rem] md:rounded-[2rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.25)] flex flex-col border border-slate-100 overflow-hidden"
             >
-              <div className="pt-6 pb-5 px-5 md:p-8 border-b border-slate-100 flex justify-between items-start md:items-center bg-white/50">
-                <div>
-                  <h2 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 leading-tight">{editingProduct?.product_id ? 'Edit Product' : 'Add New Product'}</h2>
-                  <div className="flex items-center gap-3 mt-2">
+              <div className="px-6 md:px-8 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h2 className="text-base md:text-lg font-black tracking-tight text-slate-900">{editingProduct?.product_id ? 'Edit Product' : 'Add New Product'}</h2>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
                     <button
                       type="button"
                       onClick={() => setEditingProduct({ ...editingProduct, is_store_only: false } as any)}
-                      className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${editingProduct?.is_store_only === false ? 'bg-blue-500 text-white shadow-lg shadow-blue-100' : 'bg-slate-100 text-slate-400'}`}
+                      className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${editingProduct?.is_store_only === false ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                      Online Product
+                      Online
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingProduct({ ...editingProduct, is_store_only: true } as any)}
-                      className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${editingProduct?.is_store_only ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-100' : 'bg-slate-100 text-slate-400'}`}
+                      className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${editingProduct?.is_store_only ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                      Store Product
+                      Store
                     </button>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="p-3 hover:bg-slate-100 rounded-2xl transition-all duration-300 group"
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2 hover:bg-slate-100 rounded-xl transition-all group"
                 >
-                  <X className="w-6 h-6 text-slate-400 group-hover:text-slate-900 group-hover:rotate-90 transition-all duration-300" />
+                  <X className="w-5 h-5 text-slate-400 group-hover:text-slate-900 group-hover:rotate-90 transition-all duration-200" />
                 </button>
               </div>
 
-              <form onSubmit={handleSaveProduct} className="p-6 md:p-8 pb-16 md:pb-8 overflow-y-auto space-y-6 md:space-y-8 custom-scrollbar">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 md:gap-y-6">
+              <form onSubmit={handleSaveProduct} className="px-6 md:px-8 py-5 pb-16 md:pb-6 overflow-y-auto space-y-5 custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                   {!editingProduct?.is_store_only && (
-                    <div className="space-y-2.5 col-span-1 md:col-span-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Product Title</label>
+                    <div className="space-y-1.5 col-span-1 md:col-span-3">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-0.5">Product Title</label>
                       <input
                         type="text"
                         required
                         placeholder="Enter product title..."
                         value={editingProduct?.title}
                         onChange={(e) => setEditingProduct({ ...editingProduct, title: e.target.value } as any)}
-                        className="w-full px-5 py-4 bg-white border border-slate-300 rounded-[1.25rem] focus:ring-4 focus:ring-slate-100 focus:border-slate-900 transition-all outline-none font-bold placeholder:text-slate-400 shadow-sm"
+                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all outline-none font-semibold text-sm placeholder:text-slate-300 shadow-sm"
                       />
                     </div>
                   )}
-                  <div className="space-y-2.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Category</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-0.5">Category</label>
                     <select
                       value={editingProduct?.category}
                       onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
-                      className="w-full px-5 py-4 bg-white border border-slate-300 rounded-[1.25rem] focus:ring-4 focus:ring-slate-100 focus:border-slate-900 transition-all outline-none font-bold appearance-none shadow-sm"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all outline-none font-semibold text-sm appearance-none shadow-sm"
                     >
                       {categories.map(cat => (
                         <option key={cat.category_id} value={cat.category_name}>{cat.category_name}</option>
                       ))}
                     </select>
                   </div>
-                  <div className="space-y-2.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Brand</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. The Boys Zone"
-                      value={editingProduct?.brand}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })}
-                      className="w-full px-5 py-4 bg-white border border-slate-300 rounded-[1.25rem] focus:ring-4 focus:ring-slate-100 focus:border-slate-900 transition-all outline-none font-bold placeholder:text-slate-400 shadow-sm"
-                    />
-                  </div>
-                  <div className="space-y-2.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Sub Category</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-0.5">Sub Category</label>
                     <select
                       value={editingProduct?.sub_category}
                       onChange={(e) => setEditingProduct({ ...editingProduct, sub_category: e.target.value })}
-                      className="w-full px-5 py-4 bg-white border border-slate-300 rounded-[1.25rem] focus:ring-4 focus:ring-slate-100 focus:border-slate-900 transition-all outline-none font-bold appearance-none shadow-sm"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all outline-none font-semibold text-sm appearance-none shadow-sm"
                     >
                       <option value="">Select Sub Category</option>
                       {(Object.entries(subCategoryMap).find(([key]) => key.toLowerCase() === (editingProduct?.category || '').toLowerCase())?.[1] || []).map(sub => (
@@ -760,53 +751,64 @@ export const AdminProducts = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="space-y-2.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Price (₹)</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-0.5">Brand</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. The Boys Zone"
+                      value={editingProduct?.brand}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all outline-none font-semibold text-sm placeholder:text-slate-300 shadow-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-0.5">Price (₹)</label>
                     <input
                       type="number"
                       required
                       placeholder="0"
                       value={editingProduct?.price || ''}
                       onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value === '' ? '' : Number(e.target.value) })}
-                      className="w-full px-5 py-4 bg-white border border-slate-300 rounded-[1.25rem] focus:ring-4 focus:ring-slate-100 focus:border-slate-900 transition-all outline-none font-bold placeholder:text-slate-400 shadow-sm"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all outline-none font-semibold text-sm placeholder:text-slate-300 shadow-sm"
                     />
                   </div>
-                  <div className="space-y-2.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Discount Price (₹)</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-0.5">Discount Price (₹)</label>
                     <input
                       type="number"
                       placeholder="0"
                       value={editingProduct?.discount_price || ''}
                       onChange={(e) => setEditingProduct({ ...editingProduct, discount_price: e.target.value === '' ? '' : Number(e.target.value) })}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-slate-100 focus:border-slate-900 transition-all outline-none font-bold placeholder:text-slate-300"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all outline-none font-semibold text-sm placeholder:text-slate-300"
                     />
                   </div>
                   {!editingProduct?.is_store_only && (
-                    <div className="space-y-2.5 col-span-1 md:col-span-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Description</label>
+                    <div className="space-y-1.5 col-span-1 md:col-span-3">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-0.5">Description</label>
                       <textarea
                         placeholder="Write product description..."
                         value={editingProduct?.description}
                         onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                        className="w-full px-5 py-4 bg-white border border-slate-300 rounded-[1.25rem] focus:ring-4 focus:ring-slate-100 focus:border-slate-900 transition-all outline-none font-bold min-h-[120px] placeholder:text-slate-400 resize-none shadow-sm"
+                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all outline-none font-semibold text-sm min-h-[80px] placeholder:text-slate-300 resize-none shadow-sm"
                       />
                     </div>
                   )}
                 </div>
 
                 {/* Variants Section */}
-                <div className="space-y-8 border-t border-slate-100 pt-10 mt-6">
-                   <div className="flex justify-between items-end px-1">
+                <div className="space-y-4 border-t border-slate-100 pt-5">
+                   <div className="flex justify-between items-center">
                      <div>
-                       <h3 className="text-lg font-black tracking-tight text-slate-900">Product Variants</h3>
-                       <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Colors, Sizes & Photography</p>
+                       <h3 className="text-sm font-black tracking-tight text-slate-900">Product Variants</h3>
+                       <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Colors, Sizes & Photography</p>
                      </div>
                      <button
                        type="button"
                        onClick={addVariant}
-                       className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-black hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-lg shadow-slate-200"
+                       className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
                      >
-                       <Plus className="w-4 h-4" /> Add Variant
+                       <Plus className="w-3.5 h-3.5" /> Add Variant
                      </button>
                    </div>
 
@@ -973,7 +975,7 @@ export const AdminProducts = () => {
                 <button
                   type="submit"
                   disabled={uploading || editingProduct?.is_store_only === null}
-                  className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] text-sm font-black uppercase tracking-widest hover:bg-black hover:shadow-xl hover:shadow-slate-200 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full bg-slate-900 text-white py-3.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black hover:shadow-lg hover:shadow-slate-200 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                   {editingProduct?.product_id ? 'Update Product Details' : (editingProduct?.is_store_only === null ? 'Select Channel to Launch' : 'Launch New Product')}
@@ -1002,7 +1004,7 @@ export const AdminProducts = () => {
               <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                  <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-sm">
-                       <img src={stockProduct.image_url} alt="" className="w-full h-full object-cover" />
+                       {stockProduct.image_url && <img src={stockProduct.image_url} alt="" className="w-full h-full object-cover" />}
                     </div>
                     <div>
                        <h3 className="text-xl font-black text-slate-900">{stockProduct.title}</h3>

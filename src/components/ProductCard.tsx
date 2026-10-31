@@ -21,17 +21,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     const imgs = new Set<string>();
     if (product.image_url) imgs.add(product.image_url);
     if (product.images && Array.isArray(product.images)) {
-      product.images.forEach(img => imgs.add(img));
+      product.images.forEach(img => { if (img) imgs.add(img); });
     }
     if (product.variants && Array.isArray(product.variants)) {
       product.variants.forEach(v => {
         if (v.colorImage) imgs.add(v.colorImage);
         if (v.images && Array.isArray(v.images)) {
-          v.images.forEach(img => imgs.add(img));
+          v.images.forEach(img => { if (img) imgs.add(img); });
         }
       });
     }
-    return Array.from(imgs);
+    return Array.from(imgs).filter(Boolean);
   }, [product]);
 
   // Auto-slide effect
@@ -78,13 +78,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           />
         </button>
 
-        <img 
-          src={allImages[currentImgIndex] || product.image_url} 
-          alt={product.title}
-          key={allImages[currentImgIndex]}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-          referrerPolicy="no-referrer"
-        />
+        {allImages.length > 0 ? (
+          <img
+            src={allImages[currentImgIndex]}
+            alt={product.title}
+            key={allImages[currentImgIndex]}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+            referrerPolicy="no-referrer"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300 text-xs">No Image</div>
+        )}
         
         {/* Hover Action Button */}
         <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-2 group-hover:translate-y-0">
@@ -101,10 +107,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <span className="text-[8px] md:text-[9px] font-bold md:font-black tracking-[0.15em] md:tracking-[0.2em] text-slate-400 uppercase truncate pr-2">
             {product.brand || 'The Boys Zone'}
           </span>
-          <div className="flex items-center gap-1 shrink-0">
-            <Star className="w-2.5 h-2.5 md:w-3 md:h-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-[9px] md:text-[10px] font-bold text-slate-600">{product.rating || '4.8'}</span>
-          </div>
+          {product.rating > 0 && (
+            <div className="flex items-center gap-1 shrink-0">
+              <Star className="w-2.5 h-2.5 md:w-3 md:h-3 fill-yellow-400 text-yellow-400" />
+              <span className="text-[9px] md:text-[10px] font-bold text-slate-600">{product.rating}</span>
+            </div>
+          )}
         </div>
 
         {/* Title */}

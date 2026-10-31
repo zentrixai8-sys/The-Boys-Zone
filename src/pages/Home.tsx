@@ -5,7 +5,8 @@ import { Product, Category, Offer } from '../types';
 import { ProductCard } from '../components/ProductCard';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { Play, ArrowRight, Instagram, ExternalLink, Tag, Star, Plus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { ToonhubHero } from '../components/ToonhubHero';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 50 },
@@ -85,20 +86,29 @@ const AnimatedTitle = ({ text, className }: { text: string; className?: string }
   );
 };
 
-const AutoSlidingImage = ({ product, className }: { product: Product, className?: string }) => {
+const AutoSlidingImage = ({ product, className }: { product: Product; className?: string }) => {
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
   const allImages = React.useMemo(() => {
+    if (!product) return [];
     const imgs = new Set<string>();
-    if (product.image_url) imgs.add(product.image_url);
+    if (product.image_url && typeof product.image_url === 'string' && product.image_url.trim().length > 0) {
+      imgs.add(product.image_url.trim());
+    }
     if (product.images && Array.isArray(product.images)) {
-      product.images.forEach(img => imgs.add(img));
+      product.images.forEach((img: any) => {
+        if (img && typeof img === 'string' && img.trim().length > 0) imgs.add(img.trim());
+      });
     }
     if (product.variants && Array.isArray(product.variants)) {
-      product.variants.forEach(v => {
-        if (v.colorImage) imgs.add(v.colorImage);
-        if (v.images && Array.isArray(v.images)) {
-          v.images.forEach(img => imgs.add(img));
+      product.variants.forEach((v: any) => {
+        if (v?.colorImage && typeof v.colorImage === 'string' && v.colorImage.trim().length > 0) {
+          imgs.add(v.colorImage.trim());
+        }
+        if (v?.images && Array.isArray(v.images)) {
+          v.images.forEach((img: any) => {
+            if (img && typeof img === 'string' && img.trim().length > 0) imgs.add(img.trim());
+          });
         }
       });
     }
@@ -106,61 +116,40 @@ const AutoSlidingImage = ({ product, className }: { product: Product, className?
   }, [product]);
 
   useEffect(() => {
-    if (allImages.length <= 1) return;
+    if (!allImages || allImages.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentImgIndex((prev) => (prev + 1) % allImages.length);
     }, 3000);
     return () => clearInterval(interval);
   }, [allImages]);
 
+  const fallbackImg = 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&q=80&w=800';
+  const currentSrc = (allImages && allImages.length > 0 && allImages[currentImgIndex])
+    ? allImages[currentImgIndex]
+    : (product?.image_url && typeof product.image_url === 'string' && product.image_url.trim().length > 0
+      ? product.image_url.trim()
+      : fallbackImg);
+
   return (
     <img
-      src={allImages[currentImgIndex] || product.image_url}
-      alt={product.title}
-      key={allImages[currentImgIndex]}
+      src={currentSrc}
+      alt={product?.title || 'Product'}
+      key={currentSrc}
+      loading="lazy"
       className={className}
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        if (target.src !== fallbackImg) {
+          target.src = fallbackImg;
+        }
+      }}
     />
   );
 };
 
 export const Home = () => {
+  const navigate = useNavigate();
   const { products, bestSellers, categories, offers, isLoading: loading } = useHomeData();
-  const [heroSlide, setHeroSlide] = useState(0);
-  const [heroDir, setHeroDir] = useState(1);
-
-  const heroImages = [
-    "https://images.unsplash.com/photo-1617137968427-85924c800a22?q=95&w=3840&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1622470953794-aa9c70b0fb9d?q=95&w=3840&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?q=95&w=3840&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=95&w=3840&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1488161628813-04466f872be2?q=95&w=3840&auto=format&fit=crop",
-  ];
-
-  const slideVariants = {
-    enter: (dir: number) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir > 0 ? '-100%' : '100%', opacity: 0 }),
-  };
-
-  const goToSlide = (index: number) => {
-    setHeroDir(index > heroSlide ? 1 : -1);
-    setHeroSlide(index);
-  };
-
-  // Auto-slide hero images every 5 seconds
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setHeroDir(1);
-      setHeroSlide((prev) => (prev + 1) % heroImages.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const { scrollY } = useScroll();
-  const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
-  const heroScale = useTransform(scrollY, [0, 500], [1, 1.1]);
-
-
 
   const { scrollYProgress } = useScroll();
   const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1]);
@@ -173,144 +162,71 @@ export const Home = () => {
         style={{ scaleX }}
       />
 
-      {/* 1. Urban Threads Style Hero Banner */}
-      <section className="relative w-full h-screen bg-black overflow-hidden">
-        {/* Horizontal Sliding Background Images */}
-        <AnimatePresence mode="sync" custom={heroDir}>
-          <motion.div
-            key={heroSlide}
-            custom={heroDir}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
-            className="absolute inset-0"
-          >
-            <img
-              src={heroImages[heroSlide]}
-              alt={`Boys Fashion ${heroSlide + 1}`}
-              className="w-full h-full object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-black/10" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-          </motion.div>
-        </AnimatePresence>
+      {/* 1. TOONHUB Style 3D Figurines & Boys Fashion Hero Carousel */}
+      <ToonhubHero />
 
-        {/* Content - Left Aligned */}
-        <div className="relative z-10 w-full max-w-[1400px] mx-auto flex flex-col justify-end md:justify-center h-full px-6 md:px-16 pb-32 md:pb-0">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`content-${heroSlide}`}
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 30 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-              className="flex flex-col items-start max-w-2xl"
-            >
-              <span className="text-[11px] md:text-[13px] font-semibold tracking-[0.5em] uppercase text-white/50 mb-4 md:mb-5">The Boys Zone — 2026</span>
-              <h1 className="text-[11vw] md:text-[5.5vw] lg:text-[5vw] leading-[0.9] tracking-tight text-white font-black uppercase italic" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-                STYLE
-              </h1>
-              <p className="text-[4vw] md:text-[2vw] lg:text-[1.6vw] tracking-[0.15em] text-white/80 font-semibold uppercase mt-1">
-                IS A REFLECTION OF YOUR ATTITUDE
-              </p>
-              <p className="mt-4 md:mt-5 text-white/50 text-[10px] md:text-xs leading-relaxed tracking-[0.2em] uppercase">
-                Dress Confidently. Live Fearlessly.
-              </p>
-              <Link
-                to="/products"
-                className="mt-7 md:mt-9 inline-flex items-center gap-3 bg-transparent text-white px-7 md:px-9 py-3 md:py-3.5 text-[11px] md:text-xs font-bold tracking-[0.3em] uppercase hover:bg-white hover:text-black transition-all duration-400 border border-white/50 hover:border-white"
-              >
-                SHOP NOW <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Slide Progress Indicators */}
-          <div className="flex items-center gap-3 mt-10 md:mt-14">
-            {heroImages.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goToSlide(i)}
-                className="flex flex-col items-start gap-1.5 group"
-              >
-                <span className={`text-[10px] font-bold tracking-widest transition-colors duration-300 ${i === heroSlide ? 'text-white' : 'text-white/25 group-hover:text-white/50'}`}>
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="w-10 md:w-12 h-[2px] bg-white/20 overflow-hidden rounded-full">
-                  {i === heroSlide && (
-                    <motion.div
-                      className="h-full bg-white rounded-full"
-                      initial={{ width: '0%' }}
-                      animate={{ width: '100%' }}
-                      transition={{ duration: 5, ease: 'linear' }}
-                    />
-                  )}
-                  {i !== heroSlide && (
-                    <div className={`h-full rounded-full transition-all duration-300 ${i < heroSlide ? 'bg-white/60 w-full' : 'w-0'}`} />
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 2. Premium Offers Auto-Slider Section */}
-      {offers.length > 0 && (
+      {/* 2. Premium Offers Auto-Slider Section (Luxury Light Theme - No Black Background) */}
+      {offers && offers.length > 0 && (
         <motion.section 
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="relative py-12 md:py-24 w-full bg-[#030303] overflow-hidden border-y border-white/10 z-20 group"
+          className="relative py-10 md:py-20 w-full bg-gradient-to-b from-slate-50 via-white to-slate-50 overflow-hidden border-y border-slate-200/80 z-20 group"
         >
-          {/* Background Ambient Glow */}
+          {/* Subtle Ambient Glow */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[150px] -translate-y-1/2" />
-            <div className="absolute top-1/2 right-0 w-[600px] h-[600px] bg-rose-500/10 rounded-full blur-[150px] -translate-y-1/2" />
+            <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[140px] -translate-y-1/2" />
+            <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-rose-500/5 rounded-full blur-[140px] -translate-y-1/2" />
           </div>
 
           <div className="relative flex items-center">
             <div 
-              className="flex gap-6 md:gap-10 px-4 md:px-10 animate-marquee hover:[animation-play-state:paused] w-max"
+              className="flex gap-4 md:gap-8 px-4 md:px-8 animate-marquee hover:[animation-play-state:paused] w-max py-2"
             >
-              {/* Creating 2 sets for perfect seamless infinite scroll with CSS animation */}
-              {[...offers, ...offers, ...offers].map((offer, index) => (
+              {/* Seamless infinite marquee auto-scroll */}
+              {[...(offers || []), ...(offers || []), ...(offers || [])].map((offer, index) => (
                 <div 
                   key={`${offer.id}-${index}`}
-                  onClick={() => offer.link && (window.location.href = offer.link)}
-                  className="relative shrink-0 w-[280px] sm:w-[450px] md:w-[750px] h-[160px] sm:h-[240px] md:h-[350px] rounded-[20px] md:rounded-[40px] overflow-hidden group/card shadow-[0_20px_50px_-15px_rgba(0,0,0,0.8)] transition-all duration-700 cursor-pointer border border-white/10 hover:border-white/20"
+                  onClick={() => {
+                    if (!offer.link) return;
+                    if (offer.link.startsWith('http')) {
+                      window.open(offer.link, '_blank');
+                    } else {
+                      navigate(offer.link);
+                    }
+                  }}
+                  className="relative shrink-0 w-[290px] sm:w-[460px] md:w-[720px] h-[170px] sm:h-[250px] md:h-[350px] rounded-2xl md:rounded-[2.5rem] overflow-hidden group/card shadow-[0_12px_36px_-12px_rgba(0,0,0,0.12)] hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.2)] transition-all duration-500 cursor-pointer border border-slate-200/90 hover:border-slate-300"
                 >
-                  <img 
-                    src={offer.image_url} 
-                    alt={offer.title} 
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.5s] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:scale-105" 
+                  <img
+                    src={offer.image_url}
+                    alt={offer.title}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-out group-hover/card:scale-105"
                     referrerPolicy="no-referrer"
                   />
                   
-                  {/* Premium Hover Glass Overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500 backdrop-blur-[4px] pointer-events-none" />
+                  {/* Subtle Gradient Overlay on Hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-400 pointer-events-none" />
                   
                   {/* Interactive Content */}
-                  <div className="absolute inset-0 p-5 md:p-10 flex flex-col justify-between opacity-0 group-hover/card:opacity-100 transition-all duration-500 z-10 pointer-events-none">
-                    <div className="flex items-start justify-between translate-y-[-10px] md:translate-y-[-20px] group-hover/card:translate-y-0 transition-transform duration-700 ease-out">
-                       <div className="bg-white/10 backdrop-blur-md border border-white/30 px-4 md:px-6 py-1.5 md:py-2.5 rounded-full shadow-lg">
-                         <span className="text-white text-[8px] md:text-xs font-black uppercase tracking-[0.3em]">Exclusive Edition</span>
+                  <div className="absolute inset-0 p-4 md:p-8 flex flex-col justify-between opacity-0 group-hover/card:opacity-100 transition-all duration-400 z-10 pointer-events-none">
+                    <div className="flex items-start justify-between">
+                       <div className="bg-white/90 backdrop-blur-md px-3.5 md:px-5 py-1 md:py-2 rounded-full shadow-md">
+                         <span className="text-slate-900 text-[8px] md:text-xs font-bold uppercase tracking-wider">Exclusive Drop</span>
                        </div>
                     </div>
 
-                    <div className="flex items-end justify-between translate-y-[10px] md:translate-y-[20px] group-hover/card:translate-y-0 transition-transform duration-700 ease-out">
-                       <div className="flex-1 pr-4 md:pr-6">
-                          <h3 className="text-white text-lg md:text-4xl font-black uppercase tracking-widest mb-1 md:mb-2 line-clamp-1 drop-shadow-lg">{offer.title}</h3>
-                          <p className="text-white/90 text-[10px] md:text-sm font-medium line-clamp-2 max-w-[200px] md:max-w-md drop-shadow-md">{offer.description || "Premium collection for the modern man."}</p>
+                    <div className="flex items-end justify-between">
+                       <div className="flex-1 pr-3 md:pr-6">
+                          <h3 className="text-white text-base md:text-3xl font-extrabold uppercase tracking-wide mb-1 line-clamp-1 drop-shadow-md">{offer.title}</h3>
+                          <p className="text-white/90 text-[10px] md:text-xs font-medium line-clamp-2 max-w-[220px] md:max-w-md drop-shadow">{offer.description || "Premium collection for The Boys Zone."}</p>
                        </div>
                        {offer.link && (
                           <div 
-                            className="bg-white text-black h-8 w-8 md:h-16 md:w-16 rounded-full flex items-center justify-center transition-all duration-500 shadow-[0_0_40px_rgba(255,255,255,0.3)] shrink-0 group/btn"
+                            className="bg-white text-slate-900 h-8 w-8 md:h-12 md:w-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg shrink-0 group-hover/card:scale-110"
                           >
-                            <ArrowRight className="w-4 h-4 md:w-6 md:h-6 group-hover/btn:translate-x-1 transition-transform" />
+                            <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
                           </div>
                        )}
                     </div>
@@ -323,7 +239,7 @@ export const Home = () => {
       )}
 
       {/* Fallback when no offers are available - Only for Debug/Visual confirmation */}
-      {!loading && offers.length === 0 && (
+      {!loading && (!offers || offers.length === 0) && (
         <section className="h-[300px] w-full bg-white flex flex-col items-center justify-center border-y border-black/5 z-20">
           <div className="flex flex-col items-center gap-4 text-center px-4">
             <div className="w-12 h-12 rounded-full border border-black/10 flex items-center justify-center animate-pulse">
@@ -389,7 +305,7 @@ export const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                onClick={() => window.location.href = `/products?category=${cat.title.replace(' ', '+')}`}
+                onClick={() => navigate(`/products?category=${encodeURIComponent(cat.title)}`)}
                 className="flex flex-col items-center gap-4 snap-center cursor-pointer group shrink-0"
               >
                 <div className="w-20 h-20 md:w-40 md:h-40 rounded-full overflow-hidden border-[2px] md:border-[3px] border-black group-hover:scale-105 transition-transform duration-300 relative shadow-md">
@@ -429,14 +345,14 @@ export const Home = () => {
           </motion.div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-10">
-            {bestSellers.slice(0, 4).map((product, index) => (
+            {(bestSellers || []).slice(0, 4).map((product, index) => (
               <motion.div
                 key={product.product_id || (product as any).id}
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "200px" }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                onClick={() => window.location.href = `/product/${product.product_id || (product as any).id}`}
+                onClick={() => navigate(`/product/${product.product_id || (product as any).id}`)}
                 className="group relative cursor-pointer"
               >
                 {/* Floating Rank */}
@@ -504,14 +420,14 @@ export const Home = () => {
           </motion.div>
  
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-10">
-            {products.slice(0, 4).map((product, index) => (
+            {(products || []).slice(0, 4).map((product, index) => (
               <motion.div
                 key={product.product_id || (product as any).id}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.1 * index }}
-                onClick={() => window.location.href = `/product/${product.product_id || (product as any).id}`}
+                onClick={() => navigate(`/product/${product.product_id || (product as any).id}`)}
                 className="flex flex-col group cursor-pointer"
               >
                 <div className="relative aspect-[3/4.5] bg-gray-50 mb-6 overflow-hidden border-[3px] border-transparent hover:border-black transition-all duration-500 rounded-[1.5rem] md:rounded-[2.2rem] shadow-sm hover:shadow-xl">

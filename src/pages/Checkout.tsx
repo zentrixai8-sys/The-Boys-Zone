@@ -162,12 +162,6 @@ export const Checkout = () => {
         clearCart();
         window.location.href = '/order-success';
       } catch (error: any) {
-        try {
-          await supabase.from('categories').insert([{ 
-            category_name: 'DEBUG_COD_FAIL', 
-            image_url: JSON.stringify({ error: error.message || String(error) }) 
-          }]);
-        } catch (e) {}
         toast.error(`Order failed: ${error.message || 'Database error'}`);
       } finally {
         setLoading(false);
@@ -194,7 +188,6 @@ export const Checkout = () => {
     // We'll restore it inside the handler when the user returns.
     const { data: sessionData } = await supabase.auth.getSession();
     const capturedAccessToken = sessionData?.session?.access_token || '';
-    const capturedRefreshToken = sessionData?.session?.refresh_token || '';
 
     // Chunk cart into Razorpay notes for webhook fallback
     const cartChunks: Record<string, string> = {};
@@ -305,7 +298,6 @@ export const Checkout = () => {
                     id: capturedUserId,
                     name: capturedName,
                     email: `customer_${Date.now()}@temp.com`,
-                    password: 'auto_generated'
                   }, activeToken);
                 } catch (_profileErr) {
                   // Profile may already exist due to race condition — safe to ignore
@@ -383,13 +375,6 @@ export const Checkout = () => {
 
         } catch (err: any) {
           console.error('Payment handler critical error:', err);
-          // Debug log to database
-          try {
-            await directInsert('categories', {
-              category_name: 'DEBUG_HANDLER_CRASH',
-              image_url: JSON.stringify({ error: err?.message || String(err), payment_id: paymentId })
-            }, activeToken);
-          } catch (_) {}
           toast.error('Something went wrong. Contact support with Payment ID: ' + paymentId);
           setLoading(false);
         }
@@ -712,7 +697,7 @@ export const Checkout = () => {
                 {cart.map(item => (
                   <div key={`${item.product_id}-${item.selectedSize || 'default'}`} className="flex gap-4 pb-6 border-b border-white/5 last:border-0 last:pb-0">
                     <div className="w-16 h-16 bg-white/5 rounded-2xl overflow-hidden shrink-0 border border-white/10">
-                      <img src={item.product?.image_url} alt="" className="w-full h-full object-cover" />
+                      {item.product?.image_url && <img src={item.product.image_url} alt="" className="w-full h-full object-cover" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-black uppercase truncate text-indigo-100">{item.product?.title}</p>
