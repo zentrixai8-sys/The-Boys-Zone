@@ -21,7 +21,7 @@ const DEFAULT_CATEGORY_ITEMS: CategoryAccordionItem[] = [
     tag: 'STREETWEAR',
     description: 'Drop-shoulder 240+ GSM heavyweight aesthetic graphic tees.',
     buttonText: 'EXPLORE TEES',
-    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=1200',
+    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=60&w=600',
     link: '/products?category=Oversized+Tees',
     objectPosition: 'center 45%'
   },
@@ -31,7 +31,7 @@ const DEFAULT_CATEGORY_ITEMS: CategoryAccordionItem[] = [
     tag: 'CASUAL SHIRTS',
     description: 'Relaxed fit resort collars, textured flannels & urban overshirts.',
     buttonText: 'SHOP SHIRTS',
-    image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&q=80&w=1200',
+    image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&q=60&w=600',
     link: '/products?category=Shirts',
     objectPosition: 'center 40%'
   },
@@ -41,7 +41,7 @@ const DEFAULT_CATEGORY_ITEMS: CategoryAccordionItem[] = [
     tag: 'GRAPHIC DROPS',
     description: 'Japanese anime, cyberpunk & underground graphic collector t-shirts.',
     buttonText: 'EXPLORE ANIME',
-    image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&q=80&w=1200',
+    image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&q=60&w=600',
     link: '/products?category=Anime',
     objectPosition: 'center 38%'
   },
@@ -51,7 +51,7 @@ const DEFAULT_CATEGORY_ITEMS: CategoryAccordionItem[] = [
     tag: 'EVERYDAY BASICS',
     description: 'Ultra-soft combed compact cotton plain luxury t-shirts & polos.',
     buttonText: 'SHOP BASICS',
-    image: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&q=80&w=1200',
+    image: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&q=60&w=600',
     link: '/products?category=Basics',
     objectPosition: 'center 45%'
   },
@@ -61,7 +61,7 @@ const DEFAULT_CATEGORY_ITEMS: CategoryAccordionItem[] = [
     tag: 'WINTER LAYERS',
     description: 'Boxy 400 GSM fleece hoodies, oversized crewnecks & pullovers.',
     buttonText: 'VIEW HOODIES',
-    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=1200',
+    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=60&w=600',
     link: '/products?category=Hoodies',
     objectPosition: 'center 42%'
   }

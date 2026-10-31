@@ -5,11 +5,12 @@ import { Product, Category, Offer } from '../types';
 export function useHomeData() {
   const fetcher = async () => {
     try {
-      // Fetch sequentially to prevent Supabase Auth LockManager timeouts on concurrent requests
-      const productsData = await api.request('getProducts', { limit: 12 });
-      const bestSellersData = await api.request('getBestSellers');
-      const categoriesData = await api.request('getCategories');
-      const offersData = await api.request('getOffers').catch(() => []);
+      const [productsData, bestSellersData, categoriesData, offersData] = await Promise.all([
+        api.request('getProducts', { limit: 12 }),
+        api.request('getBestSellers'),
+        api.request('getCategories'),
+        api.request('getOffers').catch(() => []),
+      ]);
 
       const allProds = productsData?.products || [];
       const products = allProds.filter((p: any) => !p.sale_type || p.sale_type.toLowerCase() === 'online').slice(0, 12);

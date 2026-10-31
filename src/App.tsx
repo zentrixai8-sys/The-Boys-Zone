@@ -110,7 +110,7 @@ const AppContent = () => {
         <>
           <div className="bg-black text-white overflow-hidden whitespace-nowrap relative z-50">
             <div className="flex animate-marquee-top min-w-max items-center py-2">
-              {[...Array(8)].map((_, i) => (
+              {[...Array(4)].map((_, i) => (
                 <div key={i} className="flex items-center gap-6 md:gap-10 px-4 md:px-6 text-[10px] md:text-xs font-semibold uppercase tracking-[0.15em]">
                   <span className="flex items-center gap-1.5 text-white/90"><Truck className="w-3.5 h-3.5 text-white/60" /> Free Shipping Over ₹999</span>
                   <span className="text-white/20">|</span>

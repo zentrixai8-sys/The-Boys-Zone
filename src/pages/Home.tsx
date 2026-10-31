@@ -10,16 +10,8 @@ import { ToonhubHero } from '../components/ToonhubHero';
 import { CategoryAccordion } from '../components/CategoryAccordion';
 
 const fadeInUp = {
-  hidden: { opacity: 0, y: 50 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.2 }
-  }
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
 };
 
 const AnimatedCounter = ({ end, duration = 2000, suffix = "+" }: { end: number, duration?: number, suffix?: string }) => {
@@ -54,38 +46,6 @@ const AnimatedCounter = ({ end, duration = 2000, suffix = "+" }: { end: number, 
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
-const charVariants = {
-  hidden: { opacity: 0, y: 50 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: [0.33, 1, 0.68, 1] }
-  }
-};
-
-const AnimatedTitle = ({ text, className }: { text: string; className?: string }) => {
-  return (
-    <motion.h1
-      className={className}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
-      variants={{
-        visible: { transition: { staggerChildren: 0.05 } }
-      }}
-    >
-      {text.split("").map((char, index) => (
-        <motion.span
-          key={index}
-          variants={charVariants}
-          className="inline-block"
-        >
-          {char === " " ? "\u00A0" : char}
-        </motion.span>
-      ))}
-    </motion.h1>
-  );
-};
 
 const AutoSlidingImage = ({ product, className }: { product: Product; className?: string }) => {
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
@@ -481,7 +441,7 @@ export const Home = () => {
               className="group relative h-[210px] sm:h-[260px] md:h-[300px] rounded-2xl md:rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/30 transition-all duration-400 cursor-pointer shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(239,68,68,0.2)]"
             >
               <img
-                src="https://images.unsplash.com/photo-1613376023733-0a73315d9b06?q=80&w=1200&auto=format&fit=crop"
+                src="https://images.unsplash.com/photo-1613376023733-0a73315d9b06?q=60&w=600&auto=format&fit=crop"
                 alt="Anime Drop"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-85 group-hover:opacity-100"
               />
@@ -528,7 +488,7 @@ export const Home = () => {
               className="group relative h-[210px] sm:h-[260px] md:h-[300px] rounded-2xl md:rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/30 transition-all duration-400 cursor-pointer shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(99,102,241,0.2)]"
             >
               <img
-                src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1200&auto=format&fit=crop"
+                src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=60&w=600&auto=format&fit=crop"
                 alt="Graphic Tees Drop"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-85 group-hover:opacity-100"
               />
@@ -623,12 +583,12 @@ export const Home = () => {
               
               <div className="mb-6 flex -space-x-4">
                 {[
-                  "https://i.pravatar.cc/100?img=11",
-                  "https://i.pravatar.cc/100?img=12",
-                  "https://i.pravatar.cc/100?img=15",
-                  "https://i.pravatar.cc/100?img=33"
+                  "https://i.pravatar.cc/60?img=11",
+                  "https://i.pravatar.cc/60?img=12",
+                  "https://i.pravatar.cc/60?img=15",
+                  "https://i.pravatar.cc/60?img=33"
                 ].map((img, i) => (
-                  <img key={i} src={img} alt="Customer" className="w-16 h-16 rounded-full border-4 border-[#0B2B26] object-cover" />
+                  <img key={i} src={img} alt="Customer" loading="lazy" className="w-16 h-16 rounded-full border-4 border-[#0B2B26] object-cover" />
                 ))}
                 <div className="w-16 h-16 rounded-full border-4 border-[#0B2B26] bg-[#8EB69B] flex items-center justify-center relative z-10 text-[#051F20]">
                   <Plus className="w-6 h-6" />
@@ -665,12 +625,12 @@ export const Home = () => {
 
         <div className="flex w-full overflow-x-auto hide-scrollbar snap-x snap-mandatory">
           {[
-            "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?q=80&w=800&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?q=80&w=800&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1516257984-b1b4d707412e?q=80&w=800&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=800&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=800&auto=format&fit=crop",
-            "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=800&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?q=60&w=400&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?q=60&w=400&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1516257984-b1b4d707412e?q=60&w=400&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=60&w=400&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=60&w=400&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=60&w=400&auto=format&fit=crop",
           ].map((img, i) => (
             <motion.div
               key={i}
