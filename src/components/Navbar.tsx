@@ -74,7 +74,7 @@ export const Navbar = () => {
   return (
     <nav className="sticky top-0 z-100 bg-white border-b border-black/5 transition-all duration-300">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="flex justify-between items-center h-14 md:h-20">
+        <div className="flex justify-between items-center h-12 md:h-14">
 
           {/* Logo (Left) */}
           <Link to="/" className="shrink-0 flex items-center gap-3">
