@@ -52,20 +52,17 @@ export const Login = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Clear any stale logout flag so AuthContext doesn't block the new session
-    sessionStorage.removeItem('tbz_force_logout');
-    
     try {
       const rawUser = await api.request('login', { email, password });
       const role = rawUser.user_metadata?.role || 'user';
       const name = rawUser.user_metadata?.name || 'User';
-      
+
       toast.success(`Welcome back, ${name}!`);
-      
+
       if (role === 'admin') {
-        window.location.href = '/admin';
+        navigate('/admin');
       } else {
-        window.location.href = '/';
+        navigate('/');
       }
     } catch (error: any) {
       toast.error(error.message || 'Login failed');

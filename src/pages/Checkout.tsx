@@ -160,7 +160,7 @@ export const Checkout = () => {
         });
         toast.success('Order placed successfully via Cash on Delivery!');
         clearCart();
-        window.location.href = '/order-success';
+        navigate('/order-success');
       } catch (error: any) {
         toast.error(`Order failed: ${error.message || 'Database error'}`);
       } finally {
@@ -286,7 +286,7 @@ export const Checkout = () => {
               if (existingOrders && existingOrders.length > 0) {
                 clearCart();
                 toast.success('Order already placed!');
-                window.location.href = '/order-success';
+                navigate('/order-success');
                 return;
               }
 
@@ -371,7 +371,7 @@ export const Checkout = () => {
           // SUCCESS
           clearCart();
           toast.success('Order placed successfully!');
-          window.location.href = '/order-success';
+          navigate('/order-success');
 
         } catch (err: any) {
           console.error('Payment handler critical error:', err);

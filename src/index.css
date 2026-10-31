@@ -157,6 +157,10 @@
     animation: marquee 30s linear infinite;
   }
 
+  .animate-marquee-top {
+    animation: marquee 25s linear infinite;
+  }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }

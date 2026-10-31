@@ -98,7 +98,7 @@ export const Register = () => {
     try {
       await api.request('verifyOtp', { email: formData.email, token });
       toast.success('Email verified successfully! Welcome to The Boys Zone.');
-      window.location.href = '/';
+      navigate('/');
     } catch (error: any) {
       toast.error(error.message || 'Verification failed. Please check the code.');
     } finally {

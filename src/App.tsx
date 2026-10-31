@@ -6,7 +6,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { Navbar } from './components/Navbar';
-import { Instagram, Mail, Phone, MapPin } from 'lucide-react';
+import { Instagram, Mail, Phone, MapPin, Star, Truck, RotateCcw, Shield } from 'lucide-react';
 import { Home } from './pages/Home';
 import { Products } from './pages/Products';
 import { ProductDetail } from './pages/ProductDetail';
@@ -108,6 +108,22 @@ const AppContent = () => {
     <div className="min-h-screen bg-white text-black font-sans selection:bg-black selection:text-white overflow-x-hidden">
       {!isAdminPath && (
         <>
+          <div className="bg-black text-white overflow-hidden whitespace-nowrap relative z-50">
+            <div className="flex animate-marquee-top min-w-max items-center py-2">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="flex items-center gap-6 md:gap-10 px-4 md:px-6 text-[10px] md:text-xs font-semibold uppercase tracking-[0.15em]">
+                  <span className="flex items-center gap-1.5 text-white/90"><Truck className="w-3.5 h-3.5 text-white/60" /> Free Shipping Over ₹999</span>
+                  <span className="text-white/20">|</span>
+                  <span className="flex items-center gap-1.5 text-white/90"><RotateCcw className="w-3.5 h-3.5 text-white/60" /> 3 Day Easy Returns</span>
+                  <span className="text-white/20">|</span>
+                  <span className="flex items-center gap-1.5 text-white/90"><Star className="w-3.5 h-3.5 text-white/60 fill-white/60" /> Premium Streetwear</span>
+                  <span className="text-white/20">|</span>
+                  <span className="flex items-center gap-1.5 text-white/90"><Shield className="w-3.5 h-3.5 text-white/60" /> 100% Genuine Products</span>
+                  <span className="text-white/20 mr-4">|</span>
+                </div>
+              ))}
+            </div>
+          </div>
           <Navbar />
           {location.pathname === '/products' && <CategoryBar />}
           <MobileBottomNav />

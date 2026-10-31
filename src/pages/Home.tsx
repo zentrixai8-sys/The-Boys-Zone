@@ -7,6 +7,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { Play, ArrowRight, Instagram, ExternalLink, Tag, Star, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ToonhubHero } from '../components/ToonhubHero';
+import { CategoryAccordion } from '../components/CategoryAccordion';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 50 },
@@ -168,21 +169,21 @@ export const Home = () => {
       {/* 2. Premium Offers Auto-Slider Section (Luxury Light Theme - No Black Background) */}
       {offers && offers.length > 0 && (
         <motion.section 
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="relative py-10 md:py-20 w-full bg-gradient-to-b from-slate-50 via-white to-slate-50 overflow-hidden border-y border-slate-200/80 z-20 group"
+          transition={{ duration: 0.6 }}
+          className="relative py-4 sm:py-6 md:py-8 w-full bg-gradient-to-b from-slate-50 via-white to-slate-50 overflow-hidden border-y border-slate-200/70 z-20 group"
         >
           {/* Subtle Ambient Glow */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[140px] -translate-y-1/2" />
-            <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-rose-500/5 rounded-full blur-[140px] -translate-y-1/2" />
+            <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-indigo-500/4 rounded-full blur-[120px] -translate-y-1/2" />
+            <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-rose-500/4 rounded-full blur-[120px] -translate-y-1/2" />
           </div>
 
           <div className="relative flex items-center">
             <div 
-              className="flex gap-4 md:gap-8 px-4 md:px-8 animate-marquee hover:[animation-play-state:paused] w-max py-2"
+              className="flex gap-3 sm:gap-4 md:gap-5 px-3 sm:px-6 md:px-8 animate-marquee hover:[animation-play-state:paused] w-max py-1.5"
             >
               {/* Seamless infinite marquee auto-scroll */}
               {[...(offers || []), ...(offers || []), ...(offers || [])].map((offer, index) => (
@@ -196,37 +197,37 @@ export const Home = () => {
                       navigate(offer.link);
                     }
                   }}
-                  className="relative shrink-0 w-[290px] sm:w-[460px] md:w-[720px] h-[170px] sm:h-[250px] md:h-[350px] rounded-2xl md:rounded-[2.5rem] overflow-hidden group/card shadow-[0_12px_36px_-12px_rgba(0,0,0,0.12)] hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.2)] transition-all duration-500 cursor-pointer border border-slate-200/90 hover:border-slate-300"
+                  className="relative shrink-0 w-[230px] sm:w-[320px] md:w-[440px] lg:w-[480px] h-[110px] sm:h-[155px] md:h-[210px] lg:h-[230px] rounded-xl sm:rounded-2xl md:rounded-[1.75rem] overflow-hidden group/card shadow-[0_4px_20px_-4px_rgba(0,0,0,0.07)] hover:shadow-[0_12px_30px_-6px_rgba(0,0,0,0.14)] transition-all duration-400 cursor-pointer border border-slate-200/80 hover:border-slate-300"
                 >
                   <img
                     src={offer.image_url}
                     alt={offer.title}
                     loading="lazy"
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-out group-hover/card:scale-105"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover/card:scale-105"
                     referrerPolicy="no-referrer"
                   />
                   
                   {/* Subtle Gradient Overlay on Hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-400 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 pointer-events-none" />
                   
                   {/* Interactive Content */}
-                  <div className="absolute inset-0 p-4 md:p-8 flex flex-col justify-between opacity-0 group-hover/card:opacity-100 transition-all duration-400 z-10 pointer-events-none">
+                  <div className="absolute inset-0 p-3 sm:p-4 md:p-6 flex flex-col justify-between opacity-0 group-hover/card:opacity-100 transition-all duration-300 z-10 pointer-events-none">
                     <div className="flex items-start justify-between">
-                       <div className="bg-white/90 backdrop-blur-md px-3.5 md:px-5 py-1 md:py-2 rounded-full shadow-md">
-                         <span className="text-slate-900 text-[8px] md:text-xs font-bold uppercase tracking-wider">Exclusive Drop</span>
+                       <div className="bg-white/95 backdrop-blur-md px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full shadow-sm">
+                         <span className="text-slate-900 text-[7px] sm:text-[9px] md:text-[10px] font-bold uppercase tracking-wider">Exclusive Drop</span>
                        </div>
                     </div>
 
                     <div className="flex items-end justify-between">
-                       <div className="flex-1 pr-3 md:pr-6">
-                          <h3 className="text-white text-base md:text-3xl font-extrabold uppercase tracking-wide mb-1 line-clamp-1 drop-shadow-md">{offer.title}</h3>
-                          <p className="text-white/90 text-[10px] md:text-xs font-medium line-clamp-2 max-w-[220px] md:max-w-md drop-shadow">{offer.description || "Premium collection for The Boys Zone."}</p>
+                       <div className="flex-1 pr-2.5 sm:pr-4">
+                          <h3 className="text-white text-xs sm:text-base md:text-lg font-extrabold uppercase tracking-wide mb-0.5 line-clamp-1 drop-shadow-md">{offer.title}</h3>
+                          <p className="text-white/90 text-[8px] sm:text-[10px] md:text-xs font-medium line-clamp-1 max-w-[160px] sm:max-w-[220px] md:max-w-xs drop-shadow">{offer.description || "Premium collection for The Boys Zone."}</p>
                        </div>
                        {offer.link && (
                           <div 
-                            className="bg-white text-slate-900 h-8 w-8 md:h-12 md:w-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg shrink-0 group-hover/card:scale-110"
+                            className="bg-white text-slate-900 h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-md shrink-0 group-hover/card:scale-110"
                           >
-                            <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
+                            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 text-slate-900" />
                           </div>
                        )}
                     </div>
@@ -256,66 +257,45 @@ export const Home = () => {
         </section>
       )}
 
-      {/* 2. Features Marquee */}
-      <section className="bg-red-600 text-white py-4 border-y-4 border-black relative z-20 overflow-hidden whitespace-nowrap flex items-center">
-        <motion.div
-          animate={{ x: ["0%", "-50%"] }}
-          transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-          className="flex gap-8 md:gap-12 text-xs md:text-sm font-black uppercase tracking-widest min-w-max items-center"
-        >
-          {[...Array(6)].map((_, i) => (
-            <React.Fragment key={i}>
-              <span className="flex items-center gap-2"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg> FREE SHIPPING OVER ₹999</span>
-              <span>•</span>
-              <span className="flex items-center gap-2"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> 14 DAY EASY RETURNS</span>
-              <span>•</span>
-              <span className="flex items-center gap-2"><Star className="w-5 h-5 fill-white" /> PREMIUM STREETWEAR</span>
-              <span>•</span>
-            </React.Fragment>
-          ))}
-        </motion.div>
-      </section>
 
-      {/* 3. Shop by Category (Bonkers Style) */}
-      <section className="py-8 md:py-24 bg-white relative z-20 border-b-4 border-black">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 3. Shop by Category (Framer 3D Accordion Gallery Style) */}
+      <section className="py-10 sm:py-14 md:py-20 bg-[#08080a] relative z-20 border-b border-white/10 text-white overflow-hidden">
+        {/* Subtle Ambient Lighting */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/3 -right-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-[140px]" />
+          <div className="absolute -bottom-20 -left-40 w-96 h-96 bg-red-600/10 rounded-full blur-[140px]" />
+        </div>
+
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="flex justify-between items-end mb-10"
+            transition={{ duration: 0.6 }}
+            className="flex flex-col sm:flex-row justify-between sm:items-end mb-6 md:mb-10 gap-3"
           >
-            <h2 className="text-2xl md:text-5xl font-black text-black uppercase tracking-tighter">
-              SHOP BY CATEGORY
-            </h2>
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-5 h-0.5 bg-red-500 rounded-full" />
+                <span className="text-[10px] sm:text-xs font-bold tracking-[0.25em] uppercase text-red-500">
+                  Wardrobe Architecture
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-white uppercase tracking-tighter">
+                SHOP BY CATEGORY
+              </h2>
+            </div>
+            <Link 
+              to="/products" 
+              className="group inline-flex items-center gap-2 text-white/80 hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors w-fit"
+            >
+              <span>Explore All Categories</span>
+              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" />
+            </Link>
           </motion.div>
 
-          <div className="flex overflow-x-auto pb-4 md:pb-8 -mx-4 px-4 sm:mx-0 sm:px-0 gap-5 md:gap-12 snap-x snap-mandatory hide-scrollbar">
-            {[
-              { title: "Oversized Tees", img: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=400&auto=format&fit=crop" },
-              { title: "Cargos", img: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=400&auto=format&fit=crop" },
-              { title: "Anime", img: "https://images.unsplash.com/photo-1613376023733-0a73315d9b06?q=80&w=400&auto=format&fit=crop" },
-              { title: "Hoodies", img: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=400&auto=format&fit=crop" },
-              { title: "Basics", img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=400&auto=format&fit=crop" },
-              { title: "Co-Ords", img: "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=400&auto=format&fit=crop" }
-            ].map((cat, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                onClick={() => navigate(`/products?category=${encodeURIComponent(cat.title)}`)}
-                className="flex flex-col items-center gap-4 snap-center cursor-pointer group shrink-0"
-              >
-                <div className="w-20 h-20 md:w-40 md:h-40 rounded-full overflow-hidden border-[2px] md:border-[3px] border-black group-hover:scale-105 transition-transform duration-300 relative shadow-md">
-                  <img src={cat.img} alt={cat.title} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                </div>
-                <h3 className="text-[10px] md:text-base font-black uppercase tracking-wider md:tracking-widest text-black group-hover:text-red-600 transition-colors">{cat.title}</h3>
-              </motion.div>
-            ))}
-          </div>
+          {/* 3D Framer Accordion Gallery */}
+          <CategoryAccordion />
         </div>
       </section>
 
@@ -454,62 +434,132 @@ export const Home = () => {
       </section>
 
       {/* 5. Collaborations / Pop Culture Drops */}
-      <section className="py-16 md:py-24 bg-black relative z-20 overflow-hidden border-y-4 border-black text-white">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-10 sm:py-14 md:py-16 bg-[#0a0a0c] relative z-20 overflow-hidden border-y border-white/10 text-white">
+        {/* Subtle Ambient Glow Effect */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/4 -left-32 w-80 h-80 bg-red-600/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-indigo-600/10 rounded-full blur-[120px]" />
+        </div>
+
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6"
+            transition={{ duration: 0.6 }}
+            className="flex flex-col sm:flex-row justify-between sm:items-end mb-6 sm:mb-8 gap-3"
           >
             <div>
-              <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="w-5 h-0.5 bg-red-500 rounded-full" />
+                <span className="text-[10px] sm:text-xs font-bold tracking-[0.25em] uppercase text-red-500">
+                  Exclusive Drops
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white uppercase tracking-tight">
                 COLLABORATIONS
               </h2>
             </div>
-            <Link to="/products" className="group inline-flex items-center gap-3 text-white text-sm font-bold uppercase tracking-widest hover:text-red-500 transition-colors">
-              VIEW ALL DROPS <ArrowRight className="w-4 h-4 transform group-hover:translate-x-2 transition-transform" />
+            <Link 
+              to="/products" 
+              className="group inline-flex items-center gap-2 text-white/80 hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors w-fit"
+            >
+              <span>View All Drops</span>
+              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" />
             </Link>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {/* Card 1: Anime Vol. 2 */}
             <motion.div
-              initial={{ opacity: 0, y: 50 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              whileHover={{ scale: 0.98 }}
-              className="relative aspect-video md:aspect-[4/3] bg-zinc-900 overflow-hidden group cursor-pointer border-4 border-white"
+              whileHover={{ y: -4 }}
+              onClick={() => navigate('/products?category=Anime')}
+              className="group relative h-[210px] sm:h-[260px] md:h-[300px] rounded-2xl md:rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/30 transition-all duration-400 cursor-pointer shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(239,68,68,0.2)]"
             >
               <img
                 src="https://images.unsplash.com/photo-1613376023733-0a73315d9b06?q=80&w=1200&auto=format&fit=crop"
                 alt="Anime Drop"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-85 group-hover:opacity-100"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-              <div className="absolute bottom-8 left-8">
-                <div className="bg-red-600 text-white text-[10px] font-black px-3 py-1 uppercase tracking-widest w-fit mb-3">NEW DROP</div>
-                <h3 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter">ANIME VOL. 2</h3>
+              
+              {/* Luxury Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent transition-opacity duration-300" />
+              
+              {/* Subtle Edge Glow on Hover */}
+              <div className="absolute inset-0 ring-1 ring-inset ring-white/10 group-hover:ring-red-500/40 rounded-2xl md:rounded-3xl transition-all duration-300 pointer-events-none" />
+
+              {/* Card Badges and Info */}
+              <div className="absolute inset-0 p-4 sm:p-6 md:p-7 flex flex-col justify-between z-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-600/90 backdrop-blur-md text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-md">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    <span>New Drop</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-white/50 tracking-wider hidden sm:inline">CAPSULE 01</span>
+                </div>
+
+                <div>
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-white uppercase tracking-tight mb-1 drop-shadow-md group-hover:text-red-400 transition-colors">
+                    ANIME VOL. 2
+                  </h3>
+                  <p className="text-white/70 text-xs sm:text-sm font-medium line-clamp-1 mb-2.5 max-w-md">
+                    Limited edition Japanese cyberpunk oversized streetwear.
+                  </p>
+                  <div className="inline-flex items-center gap-2 text-xs font-bold text-white uppercase tracking-wider group-hover:translate-x-1 transition-transform">
+                    <span>Shop Capsule</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-red-400" />
+                  </div>
+                </div>
               </div>
             </motion.div>
 
+            {/* Card 2: Graphic Archive */}
             <motion.div
-              initial={{ opacity: 0, y: 50 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              whileHover={{ scale: 0.98 }}
-              className="relative aspect-video md:aspect-[4/3] bg-zinc-900 overflow-hidden group cursor-pointer border-4 border-white"
+              transition={{ duration: 0.6, delay: 0.15 }}
+              whileHover={{ y: -4 }}
+              onClick={() => navigate('/products?category=Oversized+Tees')}
+              className="group relative h-[210px] sm:h-[260px] md:h-[300px] rounded-2xl md:rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/30 transition-all duration-400 cursor-pointer shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(99,102,241,0.2)]"
             >
               <img
                 src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1200&auto=format&fit=crop"
-                alt="Streetwear Drop"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80"
+                alt="Graphic Tees Drop"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-85 group-hover:opacity-100"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-              <div className="absolute bottom-8 left-8">
-                <div className="bg-white text-black text-[10px] font-black px-3 py-1 uppercase tracking-widest w-fit mb-3">RESTOCKED</div>
-                <h3 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter">GRAPHIC TEES</h3>
+              
+              {/* Luxury Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent transition-opacity duration-300" />
+              
+              {/* Subtle Edge Glow on Hover */}
+              <div className="absolute inset-0 ring-1 ring-inset ring-white/10 group-hover:ring-indigo-500/40 rounded-2xl md:rounded-3xl transition-all duration-300 pointer-events-none" />
+
+              {/* Card Badges and Info */}
+              <div className="absolute inset-0 p-4 sm:p-6 md:p-7 flex flex-col justify-between z-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-md">
+                    <span>Restocked</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-white/50 tracking-wider hidden sm:inline">ARCHIVE 02</span>
+                </div>
+
+                <div>
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-white uppercase tracking-tight mb-1 drop-shadow-md group-hover:text-indigo-400 transition-colors">
+                    GRAPHIC ARCHIVE
+                  </h3>
+                  <p className="text-white/70 text-xs sm:text-sm font-medium line-clamp-1 mb-2.5 max-w-md">
+                    Heavyweight 240 GSM vintage washed signature prints.
+                  </p>
+                  <div className="inline-flex items-center gap-2 text-xs font-bold text-white uppercase tracking-wider group-hover:translate-x-1 transition-transform">
+                    <span>Shop Edition</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-indigo-400" />
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>

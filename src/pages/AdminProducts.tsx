@@ -58,7 +58,7 @@ const subCategoryMap: Record<string, string[]> = {
   'Jeans': ['Skinny', 'Slim', 'Straight', 'Relaxed', 'Baggy', 'Distressed'],
   'Pants': ['Chinos', 'Formal', 'Cargo', 'Joggers', 'Cotton Pants'],
   'Accessories': ['Belts', 'Wallets', 'Watches', 'Sunglasses', 'Perfumes', 'Caps', 'Undergarments', 'Socks', 'Bracelets', 'Key Rings'],
-  'Shoes': ['Sneakers', 'Formal Shoes', 'Sandals', 'Loafers', 'Boots', 'Flip-Flops'],
+  'Shoes': ['Sneakers', 'Formal Shoes', 'Sandals', 'Loafers', 'Boots', 'Flip-Flops', 'Sport'],
 };
 
 const categorySizes: Record<string, string[]> = {
