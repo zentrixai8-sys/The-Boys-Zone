@@ -84,7 +84,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             alt={product.title}
             key={allImages[currentImgIndex]}
             loading="lazy"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700 ease-out"
             referrerPolicy="no-referrer"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />

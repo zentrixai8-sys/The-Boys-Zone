@@ -194,7 +194,7 @@ export const ToonhubHero: React.FC = () => {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="relative w-full overflow-hidden" style={{ height: '100vh', minHeight: '640px' }}>
+      <div className="relative w-full overflow-hidden" style={{ height: '85vh', minHeight: '500px' }}>
         {/* 1. Subtle Grain Overlay */}
         <div
           className="absolute inset-0 pointer-events-none"

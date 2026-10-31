@@ -157,7 +157,7 @@ export const Home = () => {
                       navigate(offer.link);
                     }
                   }}
-                  className="relative shrink-0 w-[230px] sm:w-[320px] md:w-[440px] lg:w-[480px] h-[110px] sm:h-[155px] md:h-[210px] lg:h-[230px] rounded-xl sm:rounded-2xl md:rounded-[1.75rem] overflow-hidden group/card shadow-[0_4px_20px_-4px_rgba(0,0,0,0.07)] hover:shadow-[0_12px_30px_-6px_rgba(0,0,0,0.14)] transition-all duration-400 cursor-pointer border border-slate-200/80 hover:border-slate-300"
+                  className="relative shrink-0 w-[260px] sm:w-[320px] md:w-[440px] lg:w-[480px] h-[150px] sm:h-[155px] md:h-[210px] lg:h-[230px] rounded-xl sm:rounded-2xl md:rounded-[1.75rem] overflow-hidden group/card shadow-[0_4px_20px_-4px_rgba(0,0,0,0.07)] hover:shadow-[0_12px_30px_-6px_rgba(0,0,0,0.14)] transition-all duration-400 cursor-pointer border border-slate-200/80 hover:border-slate-300"
                 >
                   <img
                     src={offer.image_url}
@@ -300,10 +300,10 @@ export const Home = () => {
                   {String(index + 1).padStart(2, '0')}
                 </div>
 
-                <div className="relative aspect-[3/4.5] rounded-[2rem] md:rounded-[2.5rem] overflow-hidden bg-zinc-900 border border-white/5 group-hover:border-red-600/30 transition-all duration-700 shadow-2xl">
+                <div className="relative aspect-[3/4] md:aspect-[3/4.5] rounded-2xl md:rounded-[2.5rem] overflow-hidden bg-zinc-900 border border-white/5 group-hover:border-red-600/30 transition-all duration-700 shadow-2xl">
                   <AutoSlidingImage
                     product={product}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2.5s] ease-out"
+                    className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-[2.5s] ease-out"
                   />
                   
                   {/* Badge */}
@@ -370,10 +370,10 @@ export const Home = () => {
                 onClick={() => navigate(`/product/${product.product_id || (product as any).id}`)}
                 className="flex flex-col group cursor-pointer"
               >
-                <div className="relative aspect-[3/4.5] bg-gray-50 mb-6 overflow-hidden border-[3px] border-transparent hover:border-black transition-all duration-500 rounded-[1.5rem] md:rounded-[2.2rem] shadow-sm hover:shadow-xl">
+                <div className="relative aspect-[3/4] md:aspect-[3/4.5] bg-gray-50 mb-4 md:mb-6 overflow-hidden border-[3px] border-transparent hover:border-black transition-all duration-500 rounded-2xl md:rounded-[2.2rem] shadow-sm hover:shadow-xl">
                   <AutoSlidingImage
                     product={product}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s] ease-out"
+                    className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-[1.5s] ease-out"
                   />
                   
                   <div className="absolute top-4 left-4 z-10 bg-black text-white px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] shadow-2xl">
@@ -438,12 +438,13 @@ export const Home = () => {
               transition={{ duration: 0.6 }}
               whileHover={{ y: -4 }}
               onClick={() => navigate('/products?category=Anime')}
-              className="group relative h-[210px] sm:h-[260px] md:h-[300px] rounded-2xl md:rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/30 transition-all duration-400 cursor-pointer shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(239,68,68,0.2)]"
+              className="group relative h-[240px] sm:h-[260px] md:h-[300px] rounded-2xl md:rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/30 transition-all duration-400 cursor-pointer shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(239,68,68,0.2)]"
             >
               <img
                 src="https://images.unsplash.com/photo-1613376023733-0a73315d9b06?q=60&w=600&auto=format&fit=crop"
                 alt="Anime Drop"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-85 group-hover:opacity-100"
+                loading="lazy"
+                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out opacity-85 group-hover:opacity-100"
               />
               
               {/* Luxury Gradient Overlay */}
@@ -485,12 +486,13 @@ export const Home = () => {
               transition={{ duration: 0.6, delay: 0.15 }}
               whileHover={{ y: -4 }}
               onClick={() => navigate('/products?category=Oversized+Tees')}
-              className="group relative h-[210px] sm:h-[260px] md:h-[300px] rounded-2xl md:rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/30 transition-all duration-400 cursor-pointer shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(99,102,241,0.2)]"
+              className="group relative h-[240px] sm:h-[260px] md:h-[300px] rounded-2xl md:rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-white/30 transition-all duration-400 cursor-pointer shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(99,102,241,0.2)]"
             >
               <img
                 src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=60&w=600&auto=format&fit=crop"
                 alt="Graphic Tees Drop"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-85 group-hover:opacity-100"
+                loading="lazy"
+                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out opacity-85 group-hover:opacity-100"
               />
               
               {/* Luxury Gradient Overlay */}
@@ -639,7 +641,7 @@ export const Home = () => {
               viewport={{ once: true, margin: "50px" }}
               transition={{ duration: 0.8, delay: i * 0.1 }}
               whileHover={{ y: -15 }}
-              className="min-w-[280px] sm:min-w-[320px] md:min-w-0 md:flex-1 aspect-3/4 relative group snap-start cursor-pointer origin-center rounded-[32px] overflow-hidden image-3d border-4 border-white mx-3 mb-16 shadow-2xl transition-all duration-500"
+              className="min-w-[200px] sm:min-w-[280px] md:min-w-0 md:flex-1 aspect-[3/4] relative group snap-start cursor-pointer origin-center rounded-2xl md:rounded-[32px] overflow-hidden image-3d border-2 md:border-4 border-white mx-2 md:mx-3 mb-10 md:mb-16 shadow-2xl transition-all duration-500"
             >
               <img src={img} alt={`Gallery ${i}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
