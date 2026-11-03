@@ -96,6 +96,18 @@ export const TodayReport = () => {
   const [endDate, setEndDate] = useState<string>('');
 
   useEffect(() => {
+    // 1. Instant hydration from cache
+    try {
+      const cachedOrders = localStorage.getItem('tbz_cached_orders');
+      if (cachedOrders) {
+        const p = JSON.parse(cachedOrders);
+        if (Array.isArray(p) && p.length > 0) {
+          setOrders(p);
+          setLoading(false);
+        }
+      }
+    } catch {}
+
     fetchData();
     fetchStoreSales();
   }, []);
@@ -110,12 +122,15 @@ export const TodayReport = () => {
   };
 
   const fetchData = async () => {
-    setLoading(true);
     try {
       const ordersData = await api.request('getOrders');
-      setOrders(Array.isArray(ordersData) ? [...ordersData].reverse() : []);
+      if (Array.isArray(ordersData)) {
+        const sorted = [...ordersData].reverse();
+        setOrders(sorted);
+        localStorage.setItem('tbz_cached_orders', JSON.stringify(sorted));
+      }
     } catch (error) {
-      toast.error('Failed to fetch orders');
+      console.error('Failed to fetch orders:', error);
     } finally {
       setLoading(false);
     }

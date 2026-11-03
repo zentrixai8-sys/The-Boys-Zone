@@ -62,11 +62,20 @@ export const PendingPayments = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const data = await api.request('getPendingPayments').catch(() => []);
-      const logs = await api.request('getAllPaymentLogs').catch(() => []);
+      const [data, logs] = await Promise.all([
+        api.request('getPendingPayments').catch(err => {
+          console.error('getPendingPayments error:', err);
+          return [];
+        }),
+        api.request('getAllPaymentLogs').catch(err => {
+          console.error('getAllPaymentLogs error:', err);
+          return [];
+        })
+      ]);
       setRecords(data || []);
       setPaymentLogs(logs || []);
     } catch (e) {
+      console.error('fetchData error:', e);
       toast.error('Failed to load pending payments');
     } finally {
       setLoading(false);

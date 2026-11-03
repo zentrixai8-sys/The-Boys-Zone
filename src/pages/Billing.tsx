@@ -675,19 +675,39 @@ export const Billing = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 print:hidden">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight text-black mb-2">Store Billing</h1>
-          <p className="text-black/40">Point of sale for walk-in customers</p>
-        </div>
-        <div className="grid grid-cols-2 sm:flex gap-3 sm:gap-4 w-full sm:w-auto">
-          <button onClick={handleClear} disabled={isProcessing} className="px-4 sm:px-6 py-3 rounded-2xl font-bold border-2 border-black/10 hover:bg-black/5 transition-all text-sm disabled:opacity-50">
-            Clear Bill
-          </button>
-          <button onClick={handleSave} disabled={isProcessing || items.length === 0} className="bg-emerald-600 text-white px-4 sm:px-6 py-3 rounded-2xl font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50">
-            {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-            {isProcessing ? 'Saving...' : 'Save Bill'}
-          </button>
+      {/* Sticky Header Section */}
+      <div className="sticky top-14 md:top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-3.5 mb-8 shadow-xs print:hidden transition-all">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Store Billing</h1>
+                {items.length > 0 && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs">
+                    {items.length} {items.length === 1 ? 'item' : 'items'} • {formatPrice(total)}
+                  </span>
+                )}
+              </div>
+              <p className="text-slate-400 text-xs font-medium">Point of sale for walk-in customers</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button 
+              onClick={handleClear} 
+              disabled={isProcessing || (items.length === 0 && !customerName && !mobile)} 
+              className="px-4 py-2.5 rounded-xl font-bold border border-slate-200 hover:bg-slate-50 active:scale-95 transition-all text-xs text-slate-700 disabled:opacity-40"
+            >
+              Clear Bill
+            </button>
+            <button 
+              onClick={handleSave} 
+              disabled={isProcessing || items.length === 0} 
+              className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-xs shadow-md shadow-emerald-600/20 disabled:opacity-40"
+            >
+              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {isProcessing ? 'Saving...' : 'Save Bill'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1174,7 +1194,7 @@ export const Billing = () => {
 
         {/* Right Column: Bill Summary & Print View */}
         <div className="lg:col-span-2">
-          <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm flex flex-col h-fit">
+          <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm flex flex-col h-fit lg:sticky lg:top-24">
             <h2 className="text-xl font-bold mb-6 print:hidden">Current Bill Items</h2>
             
             <div className="w-full">

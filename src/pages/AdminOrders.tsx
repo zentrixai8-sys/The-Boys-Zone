@@ -20,14 +20,31 @@ export const AdminOrders = () => {
   const [dateTo, setDateTo] = useState<string>('');
 
   useEffect(() => {
+    // 1. Instant hydration from cache
+    try {
+      const cached = localStorage.getItem('tbz_cached_orders');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setOrders(parsed);
+          setLoading(false);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
     fetchData();
   }, []);
 
   const fetchData = async () => {
     try {
       const ordersData = await api.request('getOrders');
-      setOrders(Array.isArray(ordersData) ? [...ordersData].reverse() : []);
-      setLoading(false);
+      if (Array.isArray(ordersData)) {
+        const sorted = [...ordersData].reverse();
+        setOrders(sorted);
+        localStorage.setItem('tbz_cached_orders', JSON.stringify(sorted));
+      }
     } catch (error) {
       console.error("Failed to fetch admin data:", error);
     } finally {

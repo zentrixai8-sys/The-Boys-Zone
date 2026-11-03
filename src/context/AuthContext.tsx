@@ -1,4 +1,4 @@
-  import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
@@ -17,8 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loginTime, setLoginTime] = useState<number | null>(user ? Date.now() : null);
-  // Always start with loading=true — Supabase session must be verified before showing authenticated UI
+  const [loginTime, setLoginTime] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const updateUserState = (profile: User) => {
@@ -27,38 +26,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // 2. Safety Timeout: Force finish loading after 3 seconds no matter what
+    // Safety Timeout: Force finish loading after 3 seconds if auth hangs
     const safetyTimer = setTimeout(() => {
       setLoading(false);
     }, 3000);
 
     const fetchProfile = async (sessionUser: any) => {
       try {
+        // Use maybeSingle() instead of single() to prevent HTTP 406 error when profile row doesn't exist yet
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', sessionUser.id)
-          .single();
+          .maybeSingle();
 
-        if (error && error.code === 'PGRST116') {
-          // Verify if we are still supposed to be logged in before creating/updating
+        if (error) {
+          console.warn('Profile fetch warning:', error);
+        }
+
+        if (!profile) {
+          // Verify if we are still supposed to be logged in before creating
           const { data: { session: currentSession } } = await supabase.auth.getSession();
           if (!currentSession) return;
 
-          // Profile missing, create it
-          const { data: newProfile } = await supabase
-            .from('profiles')
-            .upsert([{
-              id: sessionUser.id,
-              name: sessionUser.user_metadata.name || 'User',
-            }])
-            .select()
-            .single();
+          const meta = sessionUser.user_metadata || {};
+          const profilePayload = {
+            id: sessionUser.id,
+            name: meta.name || sessionUser.email?.split('@')[0] || 'User',
+            email: sessionUser.email || '',
+            phone: meta.phone || '',
+            role: meta.role || 'user',
+            avatar_url: meta.avatar_url || null,
+          };
 
-          if (newProfile) {
+          // Auto-create missing profile with all required columns (including email) to prevent 400 Bad Request
+          const { data: newProfile, error: upsertError } = await supabase
+            .from('profiles')
+            .upsert([profilePayload])
+            .select()
+            .maybeSingle();
+
+          if (upsertError) {
+            console.error('Profile creation error:', upsertError);
+          } else if (newProfile) {
             updateUserState(newProfile);
           }
-        } else if (profile) {
+        } else {
           // Verify if we are still supposed to be logged in before updating state
           const { data: { session: currentSession } } = await supabase.auth.getSession();
           if (!currentSession) return;
@@ -78,21 +91,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const initialUser: User = {
           id: session.user.id,
           email: session.user.email || '',
-          name: session.user.user_metadata.name || 'User',
-          phone: session.user.user_metadata.phone || '',
-          address: session.user.user_metadata.address || '',
-          district: session.user.user_metadata.district || '',
-          state: session.user.user_metadata.state || '',
-          pincode: session.user.user_metadata.pincode || '',
-          role: session.user.user_metadata.role || 'user',
-          avatar_url: session.user.user_metadata.avatar_url,
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+          phone: session.user.user_metadata?.phone || '',
+          address: session.user.user_metadata?.address || '',
+          district: session.user.user_metadata?.district || '',
+          state: session.user.user_metadata?.state || '',
+          pincode: session.user.user_metadata?.pincode || '',
+          role: session.user.user_metadata?.role || 'user',
+          avatar_url: session.user.user_metadata?.avatar_url,
           created_at: session.user.created_at
         };
         
         setUser(initialUser);
         setLoginTime(Date.now());
 
-        // 2. Background Sync with Profile Table (Detailed data)
+        // Background Sync with Profile Table
         await fetchProfile(session.user);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);

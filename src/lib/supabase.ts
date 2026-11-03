@@ -12,9 +12,13 @@ export const supabase = createClient(
   supabaseAnonKey,
   {
     auth: {
-      persistSession: false,
-      autoRefreshToken: false,
+      persistSession: true,
+      autoRefreshToken: true,
       detectSessionInUrl: true,
+      // Bypass Navigator LockManager — prevents deadlocks when navigating between pages with concurrent API requests
+      lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
+        return await fn();
+      },
     }
   }
 );

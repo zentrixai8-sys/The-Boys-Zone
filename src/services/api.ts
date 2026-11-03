@@ -67,7 +67,7 @@ const compressImage = (file: File, maxDimension = 1280): Promise<File> => {
 export const api = {
   async request(action: string, data: any = {}) {
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Request timed out. Please check your connection.')), 45000)
+      setTimeout(() => reject(new Error('Request timed out. Please check your connection.')), 15000)
     );
 
     const requestLogic = async () => {
@@ -385,18 +385,20 @@ export const api = {
           if (!data.user_id) throw new Error('User ID is required to create an order');
           
           // --- PRE-FLIGHT CHECK: Ensure Profile Exists to prevent FK constraint error ---
-          const { error: profileCheckError } = await supabase
+          const { data: existingProfile } = await supabase
             .from('profiles')
             .select('id')
             .eq('id', data.user_id)
-            .single();
+            .maybeSingle();
             
-          if (profileCheckError && profileCheckError.code === 'PGRST116') {
+          if (!existingProfile) {
             // Profile missing, auto-create a basic one to satisfy FK constraint
             await supabase.from('profiles').upsert([{
               id: data.user_id,
               name: 'Customer',
               email: `customer_${Date.now()}@temp.com`,
+              phone: data.address?.phone || '',
+              role: 'user'
             }]);
           }
 
@@ -755,10 +757,12 @@ export const api = {
         }
 
         case 'getOrders': {
+          const limit = data?.limit || 200;
           const { data: orders, error } = await supabase
             .from('orders')
             .select('*, profiles(name, phone)')
-            .order('date', { ascending: false });
+            .order('date', { ascending: false })
+            .limit(limit);
           if (error) throw error;
           result = orders;
           break;
